@@ -1,0 +1,6 @@
+{
+  "name": "OrbitGoals — Smart Daily Habit & Goal Progress Studio",
+  "description": "Material 3 habit tracker and smart goal visualizer with interactive charts, creator milestone tracking, customizable unlockable avatars, streak notifications, and social progression syncing.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
