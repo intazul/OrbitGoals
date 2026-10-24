@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { AppSettings } from '../types';
+import { AppSettings, UserProfile, SecurityConfig } from '../types';
 import { storage } from '../utils/storage';
 import { sound, triggerHaptic } from '../utils/sound';
 import {
@@ -19,6 +19,13 @@ import {
   Sliders,
   Database,
   Info,
+  Lock,
+  KeyRound,
+  User,
+  Calendar,
+  HelpCircle,
+  ShieldCheck,
+  AlertCircle,
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -27,6 +34,12 @@ interface SettingsScreenProps {
   onBack: () => void;
   onResetAllData: () => void;
   totalGoalsCount: number;
+  profile: UserProfile;
+  onUpdateProfile: (updates: Partial<UserProfile>) => void;
+  security: SecurityConfig;
+  onUpdateSecurity: (updates: Partial<SecurityConfig>) => void;
+  onReplayTour: () => void;
+  onLockNow: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -35,9 +48,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onBack,
   onResetAllData,
   totalGoalsCount,
+  profile,
+  onUpdateProfile,
+  security,
+  onUpdateSecurity,
+  onReplayTour,
+  onLockNow,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupSuccessMsg, setBackupSuccessMsg] = useState<string | null>(null);
+
+  // Profile Edit Modal State
+  const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
+  const [editName, setEditName] = useState<string>(profile.name);
+  const [editAge, setEditAge] = useState<string>(profile.age ? String(profile.age) : '');
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState<boolean>(false);
+
+  // Change PIN Modal State
+  const [isChangingPin, setIsChangingPin] = useState<boolean>(false);
+  const [newPin, setNewPin] = useState<string>('');
+  const [confirmPin, setConfirmPin] = useState<string>('');
+  const [pinChangeError, setPinChangeError] = useState<string | null>(null);
+  const [pinChangeSuccess, setPinChangeSuccess] = useState<boolean>(false);
 
   const handleExport = () => {
     const dataStr = storage.exportFullBackup();
@@ -81,6 +113,60 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     triggerHaptic('light');
   };
 
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = editName.trim();
+    const cleanAge = parseInt(editAge, 10);
+
+    if (!cleanName) {
+      sound.playErrorTone();
+      return;
+    }
+
+    onUpdateProfile({
+      name: cleanName,
+      age: isNaN(cleanAge) ? null : cleanAge,
+    });
+
+    sound.playSuccessChime();
+    triggerHaptic('success');
+    setProfileSaveSuccess(true);
+    setTimeout(() => {
+      setProfileSaveSuccess(false);
+      setIsEditingProfile(false);
+    }, 800);
+  };
+
+  const handleSavePin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinChangeError(null);
+
+    if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+      setPinChangeError('PIN must be exactly 4 numeric digits.');
+      sound.playErrorTone();
+      triggerHaptic('medium');
+      return;
+    }
+
+    if (newPin !== confirmPin) {
+      setPinChangeError('Passcodes do not match.');
+      sound.playErrorTone();
+      triggerHaptic('medium');
+      return;
+    }
+
+    onUpdateSecurity({ pin: newPin });
+    sound.playSuccessChime();
+    triggerHaptic('success');
+    setPinChangeSuccess(true);
+    setTimeout(() => {
+      setPinChangeSuccess(false);
+      setIsChangingPin(false);
+      setNewPin('');
+      setConfirmPin('');
+    }, 1000);
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
       {/* Settings Top Header with Back Button */}
@@ -101,7 +187,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       </header>
 
       {/* Main Settings Scrollable Body */}
-      <div className="flex-1 px-4 py-5 space-y-5 overflow-y-auto pb-10">
+      <div className="flex-1 px-4 py-5 space-y-4 overflow-y-auto pb-10">
         {backupSuccessMsg && (
           <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
             <Check className="w-4 h-4 shrink-0 stroke-[3]" />
@@ -109,8 +195,137 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         )}
 
-        {/* 1. Appearance & Theme */}
-        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-5 space-y-3.5 shadow-xs">
+        {/* 1. Profile Details Card (Name and Age) */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+              <User className="w-4 h-4" />
+              <span>User Profile</span>
+            </div>
+            <button
+              onClick={() => {
+                setEditName(profile.name);
+                setEditAge(profile.age ? String(profile.age) : '');
+                setIsEditingProfile(true);
+              }}
+              className="text-xs font-bold text-primary hover:underline cursor-pointer"
+            >
+              Edit Details
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface border border-outline-variant/20">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary to-primary-container text-on-primary font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+              {profile.name ? profile.name.slice(0, 2).toUpperCase() : 'OG'}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-black text-on-surface truncate">
+                {profile.name || 'Anonymous User'}
+              </h3>
+              <p className="text-xs text-on-surface-variant font-medium">
+                {profile.age ? `Age: ${profile.age} years old` : 'Age not specified'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Security & App Lock (Passcode) */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+              <Lock className="w-4 h-4" />
+              <span>Security & App Lock</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              Protected
+            </span>
+          </div>
+
+          <div className="space-y-2.5">
+            {/* Lock on opening app toggle */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-outline-variant/20">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-surface-container text-primary flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <span className="text-sm font-bold text-on-surface block leading-tight">
+                    Lock on Opening App
+                  </span>
+                  <span className="text-xs text-on-surface-variant">
+                    Require 4-digit passcode on launch (3 tries max)
+                  </span>
+                </div>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={security.enabled}
+                onChange={(e) => {
+                  onUpdateSecurity({ enabled: e.target.checked });
+                  sound.playPop();
+                  triggerHaptic('light');
+                }}
+                className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
+              />
+            </div>
+
+            {/* Change Passcode & Lock Now Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setNewPin('');
+                  setConfirmPin('');
+                  setPinChangeError(null);
+                  setIsChangingPin(true);
+                }}
+                className="py-2.5 px-3 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container text-on-surface font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-primary" />
+                <span>Change Passcode</span>
+              </button>
+
+              <button
+                onClick={onLockNow}
+                className="py-2.5 px-3 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container text-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Lock App Now</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Replay Introduction Tour */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-2.5 shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+            <HelpCircle className="w-4 h-4" />
+            <span>App Introduction & Guide</span>
+          </div>
+
+          <button
+            onClick={onReplayTour}
+            className="w-full p-3 rounded-2xl bg-surface border border-outline-variant/20 hover:bg-surface-container text-on-surface flex items-center justify-between active:scale-98 transition-all cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <HelpCircle className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-bold text-on-surface block leading-tight">
+                  Replay Feature Introduction
+                </span>
+                <span className="text-xs text-on-surface-variant">
+                  View the welcome walkthrough & feature guide
+                </span>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-primary">View Tour</span>
+          </button>
+        </div>
+
+        {/* 4. Appearance & Theme */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
             <Palette className="w-4 h-4" />
             <span>Appearance & Theme</span>
@@ -142,8 +357,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        {/* 2. Audio & Haptics Feedback */}
-        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-5 space-y-3.5 shadow-xs">
+        {/* 5. Audio & Haptics Feedback */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
             <Volume2 className="w-4 h-4" />
             <span>Sound & Feedback</span>
@@ -198,8 +413,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        {/* 3. Currency & Performance */}
-        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-5 space-y-3.5 shadow-xs">
+        {/* 6. Preferences & Currency */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
             <DollarSign className="w-4 h-4" />
             <span>Preferences & Currency</span>
@@ -252,8 +467,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        {/* 4. Data Backup & Storage */}
-        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-5 space-y-3.5 shadow-xs">
+        {/* 7. Data Backup & Storage */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
             <Database className="w-4 h-4" />
             <span>Data & Backup</span>
@@ -312,7 +527,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        {/* 5. App Info */}
+        {/* 8. App Info */}
         <div className="bg-surface-container-low border border-outline-variant/20 rounded-3xl p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
             <Info className="w-5 h-5" />
@@ -323,6 +538,154 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditingProfile && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <form
+            onSubmit={handleSaveProfile}
+            className="bg-surface border border-outline-variant/30 rounded-3xl p-5 max-w-xs w-full space-y-4 shadow-xl animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-on-surface">Edit Profile Details</h3>
+              {profileSaveSuccess && (
+                <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Saved
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-on-surface block mb-1">
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="e.g. Alex Rivera"
+                  className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface text-sm font-semibold focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-on-surface block mb-1">
+                  Your Age
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={editAge}
+                  onChange={(e) => setEditAge(e.target.value)}
+                  placeholder="e.g. 24"
+                  className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface text-sm font-semibold focus:outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs cursor-pointer hover:brightness-105 active:scale-98 transition-all"
+              >
+                Save Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditingProfile(false)}
+                className="py-2.5 px-3 rounded-xl bg-surface-container text-on-surface font-semibold text-xs cursor-pointer hover:bg-surface-container-high transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Change Passcode Modal */}
+      {isChangingPin && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <form
+            onSubmit={handleSavePin}
+            className="bg-surface border border-outline-variant/30 rounded-3xl p-5 max-w-xs w-full space-y-4 shadow-xl animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-on-surface">Change 4-Digit PIN</h3>
+              {pinChangeSuccess && (
+                <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Updated
+                </span>
+              )}
+            </div>
+
+            {pinChangeError && (
+              <p className="text-xs text-red-500 font-bold flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{pinChangeError}</span>
+              </p>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-on-surface block mb-1">
+                  New 4-Digit Passcode
+                </label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  pattern="[0-9]{4}"
+                  required
+                  value={newPin}
+                  onChange={(e) => {
+                    setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4));
+                    setPinChangeError(null);
+                  }}
+                  placeholder="••••"
+                  className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-center font-mono font-bold tracking-widest text-base focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-on-surface block mb-1">
+                  Confirm New Passcode
+                </label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  pattern="[0-9]{4}"
+                  required
+                  value={confirmPin}
+                  onChange={(e) => {
+                    setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4));
+                    setPinChangeError(null);
+                  }}
+                  placeholder="••••"
+                  className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-center font-mono font-bold tracking-widest text-base focus:outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs cursor-pointer hover:brightness-105 active:scale-98 transition-all"
+              >
+                Update PIN
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsChangingPin(false)}
+                className="py-2.5 px-3 rounded-xl bg-surface-container text-on-surface font-semibold text-xs cursor-pointer hover:bg-surface-container-high transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

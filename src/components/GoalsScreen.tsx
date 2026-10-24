@@ -22,6 +22,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
   currency,
 }) => {
   const formatFrequency = (goal: Goal) => {
+    if (goal.frequency === 'long_term') return 'Long Term · Every Day';
     if (goal.frequency === 'weekly') {
       if (goal.frequencyDays && goal.frequencyDays.length > 0) {
         return `Weekly · ${goal.frequencyDays.join(', ')}`;

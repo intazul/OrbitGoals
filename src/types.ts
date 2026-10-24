@@ -1,6 +1,6 @@
 export type GoalCategory = 'creator' | 'finance' | 'fitness' | 'learning' | 'wellness' | 'career' | (string & {});
 
-export type GoalFrequency = 'daily' | 'weekly' | 'monthly';
+export type GoalFrequency = 'daily' | 'weekly' | 'monthly' | 'long_term';
 
 export type GoalDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -50,24 +50,32 @@ export interface AvatarItem {
   styleClass?: string;
 }
 
+export interface SecurityConfig {
+  enabled: boolean;
+  pin: string;
+  biometricEnabled: boolean;
+}
+
 export interface UserProfile {
   name: string;
-  avatarId: string;
-  avatarBaseImage: string;
-  title: string;
-  level: number;
-  xp: number;
-  xpToNextLevel: number;
-  streakShields: number;
-  equippedItems: {
+  age: number | null;
+  onboarded: boolean;
+  avatarId?: string;
+  avatarBaseImage?: string;
+  title?: string;
+  level?: number;
+  xp?: number;
+  xpToNextLevel?: number;
+  streakShields?: number;
+  equippedItems?: {
     hat: string;
     outfit: string;
     aura: string;
     badge: string;
     companion: string;
   };
-  socialSync: {
-    youtube: {
+  socialSync?: {
+    youtube?: {
       connected: boolean;
       channelName: string;
       handle: string;
@@ -76,14 +84,14 @@ export interface UserProfile {
       targetVideos: number;
       lastSynced: string;
     };
-    instagram: {
+    instagram?: {
       connected: boolean;
       handle: string;
       followers: number;
       reelsCount: number;
       lastSynced: string;
     };
-    facebook: {
+    facebook?: {
       connected: boolean;
       pageName: string;
       followers: number;

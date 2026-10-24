@@ -50,11 +50,11 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
   // Create lookup for goal progress on specific dates
   const historyMap: Record<string, number> = {};
   if (activeGoal) {
-    activeGoal.history.forEach((h) => {
+    (activeGoal.history || []).forEach((h) => {
       historyMap[h.date] = h.value;
     });
     // Also include completedDates as full target value if not in history
-    activeGoal.completedDates.forEach((d) => {
+    (activeGoal.completedDates || []).forEach((d) => {
       if (historyMap[d] === undefined) {
         historyMap[d] = activeGoal.targetValue;
       }

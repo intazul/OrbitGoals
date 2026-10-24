@@ -1,4 +1,4 @@
-import { Goal, UserProfile, AvatarItem, CommunityChallenge, AppSettings } from '../types';
+import { Goal, UserProfile, AvatarItem, CommunityChallenge, AppSettings, SecurityConfig } from '../types';
 
 export const AVATAR_IMAGES = {
   creator: '/src/assets/images/avatar_creator_master_1792734990553.jpg',
@@ -21,48 +21,19 @@ export function getRecentDates(days: number = 14): string[] {
 
 export const INITIAL_GOALS: Goal[] = [];
 
-export const INITIAL_USER_PROFILE: UserProfile = {
-  name: 'Alex Rivera',
-  avatarId: 'creator-master',
-  avatarBaseImage: AVATAR_IMAGES.creator,
-  title: 'Content Creator & Habit Builder',
-  level: 6,
-  xp: 1420,
-  xpToNextLevel: 2000,
-  streakShields: 3,
-  equippedItems: {
-    hat: 'item-headphones',
-    outfit: 'item-hoodie',
-    aura: 'item-aura-solar',
-    badge: 'item-badge-streak',
-    companion: 'item-pet-owl',
-  },
-  socialSync: {
-    youtube: {
-      connected: true,
-      channelName: 'Alex Rivera Tech & Growth',
-      handle: '@AlexRiveraCreates',
-      subscribers: 14850,
-      videosCount: 42,
-      targetVideos: 100,
-      lastSynced: 'Just now',
-    },
-    instagram: {
-      connected: true,
-      handle: '@alexrivera_official',
-      followers: 8920,
-      reelsCount: 29,
-      lastSynced: '2 hours ago',
-    },
-    facebook: {
-      connected: false,
-      pageName: 'Alex Rivera Community',
-      followers: 2400,
-      postsCount: 16,
-      lastSynced: 'Never',
-    },
-  },
+export const DEFAULT_SECURITY: SecurityConfig = {
+  enabled: true,
+  pin: '0000',
+  biometricEnabled: false,
 };
+
+export const INITIAL_USER_PROFILE: UserProfile = {
+  name: '',
+  age: null,
+  onboarded: false,
+  title: 'Goal Achiever',
+};
+
 
 export const AVATAR_CATALOG: AvatarItem[] = [
   // Hats & Headwear

@@ -20,12 +20,21 @@ class NotificationManager {
   }
 
   get hasNativeSupport(): boolean {
-    return typeof window !== 'undefined' && 'Notification' in window;
+    if (typeof window === 'undefined' || !('Notification' in window)) return false;
+    try {
+      return typeof Notification.permission === 'string';
+    } catch {
+      return false;
+    }
   }
 
   get permission(): NotificationPermission {
     if (!this.hasNativeSupport) return 'default';
-    return Notification.permission;
+    try {
+      return Notification.permission;
+    } catch {
+      return 'default';
+    }
   }
 
   async requestPermission(): Promise<boolean> {
@@ -52,7 +61,13 @@ class NotificationManager {
   private notifyListeners() {
     // Schedule listener notification in microtask to avoid any render-phase setState conflicts
     queueMicrotask(() => {
-      this.listeners.forEach((fn) => fn());
+      this.listeners.forEach((fn) => {
+        try {
+          fn();
+        } catch {
+          // ignore
+        }
+      });
     });
   }
 
@@ -93,16 +108,16 @@ class NotificationManager {
     }
 
     // 3. Native browser Push Notification if granted
-    if (this.hasNativeSupport && Notification.permission === 'granted') {
-      try {
+    try {
+      if (this.hasNativeSupport && this.permission === 'granted') {
         new Notification(title, {
           body,
           icon: '/favicon.ico',
           tag: 'orbitgoals-alert',
         });
-      } catch {
-        // Fallback
       }
+    } catch {
+      // Fallback
     }
   }
 

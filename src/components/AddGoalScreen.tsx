@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Target, ChevronDown, ChevronUp, Check, Plus } from 'lucide-react';
+import { ArrowLeft, Target, ChevronDown, ChevronUp, Check, Plus, Sparkles } from 'lucide-react';
 import { Goal, GoalFrequency } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
 import { AVAILABLE_GOAL_ICONS, GoalIcon } from './GoalIcon';
@@ -73,7 +73,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
 
     onSaveGoal({
       title: title.trim(),
-      description: `Target: ${targetValue} ${unit.trim() || 'units'} (${frequency})`,
+      description: `Target: ${targetValue} ${unit.trim() || 'units'} (${frequency === 'long_term' ? 'Long Term · Every Day' : frequency})`,
       category: category.trim() || 'general',
       targetValue,
       currentValue: 0,
@@ -298,32 +298,79 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
 
           {/* Frequency */}
           <div className="bg-surface-container-low p-4 rounded-3xl border border-outline-variant/30 shadow-xs space-y-3">
-            <label className="text-xs font-bold text-on-surface block">
-              Frequency *
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['daily', 'weekly', 'monthly'] as const).map((freq) => {
-                const isSelected = frequency === freq;
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-on-surface block">
+                Frequency *
+              </label>
+              {frequency === 'long_term' && (
+                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  Appears Everyday
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'daily' as const, label: 'Daily', sub: 'Resets each day' },
+                { id: 'long_term' as const, label: 'Long Term', sub: 'Appears every day', tag: 'Everyday' },
+                { id: 'weekly' as const, label: 'Weekly', sub: 'Specific days/wk' },
+                { id: 'monthly' as const, label: 'Monthly', sub: 'Monthly milestone' },
+              ].map((item) => {
+                const isSelected = frequency === item.id;
                 return (
                   <button
                     type="button"
-                    key={freq}
+                    key={item.id}
                     onClick={() => {
-                      setFrequency(freq);
+                      setFrequency(item.id);
                       sound.playPop();
                       triggerHaptic('light');
                     }}
-                    className={`py-2.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer border ${
+                    className={`py-2.5 px-3 rounded-2xl text-left transition-all cursor-pointer border flex flex-col justify-center min-h-[56px] ${
                       isSelected
                         ? 'bg-primary text-on-primary border-primary shadow-xs font-black'
-                        : 'bg-surface text-on-surface-variant border-outline-variant/20 hover:text-on-surface'
+                        : 'bg-surface text-on-surface border-outline-variant/20 hover:bg-surface-container'
                     }`}
                   >
-                    {freq}
+                    <div className="flex items-center justify-between gap-1 w-full">
+                      <span className="text-xs font-bold leading-tight">
+                        {item.label}
+                      </span>
+                      {item.tag && (
+                        <span
+                          className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                            isSelected
+                              ? 'bg-on-primary/20 text-on-primary'
+                              : 'bg-primary/10 text-primary'
+                          }`}
+                        >
+                          {item.tag}
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] mt-0.5 ${
+                        isSelected
+                          ? 'text-on-primary/80 font-medium'
+                          : 'text-on-surface-variant'
+                      }`}
+                    >
+                      {item.sub}
+                    </span>
                   </button>
                 );
               })}
             </div>
+
+            {/* Long Term Info Box */}
+            {frequency === 'long_term' && (
+              <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-xs font-semibold flex items-center gap-2.5 animate-in fade-in duration-200">
+                <Sparkles className="w-4 h-4 shrink-0 stroke-[2.5]" />
+                <span className="leading-snug">
+                  <strong>Long Term Goal:</strong> This goal will appear every day on your dashboard to keep your continuous targets in sight without resetting your progress.
+                </span>
+              </div>
+            )}
 
             {/* If Weekly: Optional Specific Days Selector */}
             {frequency === 'weekly' && (
