@@ -258,17 +258,17 @@ export default function App() {
           {/* FIXED NON-SCROLLABLE TOP SECTION (Header + Overview Card + Big Add Goal Button) */}
           <div className="shrink-0 bg-surface z-30">
             {/* Dashboard Header Bar (Add Goal removed from top right) */}
-            <header className="border-b border-outline-variant/20 px-4 py-3 shrink-0 flex items-center justify-between gap-2">
+            <header className="border-b border-outline-variant/20 px-4 ml-0 pt-8 pb-1.5 text-[20px] shrink-0 flex items-center justify-between gap-2">
               {/* Brand Logo & Title */}
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-primary to-primary-container text-on-primary flex items-center justify-center font-black text-xs shadow-xs">
                   OG
                 </div>
                 <div>
-                  <span className="text-base font-black tracking-tight text-on-surface block leading-none">
+                  <span className="text-[21px] font-black tracking-tight text-on-surface block leading-none">
                     OrbitGoals
                   </span>
-                  <span className="text-[11px] font-semibold text-on-surface-variant block mt-0.5">
+                  <span className="text-[9px] font-semibold text-on-surface-variant block mt-0.5">
                     Daily Goals & Milestones
                   </span>
                 </div>
@@ -283,7 +283,7 @@ export default function App() {
                   title="Open Goals"
                 >
                   <Target className="w-3.5 h-3.5 text-primary stroke-[2.5]" />
-                  <span>Goals</span>
+                  <span className="text-[13px]">Goals</span>
                 </button>
 
                 {/* Calendar Heat Zone Launcher */}
@@ -311,24 +311,24 @@ export default function App() {
               {/* Daily Goals Progress Overview Card */}
               <div className="bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low rounded-2xl p-3.5 border border-outline-variant/30 shadow-xs">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-primary">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-primary">
                     Today's Goals Overview
                   </span>
-                  <span className="text-[10px] text-on-surface-variant font-bold">
+                  <span className="text-[12px] text-on-surface-variant font-bold">
                     {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5 min-w-0">
-                    <h2 className="text-lg font-black text-on-surface tracking-tight leading-tight truncate">
+                    <h2 className="text-[22px] pt-0 font-black text-on-surface tracking-tight leading-tight truncate">
                       {totalGoals === 0
                         ? 'No Goals Yet'
                         : todayPct === 100
                         ? 'All Goals Completed! 🎉'
                         : `${uncompletedCount} Goal${uncompletedCount === 1 ? '' : 's'} Remaining`}
                     </h2>
-                    <p className="text-[11px] text-on-surface-variant font-medium truncate">
+                    <p className="text-[10px] text-on-surface-variant font-medium truncate">
                       {totalGoals === 0
                         ? 'Tap Add Goal below to start.'
                         : `${completedTodayCount} of ${totalGoals} goals finished today.`}
@@ -356,7 +356,7 @@ export default function App() {
                       />
                     </svg>
                     <div className="absolute text-center">
-                      <span className="text-xs font-black text-on-surface font-mono tabular-nums leading-none">
+                      <span className="text-[15px] font-black text-on-surface font-mono tabular-nums leading-none">
                         {todayPct}%
                       </span>
                     </div>
@@ -372,7 +372,7 @@ export default function App() {
                 <div className="w-6 h-6 rounded-full bg-on-primary/15 flex items-center justify-center">
                   <Plus className="w-4 h-4 stroke-[3] text-on-primary" />
                 </div>
-                <span>Add Goal</span>
+                <span className="text-[18px]">Add Goal</span>
               </button>
 
               {/* List Header Label */}
@@ -380,7 +380,7 @@ export default function App() {
                 <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                   Active Goals ({goals.length})
                 </h3>
-                <span className="text-[11px] text-on-surface-variant font-medium">
+                <span className="text-[12px] text-on-surface-variant font-medium">
                   Tap - / + to update
                 </span>
               </div>
