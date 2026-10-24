@@ -124,9 +124,47 @@
     color: var(--md-on-surface);
     margin: 0;
     padding: 0;
+    min-width: 320px;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* Native Android runs edge-to-edge; the web preview keeps its device chrome. */
+@media (max-width: 640px) {
+  .app-shell {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .app-frame {
+    max-width: none;
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .preview-gesture-bar {
+    display: none;
+  }
+}
+
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px;
 }
 
 /* Low power mode for low-end device optimization */
