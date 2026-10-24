@@ -1,4 +1,4 @@
-export type GoalCategory = 'creator' | 'finance' | 'fitness' | 'learning' | 'wellness' | 'career';
+export type GoalCategory = 'creator' | 'finance' | 'fitness' | 'learning' | 'wellness' | 'career' | (string & {});
 
 export type GoalFrequency = 'daily' | 'weekly' | 'monthly';
 

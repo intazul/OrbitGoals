@@ -7,7 +7,7 @@ import { GoalIcon } from './GoalIcon';
 interface GoalsScreenProps {
   goals: Goal[];
   onBack: () => void;
-  onOpenNewGoal: () => void;
+  onOpenCalendar: (goalId?: string) => void;
   onUpdateGoalValue: (goalId: string, delta: number) => void;
   onDeleteGoal: (goalId: string) => void;
   currency: string;
@@ -16,7 +16,7 @@ interface GoalsScreenProps {
 export const GoalsScreen: React.FC<GoalsScreenProps> = ({
   goals,
   onBack,
-  onOpenNewGoal,
+  onOpenCalendar,
   onUpdateGoalValue,
   onDeleteGoal,
   currency,
@@ -34,7 +34,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
-      {/* Top Header with Back Button */}
+      {/* Top Header with Back Button (Add Goal removed from top right) */}
       <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 py-3 shrink-0 flex items-center justify-between gap-3">
         <button
           onClick={onBack}
@@ -53,142 +53,119 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
           </h1>
         </div>
 
+        {/* Calendar launcher icon on top right instead of Add Goal */}
         <button
-          onClick={onOpenNewGoal}
-          className="m3-primary-btn text-xs py-2 px-3.5 flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap min-h-[44px]"
+          onClick={() => onOpenCalendar()}
+          className="w-10 h-10 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer flex items-center justify-center border border-outline-variant/30 shadow-2xs"
+          title="Open Heat Zone Calendar"
         >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Add Goal</span>
+          <Calendar className="w-4 h-4 text-primary" />
         </button>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 py-5 space-y-4 overflow-y-auto">
+      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto pb-10">
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-            All Active Goals ({goals.length})
+            All Goals ({goals.length})
           </span>
           <span className="text-xs text-on-surface-variant font-medium">
-            Tap + to add or - to undo
+            Tap - / + to update
           </span>
         </div>
 
-        {/* Goals List */}
-        <div className="space-y-4">
+        {/* Goals List - Single-line non-stacking clean layout */}
+        <div className="space-y-2.5">
           {goals.map((goal) => {
             const pct = Math.min(100, Math.round((goal.currentValue / goal.targetValue) * 100));
 
             return (
               <div
                 key={goal.id}
-                className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-5 shadow-xs space-y-4 transition-all"
+                className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-3 shadow-xs space-y-2.5 transition-all"
               >
-                {/* Header: Icon, Title, Frequency Badge & Delete Button */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {/* Custom Goal Icon Badge */}
-                      <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/20">
-                        <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
-                      </div>
-
-                      <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface">
-                        {goal.category}
-                      </span>
-
-                      {/* Frequency Badge */}
-                      <span className="text-xs font-bold text-on-surface-variant px-2.5 py-0.5 rounded-full bg-surface-container flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-primary" />
-                        <span>{formatFrequency(goal)}</span>
-                      </span>
+                {/* Single Non-Stacking Top Row: Icon, Title, and Action Buttons */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/20">
+                      <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
                     </div>
-
-                    <h2 className="text-base sm:text-lg font-black text-on-surface break-words leading-snug pt-0.5">
+                    <span className="text-sm font-bold text-on-surface truncate">
                       {goal.title}
-                    </h2>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete "${goal.title}"?`)) {
-                        onDeleteGoal(goal.id);
-                        sound.playPop();
-                      }
-                    }}
-                    className="p-2 rounded-xl text-on-surface-variant hover:text-red-500 hover:bg-surface-container active:scale-95 transition-colors cursor-pointer shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                    title="Delete Goal"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Target Complete in Percentage - Big, Prominent, Clear */}
-                <div className="bg-surface-container p-3.5 rounded-2xl border border-outline-variant/20 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-primary font-mono tabular-nums leading-none">
-                        {pct}%
-                      </span>
-                      <span className="text-xs font-black uppercase tracking-wider text-on-surface-variant">
-                        Complete
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-on-surface-variant font-medium mt-1 block">
-                      Target Completion
                     </span>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-sm font-bold font-mono text-on-surface tabular-nums block">
+                  {/* Compact Right Control Buttons */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {/* View Calendar Heat Zone */}
+                    <button
+                      onClick={() => onOpenCalendar(goal.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:text-primary active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
+                      title="View Heat Zone Calendar"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Minus button to subtract one if mistakenly added */}
+                    <button
+                      onClick={() => onUpdateGoalValue(goal.id, -1)}
+                      disabled={goal.currentValue <= 0}
+                      className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-red-500 hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      title="Subtract 1 unit (-1)"
+                    >
+                      <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
+
+                    {/* Plus button to add 1 unit */}
+                    <button
+                      onClick={() => onUpdateGoalValue(goal.id, 1)}
+                      className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-primary hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
+                      title="Add 1 unit (+1)"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
+
+                    {/* Delete goal */}
+                    <button
+                      onClick={() => {
+                        if (confirm(`Delete "${goal.title}"?`)) {
+                          onDeleteGoal(goal.id);
+                          sound.playPop();
+                        }
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-xl text-on-surface-variant hover:text-red-500 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+                      title="Delete Goal"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Second Row: Fits perfectly in one line without stacking */}
+                <div className="flex items-center justify-between gap-2 text-xs whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg text-xs tabular-nums shrink-0">
+                      {pct}% Complete
+                    </span>
+
+                    <span className="font-mono tabular-nums text-on-surface font-semibold text-xs truncate">
                       {goal.category === 'finance' ? currency : ''}
                       {goal.currentValue.toLocaleString()} / {goal.category === 'finance' ? currency : ''}
                       {goal.targetValue.toLocaleString()} {goal.unit}
                     </span>
-                    <span className="text-[11px] text-on-surface-variant font-medium">
-                      {goal.targetValue - goal.currentValue > 0
-                        ? `${(goal.targetValue - goal.currentValue).toLocaleString()} ${goal.unit} left`
-                        : 'Goal reached! 🎉'}
-                    </span>
                   </div>
+
+                  <span className="text-[10px] font-medium text-on-surface-variant px-2 py-0.5 rounded-md bg-surface-container shrink-0 truncate max-w-[130px]">
+                    {formatFrequency(goal)}
+                  </span>
                 </div>
 
-                {/* Linear Progress Bar */}
-                <div className="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden">
+                {/* Progress Bar */}
+                <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all duration-500"
+                    className="h-full rounded-full transition-all duration-300"
                     style={{ width: `${pct}%`, backgroundColor: goal.color }}
                   />
-                </div>
-
-                {/* Quick Add / Minus Progress Controls */}
-                <div className="pt-2 border-t border-outline-variant/20 flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-on-surface-variant">
-                    Update Progress:
-                  </span>
-
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* Minus Button to subtract one if mistakenly added */}
-                    <button
-                      onClick={() => onUpdateGoalValue(goal.id, -1)}
-                      disabled={goal.currentValue <= 0}
-                      className="py-1.5 px-2.5 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high text-xs font-bold font-mono transition-all active:scale-95 cursor-pointer min-h-[38px] flex items-center justify-center border border-outline-variant/30 disabled:opacity-30 disabled:cursor-not-allowed gap-1"
-                      title="Undo / Subtract 1 unit"
-                    >
-                      <Minus className="w-3.5 h-3.5 stroke-[2.5] text-red-500" />
-                      <span>-1</span>
-                    </button>
-
-                    {/* Plus Quick Increments */}
-                    {(goal.category === 'finance' ? [25, 50, 100] : [1, 5, 10]).map((amt) => (
-                      <button
-                        key={amt}
-                        onClick={() => onUpdateGoalValue(goal.id, amt)}
-                        className="py-1.5 px-3 rounded-xl bg-surface-container text-on-surface hover:bg-primary hover:text-on-primary text-xs font-bold font-mono transition-all active:scale-95 cursor-pointer min-h-[38px] flex items-center justify-center border border-outline-variant/30"
-                      >
-                        +{goal.category === 'finance' ? `${currency}${amt}` : `${amt} ${goal.unit}`}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
             );
@@ -201,15 +178,8 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
               </div>
               <h3 className="text-base font-black text-on-surface">No goals created yet</h3>
               <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed">
-                Start fresh by creating your first milestone goal with target numbers and frequency.
+                Add your first goal from the dashboard to track your progress and heat zone.
               </p>
-              <button
-                onClick={onOpenNewGoal}
-                className="m3-primary-btn text-xs sm:text-sm py-2.5 px-6 inline-flex items-center gap-2 cursor-pointer shadow-sm font-bold mt-2"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>Create Your First Goal</span>
-              </button>
             </div>
           )}
         </div>
