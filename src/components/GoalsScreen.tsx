@@ -58,7 +58,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
         <button
           onClick={() => onOpenCalendar()}
           className="w-10 h-10 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer flex items-center justify-center border border-outline-variant/30 shadow-2xs"
-          title="Open Heat Zone Calendar"
+          title="Open Progress Calendar"
         >
           <Calendar className="w-4 h-4 text-primary" />
         </button>
@@ -78,7 +78,9 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
         {/* Goals List - Single-line non-stacking clean layout */}
         <div className="space-y-2.5">
           {goals.map((goal) => {
-            const pct = Math.min(100, Math.round((goal.currentValue / goal.targetValue) * 100));
+            const target = typeof goal.targetValue === 'number' && !isNaN(goal.targetValue) && goal.targetValue > 0 ? goal.targetValue : 1;
+            const current = typeof goal.currentValue === 'number' && !isNaN(goal.currentValue) ? Math.max(0, goal.currentValue) : 0;
+            const pct = Math.min(100, Math.max(0, Math.round((current / target) * 100)));
 
             return (
               <div
@@ -110,7 +112,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
                     {/* Minus button to subtract one if mistakenly added */}
                     <button
                       onClick={() => onUpdateGoalValue(goal.id, -1)}
-                      disabled={goal.currentValue <= 0}
+                      disabled={current <= 0}
                       className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-red-500 hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       title="Subtract 1 unit (-1)"
                     >
@@ -151,8 +153,8 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
 
                     <span className="font-mono tabular-nums text-on-surface font-semibold text-xs truncate">
                       {goal.category === 'finance' ? currency : ''}
-                      {goal.currentValue.toLocaleString()} / {goal.category === 'finance' ? currency : ''}
-                      {goal.targetValue.toLocaleString()} {goal.unit}
+                      {current.toLocaleString()} / {goal.category === 'finance' ? currency : ''}
+                      {target.toLocaleString()} {goal.unit || 'units'}
                     </span>
                   </div>
 

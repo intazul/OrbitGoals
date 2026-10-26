@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { AppSettings, UserProfile, SecurityConfig } from '../types';
 import { storage } from '../utils/storage';
 import { sound, triggerHaptic } from '../utils/sound';
+import { UserAvatar } from './UserAvatar';
+import { AvatarPickerModal } from './AvatarPickerModal';
 import {
   ArrowLeft,
   Moon,
@@ -60,6 +62,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Profile Edit Modal State
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>(profile.name);
   const [editAge, setEditAge] = useState<string>(profile.age ? String(profile.age) : '');
   const [profileSaveSuccess, setProfileSaveSuccess] = useState<boolean>(false);
@@ -202,22 +205,49 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <User className="w-4 h-4" />
               <span>User Profile</span>
             </div>
-            <button
-              onClick={() => {
-                setEditName(profile.name);
-                setEditAge(profile.age ? String(profile.age) : '');
-                setIsEditingProfile(true);
-              }}
-              className="text-xs font-bold text-primary hover:underline cursor-pointer"
-            >
-              Edit Details
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setIsAvatarPickerOpen(true);
+                  sound.playPop();
+                  triggerHaptic('light');
+                }}
+                className="text-xs font-bold text-primary hover:underline cursor-pointer"
+              >
+                Change Avatar
+              </button>
+              <span className="text-on-surface-variant text-xs">·</span>
+              <button
+                onClick={() => {
+                  setEditName(profile.name);
+                  setEditAge(profile.age ? String(profile.age) : '');
+                  setIsEditingProfile(true);
+                }}
+                className="text-xs font-bold text-primary hover:underline cursor-pointer"
+              >
+                Edit Details
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface border border-outline-variant/20">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary to-primary-container text-on-primary font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
-              {profile.name ? profile.name.slice(0, 2).toUpperCase() : 'OG'}
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsAvatarPickerOpen(true);
+                sound.playPop();
+                triggerHaptic('light');
+              }}
+              className="cursor-pointer hover:opacity-85 transition-opacity"
+              title="Click to change avatar"
+            >
+              <UserAvatar
+                avatarId={profile.avatarId}
+                avatarUrl={profile.avatarUrl}
+                fallbackText={profile.name}
+                size="md"
+              />
+            </button>
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-black text-on-surface truncate">
                 {profile.name || 'Anonymous User'}
@@ -685,6 +715,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </form>
         </div>
+      )}
+
+      {/* Avatar Picker Modal */}
+      {isAvatarPickerOpen && (
+        <AvatarPickerModal
+          currentAvatarId={profile.avatarId}
+          onSelectAvatar={(avatarId) => {
+            onUpdateProfile({ avatarId });
+          }}
+          onClose={() => setIsAvatarPickerOpen(false)}
+        />
       )}
     </div>
   );

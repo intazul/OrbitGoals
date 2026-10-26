@@ -4,6 +4,28 @@ export type GoalFrequency = 'daily' | 'weekly' | 'monthly' | 'long_term';
 
 export type GoalDifficulty = 'easy' | 'medium' | 'hard';
 
+export type HabitTimeOfDay = 'anytime' | 'morning' | 'afternoon' | 'evening';
+
+export type HabitFrequency = 'daily' | 'weekdays' | 'weekends';
+
+export interface Habit {
+  id: string;
+  title: string;
+  description?: string;
+  category: GoalCategory;
+  timeOfDay: HabitTimeOfDay;
+  frequency: HabitFrequency;
+  frequencyDays?: string[];
+  icon: string;
+  color: string;
+  streakDays: number;
+  bestStreak: number;
+  completedDates: string[]; // ISO 'YYYY-MM-DD'
+  reminderTime?: string;
+  createdAt: string;
+  archived?: boolean;
+}
+
 export interface SubTask {
   id: string;
   title: string;
@@ -61,8 +83,10 @@ export interface UserProfile {
   age: number | null;
   onboarded: boolean;
   avatarId?: string;
+  avatarUrl?: string;
   avatarBaseImage?: string;
   title?: string;
+  motto?: string;
   level?: number;
   xp?: number;
   xpToNextLevel?: number;

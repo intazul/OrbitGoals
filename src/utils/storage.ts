@@ -1,8 +1,9 @@
-import { Goal, UserProfile, AvatarItem, CommunityChallenge, AppSettings, DailyReflection, SecurityConfig } from '../types';
-import { INITIAL_GOALS, INITIAL_USER_PROFILE, AVATAR_CATALOG, INITIAL_CHALLENGES, INITIAL_SETTINGS, DEFAULT_SECURITY } from './initialData';
+import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, DailyReflection, SecurityConfig } from '../types';
+import { INITIAL_GOALS, INITIAL_HABITS, INITIAL_USER_PROFILE, AVATAR_CATALOG, INITIAL_CHALLENGES, INITIAL_SETTINGS, DEFAULT_SECURITY } from './initialData';
 
 const KEYS = {
   GOALS: 'orbitgoals_data_goals_v3',
+  HABITS: 'orbitgoals_data_habits_v2',
   PROFILE: 'orbitgoals_data_profile_v2',
   SECURITY: 'orbitgoals_data_security_v1',
   AVATARS: 'orbitgoals_data_avatars_v1',
@@ -18,27 +19,29 @@ export const storage = {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed)) {
-          return parsed.map((g: Partial<Goal>) => ({
-            id: g.id || `goal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            title: g.title || 'Untitled Goal',
-            description: g.description || '',
-            category: g.category || 'creator',
-            targetValue: typeof g.targetValue === 'number' && g.targetValue > 0 ? g.targetValue : 1,
-            currentValue: typeof g.currentValue === 'number' ? g.currentValue : 0,
-            unit: g.unit || 'units',
-            frequency: g.frequency || 'daily',
-            frequencyDays: Array.isArray(g.frequencyDays) ? g.frequencyDays : [],
-            color: g.color || '#6750a4',
-            icon: g.icon || 'target',
-            priority: g.priority || 'normal',
-            difficulty: g.difficulty || 'medium',
-            xpReward: g.xpReward || 50,
-            completedDates: Array.isArray(g.completedDates) ? g.completedDates : [],
-            history: Array.isArray(g.history) ? g.history : [],
-            subtasks: Array.isArray(g.subtasks) ? g.subtasks : [],
-            notes: g.notes || '',
-            createdAt: g.createdAt || new Date().toISOString().split('T')[0],
-          }));
+          return parsed
+            .filter((g): g is Partial<Goal> => g !== null && typeof g === 'object')
+            .map((g: Partial<Goal>) => ({
+              id: g.id || `goal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              title: typeof g.title === 'string' ? g.title : 'Untitled Goal',
+              description: typeof g.description === 'string' ? g.description : '',
+              category: typeof g.category === 'string' ? g.category : 'creator',
+              targetValue: typeof g.targetValue === 'number' && !isNaN(g.targetValue) && g.targetValue > 0 ? g.targetValue : 1,
+              currentValue: typeof g.currentValue === 'number' && !isNaN(g.currentValue) ? Math.max(0, g.currentValue) : 0,
+              unit: typeof g.unit === 'string' ? g.unit : 'units',
+              frequency: g.frequency || 'daily',
+              frequencyDays: Array.isArray(g.frequencyDays) ? g.frequencyDays : [],
+              color: typeof g.color === 'string' ? g.color : '#6750a4',
+              icon: typeof g.icon === 'string' ? g.icon : 'target',
+              priority: g.priority || 'normal',
+              difficulty: g.difficulty || 'medium',
+              xpReward: typeof g.xpReward === 'number' ? g.xpReward : 50,
+              completedDates: Array.isArray(g.completedDates) ? g.completedDates.filter((d): d is string => typeof d === 'string') : [],
+              history: Array.isArray(g.history) ? g.history : [],
+              subtasks: Array.isArray(g.subtasks) ? g.subtasks : [],
+              notes: typeof g.notes === 'string' ? g.notes : '',
+              createdAt: typeof g.createdAt === 'string' ? g.createdAt : new Date().toISOString().split('T')[0],
+            }));
         }
       }
     } catch {
@@ -55,17 +58,74 @@ export const storage = {
     }
   },
 
+  getHabits(): Habit[] {
+    try {
+      const data = localStorage.getItem(KEYS.HABITS);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          const items = parsed
+            .filter((h): h is Partial<Habit> => h !== null && typeof h === 'object')
+            .map((h: Partial<Habit>) => ({
+              id: h.id || `habit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              title: typeof h.title === 'string' ? h.title : 'Untitled Habit',
+              description: typeof h.description === 'string' ? h.description : '',
+              category: typeof h.category === 'string' ? h.category : 'wellness',
+              timeOfDay: h.timeOfDay || 'anytime',
+              frequency: h.frequency || 'daily',
+              frequencyDays: Array.isArray(h.frequencyDays) ? h.frequencyDays : [],
+              icon: typeof h.icon === 'string' ? h.icon : 'target',
+              color: typeof h.color === 'string' ? h.color : '#06b6d4',
+              streakDays: typeof h.streakDays === 'number' && !isNaN(h.streakDays) ? Math.max(0, h.streakDays) : 0,
+              bestStreak: typeof h.bestStreak === 'number' && !isNaN(h.bestStreak) ? Math.max(0, h.bestStreak) : 0,
+              completedDates: Array.isArray(h.completedDates) ? h.completedDates.filter((d): d is string => typeof d === 'string') : [],
+              reminderTime: typeof h.reminderTime === 'string' ? h.reminderTime : '',
+              createdAt: typeof h.createdAt === 'string' ? h.createdAt : new Date().toISOString().split('T')[0],
+            }));
+
+          // If the stored data was the old pre-loaded 6 mock habits, clear them as requested
+          const isOldMockSet = items.length <= 6 && items.every((h) => /^habit-[1-6]$/.test(h.id));
+          if (isOldMockSet) {
+            localStorage.setItem(KEYS.HABITS, JSON.stringify([]));
+            return [];
+          }
+          return items;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  },
+
+  saveHabits(habits: Habit[]) {
+    try {
+      localStorage.setItem(KEYS.HABITS, JSON.stringify(habits));
+    } catch {
+      // ignore
+    }
+  },
+
   getProfile(): UserProfile {
     try {
       const data = localStorage.getItem(KEYS.PROFILE);
       if (data) {
         const parsed = JSON.parse(data);
         if (parsed && typeof parsed === 'object') {
+          const xp = typeof parsed.xp === 'number' ? parsed.xp : 0;
+          const level = typeof parsed.level === 'number' ? parsed.level : Math.max(1, Math.floor(xp / 200) + 1);
           return {
             name: typeof parsed.name === 'string' ? parsed.name : '',
             age: typeof parsed.age === 'number' ? parsed.age : null,
             onboarded: Boolean(parsed.onboarded),
-            title: parsed.title || 'Goal Achiever',
+            avatarId: typeof parsed.avatarId === 'string' ? parsed.avatarId : 'cosmic-astronaut',
+            avatarUrl: typeof parsed.avatarUrl === 'string' ? parsed.avatarUrl : undefined,
+            title: parsed.title || 'Novice Achiever',
+            motto: typeof parsed.motto === 'string' ? parsed.motto : INITIAL_USER_PROFILE.motto,
+            level,
+            xp,
+            xpToNextLevel: typeof parsed.xpToNextLevel === 'number' ? parsed.xpToNextLevel : 200,
+            streakShields: typeof parsed.streakShields === 'number' ? parsed.streakShields : 2,
           };
         }
       }
@@ -192,9 +252,10 @@ export const storage = {
 
   exportFullBackup(): string {
     const backup = {
-      version: '1.1',
+      version: '1.2',
       exportedAt: new Date().toISOString(),
       goals: this.getGoals(),
+      habits: this.getHabits(),
       profile: this.getProfile(),
       security: this.getSecurity(),
       avatars: this.getAvatarCatalog(),
@@ -209,6 +270,7 @@ export const storage = {
     try {
       const backup = JSON.parse(jsonString);
       if (backup.goals) this.saveGoals(backup.goals);
+      if (backup.habits) this.saveHabits(backup.habits);
       if (backup.profile) this.saveProfile(backup.profile);
       if (backup.security) this.saveSecurity(backup.security);
       if (backup.avatars) this.saveAvatarCatalog(backup.avatars);
@@ -223,6 +285,7 @@ export const storage = {
 
   resetToDefault() {
     localStorage.removeItem(KEYS.GOALS);
+    localStorage.removeItem(KEYS.HABITS);
     localStorage.removeItem(KEYS.PROFILE);
     localStorage.removeItem(KEYS.SECURITY);
     localStorage.removeItem(KEYS.AVATARS);

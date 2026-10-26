@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserProfile, SecurityConfig } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
 import { fireConfetti } from '../utils/confetti';
+import { AVATAR_PRESETS } from '../utils/avatars';
 import {
   Sparkles,
   Target,
@@ -40,6 +41,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   // Profile Form State
   const [name, setName] = useState<string>(initialProfile?.name || '');
   const [age, setAge] = useState<string>(initialProfile?.age ? String(initialProfile.age) : '');
+  const [avatarId, setAvatarId] = useState<string>(initialProfile?.avatarId || 'cosmic-astronaut');
   const [pin, setPin] = useState<string>(initialSecurity?.pin || '0000');
   const [appLockEnabled, setAppLockEnabled] = useState<boolean>(
     initialSecurity ? initialSecurity.enabled : true
@@ -91,6 +93,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       ...(initialProfile || {}),
       name: trimmedName,
       age: parsedAge,
+      avatarId,
       onboarded: true,
       title: 'Goal Achiever',
     };
@@ -230,7 +233,18 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
               </p>
             </div>
 
-            {/* Feature 1: Frequency & Custom Cadence */}
+            {/* Feature 1: Gamified Habits & Goals */}
+            <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-500">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-[14px]">Gamified Habits & XP (+10 / +50 XP)</span>
+              </div>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Earn <strong>+10 XP</strong> for every habit completed today, and <strong>+50 XP</strong> for every step towards finishing a goal! Level up your rank from Novice to Grandmaster.
+              </p>
+            </div>
+
+            {/* Feature 2: Frequency & Custom Cadence */}
             <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1.5 shadow-xs">
               <div className="flex items-center gap-2 text-xs font-bold text-primary">
                 <Calendar className="w-4 h-4" />
@@ -321,6 +335,45 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 <span>⚠️ {validationError}</span>
               </div>
             )}
+
+            {/* Avatar Selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-on-surface flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span>Choose Profile Picture</span>
+                </span>
+                <span className="text-[10px] text-primary font-bold">Pick an avatar</span>
+              </label>
+              <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
+                {AVATAR_PRESETS.map((preset) => {
+                  const isSelected = preset.id === avatarId;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => {
+                        setAvatarId(preset.id);
+                        sound.playPop();
+                        triggerHaptic('light');
+                      }}
+                      className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-primary ring-2 ring-primary/40 scale-105 shadow-sm'
+                          : 'border-outline-variant/30 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img
+                        src={preset.url}
+                        alt={preset.name}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* 1. Name Entry */}
             <div className="space-y-1.5">

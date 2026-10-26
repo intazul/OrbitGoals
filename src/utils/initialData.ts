@@ -1,4 +1,4 @@
-import { Goal, UserProfile, AvatarItem, CommunityChallenge, AppSettings, SecurityConfig } from '../types';
+import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, SecurityConfig } from '../types';
 
 export const AVATAR_IMAGES = {
   creator: '/src/assets/images/avatar_creator_master_1792734990553.jpg',
@@ -21,6 +21,8 @@ export function getRecentDates(days: number = 14): string[] {
 
 export const INITIAL_GOALS: Goal[] = [];
 
+export const INITIAL_HABITS: Habit[] = [];
+
 export const DEFAULT_SECURITY: SecurityConfig = {
   enabled: true,
   pin: '0000',
@@ -31,8 +33,15 @@ export const INITIAL_USER_PROFILE: UserProfile = {
   name: '',
   age: null,
   onboarded: false,
-  title: 'Goal Achiever',
+  avatarId: 'cosmic-astronaut',
+  title: 'Novice Achiever',
+  motto: 'Consistency turns small steps into unstoppable momentum.',
+  level: 1,
+  xp: 0,
+  xpToNextLevel: 200,
+  streakShields: 2,
 };
+
 
 
 export const AVATAR_CATALOG: AvatarItem[] = [
