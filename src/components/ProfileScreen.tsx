@@ -360,7 +360,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
 
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[11px] font-bold text-amber-500 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30 flex items-center gap-1">
+                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-2 py-0.5 rounded-lg border border-amber-500/30 flex items-center gap-1">
                   <span>{rankInfo.badge}</span>
                   <span className="truncate">{profile.title || rankInfo.title}</span>
                 </span>
@@ -378,7 +378,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="pt-2 border-t border-outline-variant/20 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1 text-[11px]">
-                <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-current" />
                 <span>Level {levelInfo.level} Progress</span>
               </span>
               <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-primary">
@@ -407,7 +407,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         {/* Core Stats 4-Grid Strip */}
         <div className="grid grid-cols-4 gap-1.5">
           <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
-            <div className="flex items-center justify-center gap-1 text-amber-500">
+            <div className="flex items-center justify-center gap-1 text-amber-600 dark:text-amber-400">
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-black font-mono tabular-nums">{userXp}</span>
             </div>
@@ -417,7 +417,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </div>
 
           <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
-            <div className="flex items-center justify-center gap-1 text-orange-500">
+            <div className="flex items-center justify-center gap-1 text-orange-600 dark:text-orange-400">
               <Flame className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-black font-mono tabular-nums">{highestStreak}d</span>
             </div>
@@ -437,7 +437,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </div>
 
           <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
-            <div className="flex items-center justify-center gap-1 text-emerald-500">
+            <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400">
               <Shield className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-black font-mono tabular-nums">{profile.streakShields ?? 2}</span>
             </div>
@@ -508,7 +508,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
                 Unlockable Trophies ({unlockedCount}/{achievements.length})
               </span>
-              <span className="text-[11px] text-amber-500 font-bold flex items-center gap-1">
+              <span className="text-[11px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 <span>Earn Bonus XP</span>
               </span>
@@ -546,7 +546,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                             <span>Unlocked</span>
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0">
+                          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded shrink-0">
                             +{ach.xpReward} XP
                           </span>
                         )}
@@ -629,7 +629,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-surface border border-outline-variant/20 text-on-surface">
                         {formatRecentDate(comp.dateStr)}
                       </span>
-                      <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded">
                         +10 XP
                       </span>
                     </div>

@@ -198,7 +198,7 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
                 Consistency
               </span>
-              <Flame className="w-3.5 h-3.5 text-amber-500" />
+              <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="mt-1">
               <span className="text-xl font-black text-on-surface tabular-nums">

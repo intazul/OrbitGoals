@@ -178,7 +178,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({
 
           {/* Dynamic Attempts & Error Messaging */}
           {errorMessage ? (
-            <p className="text-xs text-red-500 font-bold flex items-center gap-1.5 animate-in fade-in">
+            <p className="text-xs text-red-600 dark:text-red-400 font-bold flex items-center gap-1.5 animate-in fade-in">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{errorMessage}</span>
             </p>
@@ -188,9 +188,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({
               <span
                 className={`font-mono font-bold px-1.5 py-0.5 rounded ${
                   attemptsLeft === 1
-                    ? 'bg-red-500/15 text-red-500'
+                    ? 'bg-red-500/15 dark:bg-red-500/25 text-red-700 dark:text-red-300'
                     : attemptsLeft === 2
-                    ? 'bg-amber-500/15 text-amber-500'
+                    ? 'bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300'
                     : 'bg-surface-container text-on-surface-variant'
                 }`}
               >

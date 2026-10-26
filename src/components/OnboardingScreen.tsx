@@ -235,7 +235,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
             {/* Feature 1: Gamified Habits & Goals */}
             <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1.5 shadow-xs">
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-500">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400">
                 <Sparkles className="w-4 h-4" />
                 <span className="text-[14px]">Gamified Habits & XP (+10 / +50 XP)</span>
               </div>
@@ -271,10 +271,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 <span className="px-2 py-0.5 rounded-lg bg-surface text-pink-500 font-bold text-[10px] flex items-center gap-1 border border-outline-variant/20">
                   <Instagram className="w-3 h-3" /> Reels
                 </span>
-                <span className="px-2 py-0.5 rounded-lg bg-surface text-emerald-500 font-bold text-[10px] flex items-center gap-1 border border-outline-variant/20">
+                <span className="px-2 py-0.5 rounded-lg bg-surface text-emerald-600 dark:text-emerald-400 font-bold text-[10px] flex items-center gap-1 border border-outline-variant/20">
                   <DollarSign className="w-3 h-3" /> Money
                 </span>
-                <span className="px-2 py-0.5 rounded-lg bg-surface text-amber-500 font-bold text-[10px] flex items-center gap-1 border border-outline-variant/20">
+                <span className="px-2 py-0.5 rounded-lg bg-surface text-amber-700 dark:text-amber-300 font-bold text-[10px] flex items-center gap-1 border border-outline-variant/20">
                   <Dumbbell className="w-3 h-3" /> Fitness
                 </span>
               </div>

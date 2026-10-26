@@ -98,7 +98,7 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
             <span className="text-[10px] font-black uppercase tracking-wider text-primary">
               Daily Habit Momentum
             </span>
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[11px] font-black">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-black">
               <Sparkles className="w-3 h-3" />
               <span>+{earnedXpToday} XP earned today</span>
             </div>
@@ -284,7 +284,7 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                       )}
 
                       {/* XP Pill */}
-                      <span className="font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md">
+                      <span className="font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded-md">
                         +10 XP
                       </span>
                     </div>

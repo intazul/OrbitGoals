@@ -170,7 +170,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
         </div>
 
         {/* XP Reward Pill */}
-        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[11px] font-black shrink-0">
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-black shrink-0">
           <Sparkles className="w-3.5 h-3.5 animate-pulse" />
           <span>+10 XP / day</span>
         </div>
@@ -414,7 +414,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
           {/* Gamification Reminder Card */}
           <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 via-primary/10 to-transparent border border-amber-500/20 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center font-black">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center font-black">
                 <Flame className="w-4 h-4" />
               </div>
               <div>

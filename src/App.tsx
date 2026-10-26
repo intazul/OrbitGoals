@@ -101,9 +101,11 @@ export default function App() {
 
       if (isDark) {
         root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
         root.style.colorScheme = 'dark';
       } else {
         root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
         root.style.colorScheme = 'light';
       }
     };
@@ -625,7 +627,7 @@ export default function App() {
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-primary transition-colors opacity-70" />
                       </div>
-                      <span className="text-[10px] font-bold text-amber-500 block mt-1 truncate flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 block mt-1 truncate flex items-center gap-1">
                         <span>{rankInfo.badge}</span>
                         <span>{profile.title || rankInfo.title}</span>
                       </span>
@@ -725,7 +727,7 @@ export default function App() {
                         <span className="text-[9px] font-black uppercase tracking-wider text-primary">
                           Today's Habits Progress
                         </span>
-                        <span className="text-[11px] text-amber-500 font-bold flex items-center gap-1">
+                        <span className="text-[11px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
                           <Flame className="w-3.5 h-3.5 fill-current" />
                           <span>+{completedHabitsCount * 10} XP today</span>
                         </span>
@@ -975,7 +977,7 @@ export default function App() {
                                 <span
                                   className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-black tabular-nums ${
                                     habit.streakDays > 0
-                                      ? 'bg-orange-500/15 text-orange-500 border border-orange-500/30'
+                                      ? 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30'
                                       : 'bg-surface text-on-surface-variant border border-outline-variant/20'
                                   }`}
                                 >
@@ -987,7 +989,7 @@ export default function App() {
                                   {habit.timeOfDay}
                                 </span>
 
-                                <span className="font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                <span className="font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded">
                                   +10 XP
                                 </span>
                               </div>
@@ -1108,7 +1110,7 @@ export default function App() {
                                 <span className="text-sm font-bold text-on-surface truncate block">
                                   {goal.title}
                                 </span>
-                                <span className="text-[10px] text-amber-500 font-bold block">
+                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold block">
                                   +50 XP / step
                                 </span>
                               </div>
