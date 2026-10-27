@@ -718,8 +718,8 @@ export default function App() {
             <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface">
               {/* Sticky Dashboard Header Bar */}
               <header
-                style={{ marginTop: '15px', marginLeft: '0px' }}
-                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-[15px] ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
+                style={{ marginTop: '21px', marginLeft: '0px' }}
+                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-[21px] ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
               >
                 {/* Brand / Profile Launcher Button (Clicking Name or Avatar opens Profile) */}
                   <button

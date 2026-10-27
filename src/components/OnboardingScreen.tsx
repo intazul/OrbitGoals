@@ -117,7 +117,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       <div className="absolute bottom-0 left-0 w-60 h-60 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header */}
-      <header className="px-4 pt-6 pb-2 border-b border-outline-variant/20 flex items-center justify-between gap-3 shrink-0 bg-surface/90 backdrop-blur-md z-10">
+      <header
+        style={{ marginTop: '20px', paddingLeft: '17px' }}
+        className="pl-[17px] pr-4 pt-6 pb-2 mt-[20px] border-b border-outline-variant/20 flex items-center justify-between gap-3 shrink-0 bg-surface/90 backdrop-blur-md z-10"
+      >
         <div className="flex items-center gap-2">
           {isReplay && onCancelReplay && (
             <button
@@ -139,10 +142,16 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             </button>
           )}
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-primary block leading-none">
+            <span
+              style={{ fontSize: '17px', fontFamily: 'Georgia', fontWeight: 'normal' }}
+              className="text-[17px] font-normal uppercase tracking-wider text-primary block leading-none font-serif"
+            >
               OrbitGoals
             </span>
-            <span className="text-[14px] font-bold text-on-surface leading-tight">
+            <span
+              style={{ fontSize: '27px' }}
+              className="text-[27px] font-bold text-on-surface leading-tight"
+            >
               {step === 0 ? 'Welcome' : 'Quick Profile'}
             </span>
           </div>
@@ -166,10 +175,16 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 <span className="text-2xl font-black tracking-tight font-sans">OG</span>
                 <div className="absolute -inset-1 rounded-2xl border border-primary/40 animate-pulse pointer-events-none" />
               </div>
-              <h1 className="text-[20px] font-black text-on-surface tracking-tight leading-tight">
+              <h1
+                style={{ fontSize: '23px' }}
+                className="text-[23px] font-black text-on-surface tracking-tight leading-tight"
+              >
                 OrbitGoals
               </h1>
-              <p className="text-[11px] text-on-surface-variant font-medium max-w-xs mx-auto mt-0.5 leading-snug">
+              <p
+                style={{ fontSize: '9px' }}
+                className="text-[9px] text-on-surface-variant font-medium max-w-xs mx-auto mt-0.5 leading-snug"
+              >
                 Master daily habits, track reps & sets, and power your goals with gamified XP.
               </p>
             </div>
@@ -181,7 +196,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                   <Target className="w-4 h-4 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[12px] font-bold text-on-surface leading-none">Habit Sets & Goals</h3>
+                  <h3
+                    style={{ fontSize: '15px' }}
+                    className="text-[15px] font-bold text-on-surface leading-none"
+                  >
+                    Habit Sets & Goals
+                  </h3>
                   <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">
                     Log workout sets & video uploads connected directly to your goals.
                   </p>
@@ -193,7 +213,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                   <Zap className="w-4 h-4 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[12px] font-bold text-on-surface leading-none">Earn XP on Every Step</h3>
+                  <h3
+                    style={{ fontSize: '15px' }}
+                    className="text-[15px] font-bold text-on-surface leading-none"
+                  >
+                    Earn XP on Every Step
+                  </h3>
                   <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">
                     Custom XP per set (+10 XP) and goal steps (+50 XP). Level up as you progress!
                   </p>
@@ -205,7 +230,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                   <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[12px] font-bold text-on-surface leading-none">100% Private & Offline</h3>
+                  <h3
+                    style={{ fontSize: '15px' }}
+                    className="text-[15px] font-bold text-on-surface leading-none"
+                  >
+                    100% Private & Offline
+                  </h3>
                   <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">
                     Zero signup or login required. Your data never leaves your device.
                   </p>
@@ -221,7 +251,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-black text-[13px] flex items-center justify-center gap-2 shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer"
               >
                 <User className="w-4 h-4" />
-                <span>Instant Guest Access (No Signup)</span>
+                <span
+                  style={{ fontSize: '16px' }}
+                  className="text-[16px]"
+                >
+                  Instant Guest Access (No Signup)
+                </span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5] ml-auto" />
               </button>
 
