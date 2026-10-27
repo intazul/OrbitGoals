@@ -1,6 +1,6 @@
 import React from 'react';
 import { Goal } from '../types';
-import { ArrowLeft, Plus, Minus, Target, Trash2, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Target, Trash2, Calendar, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { GoalIcon } from './GoalIcon';
 
@@ -92,13 +92,19 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
               >
                 {/* Single Non-Stacking Top Row: Icon, Title, and Action Buttons */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
                     <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/20">
                       <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
                     </div>
                     <span className="text-sm font-bold text-on-surface truncate">
                       {goal.title}
                     </span>
+                    {goal.linkedHabitId && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        <span>Daily Habit Synced</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Compact Right Control Buttons */}

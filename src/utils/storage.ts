@@ -40,6 +40,7 @@ export const storage = {
               history: Array.isArray(g.history) ? g.history : [],
               subtasks: Array.isArray(g.subtasks) ? g.subtasks : [],
               notes: typeof g.notes === 'string' ? g.notes : '',
+              linkedHabitId: typeof g.linkedHabitId === 'string' ? g.linkedHabitId : undefined,
               createdAt: typeof g.createdAt === 'string' ? g.createdAt : new Date().toISOString().split('T')[0],
             }));
         }
@@ -80,6 +81,15 @@ export const storage = {
               bestStreak: typeof h.bestStreak === 'number' && !isNaN(h.bestStreak) ? Math.max(0, h.bestStreak) : 0,
               completedDates: Array.isArray(h.completedDates) ? h.completedDates.filter((d): d is string => typeof d === 'string') : [],
               reminderTime: typeof h.reminderTime === 'string' ? h.reminderTime : '',
+              trackingType: h.trackingType || 'sets',
+              targetValue: typeof h.targetValue === 'number' && h.targetValue > 0 ? h.targetValue : 30,
+              unit: typeof h.unit === 'string' ? h.unit : 'reps',
+              stepValue: typeof h.stepValue === 'number' && h.stepValue > 0 ? h.stepValue : 10,
+              xpPerSet: typeof h.xpPerSet === 'number' && h.xpPerSet > 0 ? h.xpPerSet : 10,
+              todayProgress: typeof h.todayProgress === 'number' ? Math.max(0, h.todayProgress) : 0,
+              progressHistory: h.progressHistory && typeof h.progressHistory === 'object' ? h.progressHistory : {},
+              linkedGoalId: typeof h.linkedGoalId === 'string' ? h.linkedGoalId : undefined,
+              linkedGoalTitle: typeof h.linkedGoalTitle === 'string' ? h.linkedGoalTitle : undefined,
               createdAt: typeof h.createdAt === 'string' ? h.createdAt : new Date().toISOString().split('T')[0],
             }));
 

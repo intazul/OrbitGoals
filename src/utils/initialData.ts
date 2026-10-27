@@ -19,9 +19,122 @@ export function getRecentDates(days: number = 14): string[] {
   return dates;
 }
 
-export const INITIAL_GOALS: Goal[] = [];
+const today = new Date().toISOString().split('T')[0];
 
-export const INITIAL_HABITS: Habit[] = [];
+export const INITIAL_GOALS: Goal[] = [
+  {
+    id: 'goal-starter-youtube',
+    title: 'YouTube Channel: 20 Videos',
+    description: 'Post high-value videos & shorts to accelerate audience reach (+50 XP / step)',
+    category: 'creator',
+    targetValue: 20,
+    currentValue: 3,
+    unit: 'videos',
+    frequency: 'daily',
+    color: '#ef4444',
+    icon: 'youtube',
+    priority: 'high',
+    difficulty: 'medium',
+    xpReward: 50,
+    completedDates: [],
+    history: [{ date: today, value: 3 }],
+    subtasks: [],
+    notes: 'Connected to Daily YouTube Video Upload habit',
+    linkedHabitId: 'habit-starter-youtube',
+    createdAt: today,
+  },
+  {
+    id: 'goal-starter-fitness',
+    title: 'Fitness Milestone: 500 Reps',
+    description: 'Build strength via daily bodyweight exercise sets (+50 XP / step)',
+    category: 'fitness',
+    targetValue: 500,
+    currentValue: 60,
+    unit: 'reps',
+    frequency: 'daily',
+    color: '#10b981',
+    icon: 'fitness',
+    priority: 'high',
+    difficulty: 'medium',
+    xpReward: 50,
+    completedDates: [],
+    history: [{ date: today, value: 60 }],
+    subtasks: [],
+    notes: 'Connected to Daily Exercise Sets habit',
+    linkedHabitId: 'habit-starter-exercise',
+    createdAt: today,
+  },
+];
+
+export const INITIAL_HABITS: Habit[] = [
+  {
+    id: 'habit-starter-exercise',
+    title: 'Exercise Sets (Target: 30 Reps)',
+    description: 'Hit 30 reps or above in sets of 10. Earn 10 XP for each set logged.',
+    category: 'fitness',
+    timeOfDay: 'afternoon',
+    frequency: 'daily',
+    icon: 'fitness',
+    color: '#10b981',
+    streakDays: 4,
+    bestStreak: 7,
+    completedDates: [],
+    createdAt: today,
+    trackingType: 'sets',
+    targetValue: 30,
+    unit: 'reps',
+    stepValue: 10,
+    xpPerSet: 10,
+    todayProgress: 0,
+    progressHistory: {},
+    linkedGoalId: 'goal-starter-fitness',
+    linkedGoalTitle: 'Fitness Milestone: 500 Reps',
+  },
+  {
+    id: 'habit-starter-youtube',
+    title: 'Daily YouTube Video Upload',
+    description: 'Upload 1 video/short per day. Connects directly to YouTube 20 Videos goal (+50 XP).',
+    category: 'creator',
+    timeOfDay: 'afternoon',
+    frequency: 'daily',
+    icon: 'youtube',
+    color: '#ef4444',
+    streakDays: 2,
+    bestStreak: 5,
+    completedDates: [],
+    createdAt: today,
+    trackingType: 'sets',
+    targetValue: 1,
+    unit: 'videos',
+    stepValue: 1,
+    xpPerSet: 50,
+    todayProgress: 0,
+    progressHistory: {},
+    linkedGoalId: 'goal-starter-youtube',
+    linkedGoalTitle: 'YouTube Channel: 20 Videos',
+  },
+  {
+    id: 'habit-starter-water',
+    title: 'Daily Hydration (8 Glasses)',
+    description: 'Drink fresh water throughout the day (+5 XP per glass)',
+    category: 'wellness',
+    timeOfDay: 'morning',
+    frequency: 'daily',
+    icon: 'water',
+    color: '#06b6d4',
+    streakDays: 6,
+    bestStreak: 12,
+    completedDates: [],
+    createdAt: today,
+    trackingType: 'sets',
+    targetValue: 8,
+    unit: 'glasses',
+    stepValue: 1,
+    xpPerSet: 5,
+    todayProgress: 0,
+    progressHistory: {},
+  },
+];
 
 export const DEFAULT_SECURITY: SecurityConfig = {
   enabled: true,
@@ -42,8 +155,6 @@ export const INITIAL_USER_PROFILE: UserProfile = {
   streakShields: 2,
 };
 
-
-
 export const AVATAR_CATALOG: AvatarItem[] = [
   // Hats & Headwear
   { id: 'item-headphones', name: 'Studio Monitor Cans', type: 'hat', unlockRequirement: 'Starter Creator Gear', unlockLevel: 1, unlocked: true, iconEmoji: '🎧' },
@@ -51,26 +162,22 @@ export const AVATAR_CATALOG: AvatarItem[] = [
   { id: 'item-headband', name: 'Athletic Runner Band', type: 'hat', unlockRequirement: 'Reach Level 3', unlockLevel: 3, unlocked: true, iconEmoji: '🎗️' },
   { id: 'item-crown', name: 'Golden Champion Crown', type: 'hat', unlockRequirement: 'Reach Level 8', unlockLevel: 8, unlocked: false, iconEmoji: '👑' },
   { id: 'item-halo', name: 'Halo of Consistency', type: 'hat', unlockRequirement: '30-Day Total Streak', unlockLevel: 10, unlockStreak: 30, unlocked: false, iconEmoji: '✨' },
-
   // Outfits
   { id: 'item-hoodie', name: 'Creator Minimal Hoodie', type: 'outfit', unlockRequirement: 'Starter Outfit', unlockLevel: 1, unlocked: true, iconEmoji: '🧥' },
   { id: 'item-jersey', name: 'Pro Athletic Jersey', type: 'outfit', unlockRequirement: 'Reach Level 3', unlockLevel: 3, unlocked: true, iconEmoji: '🎽' },
   { id: 'item-blazer', name: 'Founder Tailored Blazer', type: 'outfit', unlockRequirement: 'Reach Level 5', unlockLevel: 5, unlocked: true, iconEmoji: '👔' },
   { id: 'item-armor', name: 'Cyber Titanium Weave', type: 'outfit', unlockRequirement: 'Reach Level 9', unlockLevel: 9, unlocked: false, iconEmoji: '🛡️' },
-
   // Auras
   { id: 'item-aura-slate', name: 'Calm Studio Mist', type: 'aura', unlockRequirement: 'Default Aura', unlockLevel: 1, unlocked: true, iconEmoji: '🌫️' },
   { id: 'item-aura-solar', name: 'Golden Solar Radiance', type: 'aura', unlockRequirement: 'Reach Level 4', unlockLevel: 4, unlocked: true, iconEmoji: '☀️', styleClass: 'ring-4 ring-amber-400/50 shadow-[0_0_25px_rgba(251,191,36,0.5)]' },
   { id: 'item-aura-neon', name: 'Cyber Neon Pulse', type: 'aura', unlockRequirement: 'Reach Level 7', unlockLevel: 7, unlocked: false, iconEmoji: '⚡', styleClass: 'ring-4 ring-cyan-400/60 shadow-[0_0_30px_rgba(34,211,238,0.6)]' },
   { id: 'item-aura-flame', name: 'Blazing Streak Fire', type: 'aura', unlockRequirement: '21-Day Streak Milestone', unlockLevel: 6, unlockStreak: 21, unlocked: false, iconEmoji: '🔥', styleClass: 'ring-4 ring-orange-500/70 shadow-[0_0_30px_rgba(249,115,22,0.7)]' },
-
   // Badges
   { id: 'item-badge-first', name: 'First Spark Badge', type: 'badge', unlockRequirement: 'First completed habit', unlockLevel: 1, unlocked: true, iconEmoji: '🥉' },
   { id: 'item-badge-streak', name: 'Flame Centurion (14d)', type: 'badge', unlockRequirement: '14-Day Streak', unlockLevel: 4, unlocked: true, iconEmoji: '🔥' },
   { id: 'item-badge-creator', name: 'YouTube Silver Creator', type: 'badge', unlockRequirement: 'Upload 40+ Videos', unlockLevel: 5, unlocked: true, iconEmoji: '🎬' },
   { id: 'item-badge-vault', name: 'Financial Vault Master', type: 'badge', unlockRequirement: 'Save $3,000+', unlockLevel: 5, unlocked: true, iconEmoji: '💎' },
   { id: 'item-badge-legend', name: 'Grandmaster Habit Titan', type: 'badge', unlockRequirement: 'Reach Level 10', unlockLevel: 10, unlocked: false, iconEmoji: '🏆' },
-
   // Companions
   { id: 'item-pet-owl', name: 'Archimedes the Focus Owl', type: 'companion', unlockRequirement: 'Complete 10 Deep Focus Sessions', unlockLevel: 2, unlocked: true, iconEmoji: '🦉' },
   { id: 'item-pet-shiba', name: 'Turbo the Athletic Shiba', type: 'companion', unlockRequirement: 'Reach Level 4', unlockLevel: 4, unlocked: true, iconEmoji: '🐕' },

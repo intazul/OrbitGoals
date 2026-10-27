@@ -6,7 +6,7 @@ import { AVAILABLE_GOAL_ICONS, GoalIcon } from './GoalIcon';
 
 interface AddGoalScreenProps {
   onBack: () => void;
-  onSaveGoal: (goal: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>) => void;
+  onSaveGoal: (goal: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>, autoCreateHabit?: boolean) => void;
   currency: string;
 }
 
@@ -39,6 +39,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   const [selectedIcon, setSelectedIcon] = useState('youtube');
   const [color, setColor] = useState('#ef4444');
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
+  const [createLinkedHabit, setCreateLinkedHabit] = useState<boolean>(true);
 
   const handleSelectQuickName = (item: typeof QUICK_NAME_OPTIONS[0]) => {
     setTitle(item.name);
@@ -71,23 +72,26 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
     e.preventDefault();
     if (!title.trim() || targetValue <= 0) return;
 
-    onSaveGoal({
-      title: title.trim(),
-      description: `Target: ${targetValue} ${unit.trim() || 'units'} (${frequency === 'long_term' ? 'Long Term · Every Day' : frequency})`,
-      category: category.trim() || 'general',
-      targetValue,
-      currentValue: 0,
-      unit: unit.trim() || 'units',
-      frequency,
-      frequencyDays: frequency === 'weekly' && frequencyDays.length > 0 ? frequencyDays : undefined,
-      color,
-      icon: selectedIcon,
-      priority: 'high',
-      difficulty: 'medium',
-      xpReward: 40,
-      subtasks: [],
-      notes: '',
-    });
+    onSaveGoal(
+      {
+        title: title.trim(),
+        description: `Target: ${targetValue} ${unit.trim() || 'units'} (${frequency === 'long_term' ? 'Long Term · Every Day' : frequency})`,
+        category: category.trim() || 'general',
+        targetValue,
+        currentValue: 0,
+        unit: unit.trim() || 'units',
+        frequency,
+        frequencyDays: frequency === 'weekly' && frequencyDays.length > 0 ? frequencyDays : undefined,
+        color,
+        icon: selectedIcon,
+        priority: 'high',
+        difficulty: 'medium',
+        xpReward: 50,
+        subtasks: [],
+        notes: '',
+      },
+      createLinkedHabit
+    );
 
     sound.playSuccessChime();
     triggerHaptic('success');
@@ -411,6 +415,32 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Connected Daily Habit Toggle Card */}
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-on-surface block leading-tight">
+                  Connect to Daily Habit (+50 XP)
+                </span>
+                <span className="text-[10px] text-on-surface-variant block mt-0.5">
+                  Auto-create daily habit with sets (e.g. video uploads or reps) that syncs progress
+                </span>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={createLinkedHabit}
+              onChange={(e) => {
+                setCreateLinkedHabit(e.target.checked);
+                sound.playPop();
+              }}
+              className="w-4 h-4 accent-primary rounded cursor-pointer shrink-0"
+            />
           </div>
 
           {/* Action Submit Button */}

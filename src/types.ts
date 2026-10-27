@@ -24,6 +24,17 @@ export interface Habit {
   reminderTime?: string;
   createdAt: string;
   archived?: boolean;
+  // --- Sets & Target Features ---
+  trackingType?: 'simple' | 'sets'; // 'simple' = single check, 'sets' = set-based target
+  targetValue?: number; // e.g. 30 reps, 1 video, 20 mins
+  unit?: string; // e.g. "reps", "mins", "videos", "pages", "sets"
+  stepValue?: number; // size of each set (e.g. 5, 10, 1), user editable
+  xpPerSet?: number; // XP gained per set (e.g. 10 XP per set, 50 XP for YouTube video)
+  todayProgress?: number; // current count for today (can exceed target!)
+  progressHistory?: { [dateStr: string]: number }; // date -> numeric progress
+  // --- Goal Linking ---
+  linkedGoalId?: string; // ID of the Goal this habit connects to
+  linkedGoalTitle?: string;
 }
 
 export interface SubTask {
@@ -55,6 +66,7 @@ export interface Goal {
   subtasks: SubTask[];
   notes: string;
   linkedPlatform?: 'youtube' | 'instagram' | 'facebook';
+  linkedHabitId?: string;
   reminderTime?: string;
   createdAt: string;
 }

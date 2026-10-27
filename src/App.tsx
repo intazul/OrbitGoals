@@ -50,6 +50,8 @@ import {
   Zap,
   User,
   ChevronRight,
+  Link,
+  Layers,
 } from 'lucide-react';
 
 export default function App() {
@@ -224,27 +226,46 @@ export default function App() {
     );
   };
 
-  // Toggle Habit completion for today (+10 XP per completion)
+  // Toggle Habit completion for today (+10 XP or custom habit xpPerSet)
   const handleToggleHabit = (habitId: string) => {
     let wasChecked = false;
+    let xpChange = 0;
+    let habitTitle = '';
+    let linkedGoalIdToSync: string | undefined;
 
     const newHabits = habits.map((habit) => {
       if (habit.id !== habitId) return habit;
+      habitTitle = habit.title;
+      linkedGoalIdToSync = habit.linkedGoalId;
+      const target = habit.targetValue || 30;
+      const setXp = habit.xpPerSet || (habit.unit === 'videos' ? 50 : XP_PER_HABIT);
+
       const isAlreadyCompleted = (habit.completedDates || []).includes(todayStr);
       wasChecked = !isAlreadyCompleted;
 
       let updatedDates = [...(habit.completedDates || [])];
+      let todayProgress = typeof habit.todayProgress === 'number' ? habit.todayProgress : 0;
+
       if (wasChecked) {
         if (!updatedDates.includes(todayStr)) updatedDates.push(todayStr);
+        todayProgress = Math.max(todayProgress, target);
+        xpChange = setXp;
       } else {
         updatedDates = updatedDates.filter((d) => d !== todayStr);
+        todayProgress = 0;
+        xpChange = -setXp;
       }
+
+      const progressHistory = { ...(habit.progressHistory || {}) };
+      progressHistory[todayStr] = todayProgress;
 
       const streakDays = calculateStreak(updatedDates);
       const bestStreak = Math.max(habit.bestStreak || 0, streakDays);
 
       return {
         ...habit,
+        todayProgress,
+        progressHistory,
         completedDates: updatedDates,
         streakDays,
         bestStreak,
@@ -256,11 +277,72 @@ export default function App() {
     if (wasChecked) {
       sound.playPop();
       triggerHaptic('success');
-      handleAdjustXp(XP_PER_HABIT, 'Habit completed');
+      handleAdjustXp(xpChange, `${habitTitle} completed`);
+      if (linkedGoalIdToSync) {
+        handleUpdateGoalValue(linkedGoalIdToSync, 1);
+      }
     } else {
       sound.playPop();
       triggerHaptic('light');
-      handleAdjustXp(-XP_PER_HABIT, 'Habit uncompleted');
+      handleAdjustXp(xpChange, `${habitTitle} uncompleted`);
+      if (linkedGoalIdToSync) {
+        handleUpdateGoalValue(linkedGoalIdToSync, -1);
+      }
+    }
+  };
+
+  // Log a set for a habit (e.g. +10 reps, or +1 video), synced with linked goal
+  const handleLogHabitSet = (habitId: string, delta: number) => {
+    let xpChange = 0;
+    let habitTitle = '';
+    let linkedGoalIdToSync: string | undefined;
+
+    const newHabits = habits.map((habit) => {
+      if (habit.id !== habitId) return habit;
+      habitTitle = habit.title;
+      linkedGoalIdToSync = habit.linkedGoalId;
+
+      const target = habit.targetValue || 30;
+      const setXp = habit.xpPerSet || (habit.unit === 'videos' ? 50 : 10);
+      const currentProgress = typeof habit.todayProgress === 'number' ? habit.todayProgress : 0;
+      const newProgress = Math.max(0, currentProgress + delta);
+
+      xpChange = delta > 0 ? setXp : (currentProgress > 0 ? -setXp : 0);
+
+      const progressHistory = { ...(habit.progressHistory || {}) };
+      progressHistory[todayStr] = newProgress;
+
+      let updatedDates = [...(habit.completedDates || [])];
+      if (newProgress >= target) {
+        if (!updatedDates.includes(todayStr)) updatedDates.push(todayStr);
+      } else {
+        updatedDates = updatedDates.filter((d) => d !== todayStr);
+      }
+
+      const streakDays = calculateStreak(updatedDates);
+      const bestStreak = Math.max(habit.bestStreak || 0, streakDays);
+
+      return {
+        ...habit,
+        todayProgress: newProgress,
+        progressHistory,
+        completedDates: updatedDates,
+        streakDays,
+        bestStreak,
+      };
+    });
+
+    updateHabits(newHabits);
+
+    if (xpChange !== 0) {
+      sound.playPop();
+      triggerHaptic('light');
+      handleAdjustXp(xpChange, `${habitTitle} set logged`);
+    }
+
+    // Sync linked goal!
+    if (linkedGoalIdToSync) {
+      handleUpdateGoalValue(linkedGoalIdToSync, delta);
     }
   };
 
@@ -391,17 +473,54 @@ export default function App() {
     }
   };
 
-  // Save New Goal
+  // Save New Goal (with optional auto-created linked habit)
   const handleSaveGoal = (
-    goalData: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>
+    goalData: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>,
+    autoCreateHabit?: boolean
   ) => {
+    const goalId = `goal-${Date.now()}`;
     const newGoal: Goal = {
       ...goalData,
-      id: `goal-${Date.now()}`,
+      id: goalId,
       createdAt: todayStr,
       completedDates: [],
       history: [{ date: todayStr, value: goalData.currentValue }],
     };
+
+    if (autoCreateHabit) {
+      const isYouTube = goalData.icon === 'youtube' || goalData.category === 'creator';
+      const isFitness = goalData.category === 'fitness';
+      const habitId = `habit-${Date.now()}`;
+      const newHabit: Habit = {
+        id: habitId,
+        title: isYouTube
+          ? `Upload YouTube Video`
+          : isFitness
+          ? `Daily Exercise Sets`
+          : `Daily ${goalData.title}`,
+        description: `Connected to goal: ${goalData.title} (+50 XP)`,
+        category: goalData.category,
+        timeOfDay: 'anytime',
+        frequency: 'daily',
+        icon: goalData.icon,
+        color: goalData.color,
+        streakDays: 0,
+        bestStreak: 0,
+        completedDates: [],
+        createdAt: todayStr,
+        trackingType: 'sets',
+        targetValue: isYouTube ? 1 : (isFitness ? 30 : Math.min(goalData.targetValue, 10)),
+        unit: goalData.unit,
+        stepValue: isYouTube ? 1 : (isFitness ? 10 : 1),
+        xpPerSet: isYouTube ? 50 : 10,
+        todayProgress: 0,
+        progressHistory: {},
+        linkedGoalId: goalId,
+        linkedGoalTitle: goalData.title,
+      };
+      newGoal.linkedHabitId = habitId;
+      updateHabits([newHabit, ...habits]);
+    }
 
     updateGoals([newGoal, ...goals]);
     sound.playSuccessChime();
@@ -509,6 +628,7 @@ export default function App() {
               }}
               onSaveHabit={handleSaveHabit}
               existingHabit={editingHabit}
+              goals={goals}
             />
           )}
 
@@ -520,11 +640,13 @@ export default function App() {
               onBack={() => setScreenView('dashboard')}
               onOpenAddHabit={() => setScreenView('add-habit')}
               onToggleHabit={handleToggleHabit}
+              onLogHabitSet={handleLogHabitSet}
               onDeleteHabit={handleDeleteHabit}
               onEditHabit={(h) => {
                 setEditingHabit(h);
                 setScreenView('add-habit');
               }}
+              goals={goals}
             />
           )}
 
@@ -596,8 +718,8 @@ export default function App() {
             <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface">
               {/* Sticky Dashboard Header Bar */}
               <header
-                style={{ marginTop: '20px', marginLeft: '0px' }}
-                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-5 ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
+                style={{ marginTop: '15px', marginLeft: '0px' }}
+                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-[15px] ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
               >
                 {/* Brand / Profile Launcher Button (Clicking Name or Avatar opens Profile) */}
                   <button
@@ -922,6 +1044,13 @@ export default function App() {
                   <>
                     {filteredHabits.map((habit) => {
                       const isDoneToday = (habit.completedDates || []).includes(todayStr);
+                      const isSets = habit.trackingType === 'sets';
+                      const target = habit.targetValue || 30;
+                      const current = typeof habit.todayProgress === 'number' ? habit.todayProgress : (isDoneToday ? target : 0);
+                      const step = habit.stepValue || (habit.unit === 'videos' ? 1 : 10);
+                      const xpReward = habit.xpPerSet || (habit.unit === 'videos' ? 50 : 10);
+                      const isTargetExceeded = current > target;
+                      const pct = Math.min(100, Math.round((current / target) * 100));
 
                       return (
                         <div
@@ -944,7 +1073,7 @@ export default function App() {
                                   : 'border-outline-variant/50 hover:border-primary text-transparent bg-surface'
                               }`}
                               style={isDoneToday ? { backgroundColor: habit.color } : undefined}
-                              title={isDoneToday ? 'Mark as incomplete (-10 XP)' : 'Mark as completed (+10 XP)'}
+                              title={isDoneToday ? 'Mark as incomplete' : 'Mark as completed'}
                             >
                               <Check
                                 className={`w-4 h-4 stroke-[3] transition-transform ${
@@ -955,7 +1084,7 @@ export default function App() {
 
                             {/* Habit details */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <div
                                   className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
                                   style={{ backgroundColor: `${habit.color}15`, color: habit.color }}
@@ -971,7 +1100,7 @@ export default function App() {
                                 </span>
                               </div>
 
-                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap">
                                 <span
                                   className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-black tabular-nums ${
                                     habit.streakDays > 0
@@ -988,9 +1117,17 @@ export default function App() {
                                 </span>
 
                                 <span className="font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded">
-                                  +10 XP
+                                  +{xpReward} XP {isSets ? '/ set' : ''}
                                 </span>
                               </div>
+
+                              {/* Connected Goal Badge */}
+                              {habit.linkedGoalTitle && (
+                                <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-[9px] font-bold">
+                                  <Link className="w-2.5 h-2.5" />
+                                  <span>Connected: {habit.linkedGoalTitle} (+50 XP synced)</span>
+                                </div>
+                              )}
                             </div>
 
                             {/* Actions */}
@@ -1005,6 +1142,72 @@ export default function App() {
                               </button>
                             </div>
                           </div>
+
+                          {/* Sets Logger on Dashboard card */}
+                          {isSets && (
+                            <div className="p-2 rounded-xl bg-surface border border-outline-variant/20 space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-mono font-black text-on-surface text-[11px]">
+                                  {current} / {target} {habit.unit || 'reps'}
+                                  {isTargetExceeded && (
+                                    <span className="ml-1 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-1 py-0.5 rounded">
+                                      +{current - target} exceeded!
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                  +{xpReward} XP / set
+                                </span>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${pct}%`,
+                                    backgroundColor: isDoneToday ? '#10b981' : habit.color,
+                                  }}
+                                />
+                              </div>
+
+                              {/* Quick set logging controls */}
+                              <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleLogHabitSet(habit.id, -step)}
+                                  disabled={current <= 0}
+                                  className="px-2 py-1 rounded-lg bg-surface-container text-red-500 hover:bg-surface-container-high text-xs font-bold active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                  title={`Subtract ${step}`}
+                                >
+                                  <Minus className="w-3 h-3 stroke-[2.5]" />
+                                  <span>-{step}</span>
+                                </button>
+
+                                {step >= 10 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleLogHabitSet(habit.id, 5)}
+                                    className="px-2 py-1 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high text-xs font-bold active:scale-95 transition-all cursor-pointer"
+                                    title="Add +5 set"
+                                  >
+                                    +5 {habit.unit || 'reps'}
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleLogHabitSet(habit.id, step)}
+                                  className="flex-1 py-1 px-2.5 rounded-lg bg-primary text-on-primary text-xs font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer shadow-xs"
+                                  title={`Log set of +${step} (+${xpReward} XP)`}
+                                >
+                                  <Plus className="w-3 h-3 stroke-[3]" />
+                                  <span>+{step} {habit.unit || 'reps'}</span>
+                                  <span className="text-[9px] bg-on-primary/20 px-1 rounded ml-1">+{xpReward} XP</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Row 2: 7-day mini matrix */}
                           <div className="pt-1.5 border-t border-outline-variant/20 flex items-center justify-between text-[9px] text-on-surface-variant">
@@ -1108,9 +1311,17 @@ export default function App() {
                                 <span className="text-sm font-bold text-on-surface truncate block">
                                   {goal.title}
                                 </span>
-                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold block">
-                                  +50 XP / step
-                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">
+                                    +50 XP / step
+                                  </span>
+                                  {goal.linkedHabitId && (
+                                    <span className="text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded-full inline-flex items-center gap-0.5">
+                                      <Sparkles className="w-2.5 h-2.5" />
+                                      <span>Habit Synced</span>
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
