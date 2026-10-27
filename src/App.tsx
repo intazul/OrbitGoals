@@ -32,7 +32,6 @@ import { OnboardingScreen } from './components/OnboardingScreen';
 import { ToastContainer } from './components/ToastContainer';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { GoalIcon } from './components/GoalIcon';
-import { UserAvatar } from './components/UserAvatar';
 import { INITIAL_HABITS } from './utils/initialData';
 
 import {
@@ -596,7 +595,10 @@ export default function App() {
           {screenView === 'dashboard' && (
             <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface">
               {/* Sticky Dashboard Header Bar */}
-              <header className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md">
+              <header
+                style={{ marginTop: '20px', marginLeft: '0px' }}
+                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-5 ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
+              >
                 {/* Brand / Profile Launcher Button (Clicking Name or Avatar opens Profile) */}
                   <button
                     type="button"
@@ -609,13 +611,9 @@ export default function App() {
                     title="Tap to open Player Profile & Trophies"
                   >
                     <div className="relative shrink-0">
-                      <UserAvatar
-                        avatarId={profile.avatarId}
-                        avatarUrl={profile.avatarUrl}
-                        fallbackText={profile.name}
-                        size="sm"
-                        className="group-hover:ring-primary/50 transition-all shadow-xs"
-                      />
+                      <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-black text-sm group-hover:ring-2 group-hover:ring-primary/40 transition-all shadow-xs">
+                        {profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'G'}
+                      </div>
                       <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-black text-[8px] leading-tight shadow-xs border border-surface">
                         Lv.{levelInfo.level}
                       </span>

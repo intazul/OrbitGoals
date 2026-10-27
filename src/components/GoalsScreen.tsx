@@ -36,7 +36,10 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
       {/* Top Header with Back Button (Add Goal removed from top right) */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 py-3 shrink-0 flex items-center justify-between gap-3">
+      <header
+        style={{ marginTop: '20px', marginLeft: '0px' }}
+        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-5 pt-8 pb-3 shrink-0 flex items-center justify-between gap-3"
+      >
         <button
           onClick={onBack}
           className="flex items-center gap-2 py-2 px-3 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer font-bold text-sm min-h-[44px]"

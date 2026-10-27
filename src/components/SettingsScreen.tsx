@@ -2,8 +2,6 @@ import React, { useRef, useState } from 'react';
 import { AppSettings, UserProfile, SecurityConfig } from '../types';
 import { storage } from '../utils/storage';
 import { sound, triggerHaptic } from '../utils/sound';
-import { UserAvatar } from './UserAvatar';
-import { AvatarPickerModal } from './AvatarPickerModal';
 import {
   ArrowLeft,
   Moon,
@@ -62,7 +60,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Profile Edit Modal State
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
-  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>(profile.name);
   const [editAge, setEditAge] = useState<string>(profile.age ? String(profile.age) : '');
   const [profileSaveSuccess, setProfileSaveSuccess] = useState<boolean>(false);
@@ -172,8 +169,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
-      {/* Settings Top Header with Back Button */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 py-3 shrink-0 flex items-center justify-between gap-3">
+      {/* Settings Top Header with Back Button - Space Upwards */}
+      <header
+        style={{ marginTop: '20px', marginLeft: '0px' }}
+        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-5 pt-8 pb-3 shrink-0 flex items-center justify-between gap-3"
+      >
         <button
           onClick={onBack}
           className="flex items-center gap-2 py-2 px-3 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer font-bold text-sm min-h-[44px]"
@@ -190,7 +190,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       </header>
 
       {/* Main Settings Scrollable Body */}
-      <div className="flex-1 px-4 py-5 space-y-4 overflow-y-auto pb-10">
+      <div className="flex-1 px-4 pt-3 pb-10 space-y-4 overflow-y-auto">
         {backupSuccessMsg && (
           <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
             <Check className="w-4 h-4 shrink-0 stroke-[3]" />
@@ -198,65 +198,77 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         )}
 
-        {/* 1. Profile Details Card (Name and Age) */}
+        {/* 1. Profile Details Card (Name and Age) - No Avatar */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
               <User className="w-4 h-4" />
               <span>User Profile</span>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setIsAvatarPickerOpen(true);
-                  sound.playPop();
-                  triggerHaptic('light');
-                }}
-                className="text-xs font-bold text-primary hover:underline cursor-pointer"
-              >
-                Change Avatar
-              </button>
-              <span className="text-on-surface-variant text-xs">·</span>
-              <button
-                onClick={() => {
-                  setEditName(profile.name);
-                  setEditAge(profile.age ? String(profile.age) : '');
-                  setIsEditingProfile(true);
-                }}
-                className="text-xs font-bold text-primary hover:underline cursor-pointer"
-              >
-                Edit Details
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setEditName(profile.name);
+                setEditAge(profile.age ? String(profile.age) : '');
+                setIsEditingProfile(true);
+              }}
+              className="text-xs font-bold text-primary hover:underline cursor-pointer"
+            >
+              Edit Details
+            </button>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface border border-outline-variant/20">
-            <button
-              type="button"
-              onClick={() => {
-                setIsAvatarPickerOpen(true);
-                sound.playPop();
-                triggerHaptic('light');
-              }}
-              className="cursor-pointer hover:opacity-85 transition-opacity"
-              title="Click to change avatar"
-            >
-              <UserAvatar
-                avatarId={profile.avatarId}
-                avatarUrl={profile.avatarUrl}
-                fallbackText={profile.name}
-                size="md"
-              />
-            </button>
+            <div className="w-11 h-11 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-black text-lg shrink-0">
+              {profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'G'}
+            </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-black text-on-surface truncate">
-                {profile.name || 'Anonymous User'}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-on-surface truncate">
+                  {profile.name || 'Guest User'}
+                </h3>
+                {(!profile.name || profile.name.toLowerCase().includes('guest')) && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
+                    Guest Mode
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-on-surface-variant font-medium">
                 {profile.age ? `Age: ${profile.age} years old` : 'Age not specified'}
               </p>
             </div>
           </div>
+        </div>
+
+        {/* 1b. Instant Guest Access Card (No Signup/Login Required) */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Instant Guest Access</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              Active
+            </span>
+          </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            No login, signup, or email is ever required. OrbitGoals runs 100% locally and privately on your device.
+          </p>
+
+          <button
+            onClick={() => {
+              onUpdateProfile({ name: 'Guest User', age: 24, title: 'Goal Pioneer' });
+              onUpdateSecurity({ enabled: false });
+              sound.playSuccessChime();
+              triggerHaptic('success');
+              setBackupSuccessMsg('Switched to Guest Login mode (no signup/login required)!');
+              setTimeout(() => setBackupSuccessMsg(null), 3000);
+            }}
+            className="w-full py-2.5 px-3 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container text-primary font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
+          >
+            <User className="w-4 h-4" />
+            <span>Switch to Guest Profile (No Login / Sign-up)</span>
+          </button>
         </div>
 
         {/* 2. Security & App Lock (Passcode) */}
@@ -717,16 +729,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </div>
       )}
 
-      {/* Avatar Picker Modal */}
-      {isAvatarPickerOpen && (
-        <AvatarPickerModal
-          currentAvatarId={profile.avatarId}
-          onSelectAvatar={(avatarId) => {
-            onUpdateProfile({ avatarId });
-          }}
-          onClose={() => setIsAvatarPickerOpen(false)}
-        />
-      )}
     </div>
   );
 };

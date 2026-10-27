@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { UserProfile, SecurityConfig } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
 import { fireConfetti } from '../utils/confetti';
-import { AVATAR_PRESETS } from '../utils/avatars';
 import {
   Sparkles,
   Target,
@@ -41,10 +40,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   // Profile Form State
   const [name, setName] = useState<string>(initialProfile?.name || '');
   const [age, setAge] = useState<string>(initialProfile?.age ? String(initialProfile.age) : '');
-  const [avatarId, setAvatarId] = useState<string>(initialProfile?.avatarId || 'cosmic-astronaut');
   const [pin, setPin] = useState<string>(initialSecurity?.pin || '0000');
   const [appLockEnabled, setAppLockEnabled] = useState<boolean>(
-    initialSecurity ? initialSecurity.enabled : true
+    initialSecurity ? initialSecurity.enabled : false
   );
 
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -59,6 +57,26 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     sound.playPop();
     triggerHaptic('light');
     setStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleContinueAsGuest = () => {
+    sound.playSuccessChime();
+    triggerHaptic('success');
+    fireConfetti(2000);
+    onComplete(
+      {
+        ...(initialProfile || {}),
+        name: 'Guest User',
+        age: 24,
+        onboarded: true,
+        title: 'Goal Pioneer',
+      },
+      {
+        enabled: false,
+        pin: '0000',
+        biometricEnabled: false,
+      }
+    );
   };
 
   const handleFinish = (e: React.FormEvent) => {
@@ -93,7 +111,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       ...(initialProfile || {}),
       name: trimmedName,
       age: parsedAge,
-      avatarId,
       onboarded: true,
       title: 'Goal Achiever',
     };
@@ -214,6 +231,21 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Instant Guest Access Button */}
+            <div className="pt-2 space-y-1 text-center">
+              <button
+                type="button"
+                onClick={handleContinueAsGuest}
+                className="w-full py-3.5 px-4 rounded-2xl bg-surface-container-high border-2 border-primary/40 hover:bg-surface-container hover:border-primary text-on-surface font-black text-sm flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all cursor-pointer"
+              >
+                <User className="w-4 h-4 text-primary" />
+                <span>Instant Guest Access (No Signup / Login)</span>
+              </button>
+              <span className="text-[10px] text-on-surface-variant font-medium block">
+                Start tracking immediately with no registration required
+              </span>
             </div>
           </div>
         )}
@@ -336,44 +368,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
               </div>
             )}
 
-            {/* Avatar Selector */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-on-surface flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span>Choose Profile Picture</span>
-                </span>
-                <span className="text-[10px] text-primary font-bold">Pick an avatar</span>
-              </label>
-              <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
-                {AVATAR_PRESETS.map((preset) => {
-                  const isSelected = preset.id === avatarId;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => {
-                        setAvatarId(preset.id);
-                        sound.playPop();
-                        triggerHaptic('light');
-                      }}
-                      className={`relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-primary ring-2 ring-primary/40 scale-105 shadow-sm'
-                          : 'border-outline-variant/30 opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img
-                        src={preset.url}
-                        alt={preset.name}
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+
 
             {/* 1. Name Entry */}
             <div className="space-y-1.5">
@@ -501,6 +496,18 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
               >
                 <Check className="w-4 h-4 stroke-[3]" />
                 <span>Get Started in OrbitGoals</span>
+              </button>
+            </div>
+          )}
+
+          {step > 0 && (
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={handleContinueAsGuest}
+                className="text-xs font-bold text-primary hover:underline cursor-pointer opacity-85 hover:opacity-100"
+              >
+                Or Continue as Guest (No Login / Sign-up)
               </button>
             </div>
           )}

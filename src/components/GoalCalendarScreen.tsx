@@ -125,8 +125,11 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 py-3 shrink-0 flex items-center justify-between gap-3">
+      {/* Top Header - Space Upwards */}
+      <header
+        style={{ marginTop: '20px', marginLeft: '0px' }}
+        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-5 pt-8 pb-3 shrink-0 flex items-center justify-between gap-3"
+      >
         <button
           onClick={onBack}
           className="flex items-center gap-1.5 py-2 px-3 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer font-bold text-sm min-h-[44px]"
@@ -153,7 +156,7 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto pb-12">
+      <div className="flex-1 px-4 pt-3 pb-12 space-y-4 overflow-y-auto">
         {/* Month Summary Bar (Habits vs Goals Contrast) */}
         <div className="grid grid-cols-3 gap-2">
           {/* Habits KPI Card (Emerald Accent) */}

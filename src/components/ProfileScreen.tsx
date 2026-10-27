@@ -3,8 +3,6 @@ import { UserProfile, Habit, Goal } from '../types';
 import { calculateLevelProgress, getRankInfo, calculateStreak } from '../utils/gamification';
 import { sound, triggerHaptic } from '../utils/sound';
 import { GoalIcon } from './GoalIcon';
-import { UserAvatar } from './UserAvatar';
-import { AvatarPickerModal } from './AvatarPickerModal';
 import {
   ArrowLeft,
   Flame,
@@ -60,7 +58,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'achievements' | 'recent' | 'ongoing'>('achievements');
   const [isEditing, setIsEditing] = useState(false);
-  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [editName, setEditName] = useState(profile.name || '');
   const [editAge, setEditAge] = useState(profile.age ? String(profile.age) : '');
   const [editTitle, setEditTitle] = useState(profile.title || 'Novice Achiever');
@@ -318,29 +315,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         {/* User Identity Hero Card */}
         <div className="p-4 rounded-3xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface border border-outline-variant/30 shadow-xs space-y-3">
           <div className="flex items-center gap-3">
-            {/* Avatar Badge with Tap to Change */}
-            <div className="relative group shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAvatarModalOpen(true);
-                  sound.playPop();
-                  triggerHaptic('light');
-                }}
-                className="block cursor-pointer transition-transform active:scale-95 hover:opacity-90 rounded-2xl relative"
-                title="Tap to change avatar portrait"
-              >
-                <UserAvatar
-                  avatarId={profile.avatarId}
-                  avatarUrl={profile.avatarUrl}
-                  fallbackText={profile.name}
-                  size="lg"
-                  className="shadow-sm"
-                />
-                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md border-2 border-surface">
-                  <Camera className="w-3 h-3 stroke-[2.5]" />
-                </div>
-              </button>
+            {/* User Profile Monogram Badge */}
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-indigo-500 text-white font-black text-2xl flex items-center justify-center shadow-md border-2 border-surface">
+                {profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'G'}
+              </div>
               <div className="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-black font-black text-[10px] shadow-sm flex items-center gap-0.5 border border-amber-300 pointer-events-none">
                 <span>Lv.{levelInfo.level}</span>
               </div>
@@ -790,28 +769,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-3">
-              {/* Avatar Selector in Edit modal */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-container border border-outline-variant/30">
-                <div className="flex items-center gap-3">
-                  <UserAvatar
-                    avatarId={profile.avatarId}
-                    avatarUrl={profile.avatarUrl}
-                    fallbackText={editName || profile.name}
-                    size="sm"
-                  />
-                  <div>
-                    <span className="text-xs font-bold text-on-surface block">Profile Avatar</span>
-                    <span className="text-[10px] text-on-surface-variant font-medium">Customize your achiever portrait</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAvatarModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all cursor-pointer"
-                >
-                  Change
-                </button>
-              </div>
 
               <div>
                 <label className="text-xs font-bold text-on-surface-variant block mb-1">
@@ -888,16 +845,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
       )}
 
-      {/* AVATAR PICKER MODAL */}
-      {isAvatarModalOpen && (
-        <AvatarPickerModal
-          currentAvatarId={profile.avatarId}
-          onSelectAvatar={(avatarId) => {
-            onUpdateProfile({ avatarId });
-          }}
-          onClose={() => setIsAvatarModalOpen(false)}
-        />
-      )}
     </div>
   );
 };

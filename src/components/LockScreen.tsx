@@ -243,13 +243,25 @@ export const LockScreen: React.FC<LockScreenProps> = ({
           </button>
         </div>
 
-        {/* Forgot Passcode Helper */}
-        <div className="text-center mt-3">
+        {/* Forgot Passcode & Guest Mode Helpers */}
+        <div className="flex items-center justify-center gap-3 mt-3">
           <button
             onClick={() => setShowForgotModal(true)}
             className="text-[11px] font-bold text-primary hover:underline cursor-pointer opacity-80 hover:opacity-100"
           >
             Forgot Passcode?
+          </button>
+          <span className="text-on-surface-variant/40 text-xs">·</span>
+          <button
+            onClick={() => {
+              onUpdateSecurity({ enabled: false });
+              sound.playUnlock();
+              triggerHaptic('success');
+              onUnlock();
+            }}
+            className="text-[11px] font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            Continue as Guest
           </button>
         </div>
       </div>
