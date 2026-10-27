@@ -118,8 +118,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
       {/* Top Header */}
       <header
-        style={{ marginTop: '20px', paddingLeft: '17px' }}
-        className="pl-[17px] pr-4 pt-6 pb-2 mt-[20px] border-b border-outline-variant/20 flex items-center justify-between gap-3 shrink-0 bg-surface/90 backdrop-blur-md z-10"
+        style={{ marginTop: '32px', paddingLeft: '17px' }}
+        className="pl-[17px] pr-4 pt-6 pb-2 mt-[32px] border-b border-outline-variant/20 flex items-center justify-between gap-3 shrink-0 bg-surface/90 backdrop-blur-md z-10"
       >
         <div className="flex items-center gap-2">
           {isReplay && onCancelReplay && (
