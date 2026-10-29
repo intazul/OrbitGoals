@@ -127,8 +127,8 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
       {/* Top Header - Space Upwards */}
       <header
-        style={{ marginTop: '20px', marginLeft: '0px' }}
-        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-5 pt-8 pb-3 shrink-0 flex items-center justify-between gap-3"
+        style={{ marginTop: '32px', marginLeft: '0px' }}
+        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-8 pt-6 pb-3 shrink-0 flex items-center justify-between gap-3"
       >
         <button
           onClick={onBack}

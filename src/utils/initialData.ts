@@ -140,6 +140,7 @@ export const DEFAULT_SECURITY: SecurityConfig = {
   enabled: true,
   pin: '0000',
   biometricEnabled: false,
+  autoLockMinutes: 0,
 };
 
 export const INITIAL_USER_PROFILE: UserProfile = {
@@ -268,4 +269,6 @@ export const INITIAL_SETTINGS: AppSettings = {
   streakSaverTime: '21:30',
   currency: '$',
   fastTapMode: false,
+  goalXpPerStep: 50,
+  habitXpPerSet: 10,
 };

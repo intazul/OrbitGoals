@@ -64,7 +64,10 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
       {/* Top Header */}
-      <header className="px-4 pt-8 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10">
+      <header
+        style={{ marginTop: '32px', marginLeft: '0px' }}
+        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
+      >
         <div className="flex items-center gap-3">
           <button
             type="button"

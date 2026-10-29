@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
-import { UserProfile, Habit, Goal } from '../types';
-import { calculateLevelProgress, getRankInfo, calculateStreak } from '../utils/gamification';
+import { UserProfile, Habit, Goal, Trophy } from '../types';
+import {
+  calculateLevelProgress,
+  getRankInfo,
+  calculateStreak,
+  getTrophies,
+  TIER_CONFIG,
+  calculateLevel,
+  MAX_LEVEL,
+} from '../utils/gamification';
 import { sound, triggerHaptic } from '../utils/sound';
 import { GoalIcon } from './GoalIcon';
 import {
@@ -8,7 +16,7 @@ import {
   Flame,
   Zap,
   Sparkles,
-  Trophy,
+  Trophy as TrophyIcon,
   Shield,
   CheckCircle2,
   Calendar,
@@ -23,6 +31,7 @@ import {
   X,
   Plus,
   Camera,
+  Gift,
 } from 'lucide-react';
 
 interface ProfileScreenProps {
@@ -33,18 +42,6 @@ interface ProfileScreenProps {
   onUpdateProfile: (updates: Partial<UserProfile>) => void;
   onToggleHabit: (habitId: string) => void;
   onRestoreStarterHabits?: () => void;
-}
-
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  category: 'streak' | 'habits' | 'goals' | 'level';
-  isUnlocked: boolean;
-  progress: number; // 0 to 100
-  progressText: string;
-  xpReward: number;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -65,6 +62,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     profile.motto || 'Consistency turns small steps into unstoppable momentum.'
   );
   const [copiedToast, setCopiedToast] = useState(false);
+  const [claimToast, setClaimToast] = useState<{ title: string; xp: number } | null>(null);
+  const [trophyCategory, setTrophyCategory] = useState<string>('all');
+  const [showClaimableOnly, setShowClaimableOnly] = useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const userXp = profile.xp || 0;
@@ -83,110 +83,44 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   // Goals progress steps taken (sum of currentValue)
   const totalGoalSteps = goals.reduce((acc, g) => acc + (g.currentValue || 0), 0);
 
-  // Compute Achievements dynamically
-  const achievements: Achievement[] = [
-    {
-      id: 'first-habit',
-      title: 'First Spark',
-      description: 'Complete your first daily habit',
-      icon: '🌱',
-      category: 'habits',
-      isUnlocked: totalHabitCheckins >= 1,
-      progress: Math.min(100, (totalHabitCheckins / 1) * 100),
-      progressText: `${Math.min(1, totalHabitCheckins)}/1 habit completed`,
-      xpReward: 50,
-    },
-    {
-      id: 'flame-starter',
-      title: 'Flame Starter',
-      description: 'Achieve a 3-day streak on any daily habit',
-      icon: '🔥',
-      category: 'streak',
-      isUnlocked: highestStreak >= 3,
-      progress: Math.min(100, Math.round((highestStreak / 3) * 100)),
-      progressText: `${Math.min(3, highestStreak)}/3 days`,
-      xpReward: 100,
-    },
-    {
-      id: 'week-warrior',
-      title: 'Week Warrior',
-      description: 'Build an unbroken 7-day habit streak',
-      icon: '⚡',
-      category: 'streak',
-      isUnlocked: highestStreak >= 7,
-      progress: Math.min(100, Math.round((highestStreak / 7) * 100)),
-      progressText: `${Math.min(7, highestStreak)}/7 days`,
-      xpReward: 200,
-    },
-    {
-      id: 'iron-discipline',
-      title: 'Iron Discipline',
-      description: 'Reach an exceptional 14-day habit streak',
-      icon: '🛡️',
-      category: 'streak',
-      isUnlocked: highestStreak >= 14,
-      progress: Math.min(100, Math.round((highestStreak / 14) * 100)),
-      progressText: `${Math.min(14, highestStreak)}/14 days`,
-      xpReward: 350,
-    },
-    {
-      id: 'goal-pioneer',
-      title: 'Objective Pioneer',
-      description: 'Log at least 5 step increments towards any goal',
-      icon: '🎯',
-      category: 'goals',
-      isUnlocked: totalGoalSteps >= 5,
-      progress: Math.min(100, Math.round((totalGoalSteps / 5) * 100)),
-      progressText: `${Math.min(5, totalGoalSteps)}/5 steps taken`,
-      xpReward: 150,
-    },
-    {
-      id: 'goal-crusher',
-      title: 'Goal Crusher',
-      description: 'Reach 100% completion on a target goal',
-      icon: '🏆',
-      category: 'goals',
-      isUnlocked: totalCompletedGoals >= 1,
-      progress: Math.min(100, totalCompletedGoals >= 1 ? 100 : 0),
-      progressText: `${Math.min(1, totalCompletedGoals)}/1 goal crushed`,
-      xpReward: 300,
-    },
-    {
-      id: 'level-three',
-      title: 'Rising Star',
-      description: 'Reach Account Level 3 with earned XP',
-      icon: '⭐',
-      category: 'level',
-      isUnlocked: levelInfo.level >= 3,
-      progress: Math.min(100, Math.round((levelInfo.level / 3) * 100)),
-      progressText: `Level ${levelInfo.level}/3`,
-      xpReward: 150,
-    },
-    {
-      id: 'level-five',
-      title: 'Vanguard Leader',
-      description: 'Reach Account Level 5 and unlock elite status',
-      icon: '👑',
-      category: 'level',
-      isUnlocked: levelInfo.level >= 5,
-      progress: Math.min(100, Math.round((levelInfo.level / 5) * 100)),
-      progressText: `Level ${levelInfo.level}/5`,
-      xpReward: 500,
-    },
-    {
-      id: 'century-club',
-      title: 'Consistency Centurion',
-      description: 'Complete 25 total daily habit check-ins',
-      icon: '💎',
-      category: 'habits',
-      isUnlocked: totalHabitCheckins >= 25,
-      progress: Math.min(100, Math.round((totalHabitCheckins / 25) * 100)),
-      progressText: `${Math.min(25, totalHabitCheckins)}/25 check-ins`,
-      xpReward: 400,
-    },
-  ];
+  // Generate dynamic trophies
+  const allTrophies = getTrophies({
+    habits,
+    goals,
+    profile,
+    claimedIds: profile.claimedTrophyIds || [],
+  });
 
-  const unlockedCount = achievements.filter((a) => a.isUnlocked).length;
+  const unlockedCount = allTrophies.filter((t) => t.unlocked).length;
+  const claimableCount = allTrophies.filter((t) => t.unlocked && !t.claimed).length;
+
+  const handleClaimTrophy = (trophy: Trophy) => {
+    if (!trophy.unlocked || trophy.claimed) return;
+    const currentClaimed = profile.claimedTrophyIds || [];
+    if (currentClaimed.includes(trophy.id)) return;
+
+    const newClaimed = [...currentClaimed, trophy.id];
+    const newXp = (profile.xp || 0) + trophy.xpReward;
+    const newLevel = calculateLevel(newXp);
+    const oldLevel = profile.level || 1;
+
+    if (newLevel > oldLevel) {
+      sound.playLevelUp();
+    } else {
+      sound.playSuccessChime();
+    }
+    triggerHaptic('success');
+
+    onUpdateProfile({
+      claimedTrophyIds: newClaimed,
+      xp: newXp,
+      level: newLevel,
+      title: getRankInfo(newLevel).title,
+    });
+
+    setClaimToast({ title: trophy.title, xp: trophy.xpReward });
+    setTimeout(() => setClaimToast(null), 3000);
+  };
 
   // Recent completed habits (extracted chronologically)
   interface RecentCompletion {
@@ -246,7 +180,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   };
 
   const handleShareSummary = () => {
-    const text = `🌟 OrbitGoals Profile Summary\n👤 ${profile.name || 'Achiever'} (${rankInfo.title})\n⚡ Level ${levelInfo.level} · ${userXp} XP\n🔥 Best Habit Streak: ${highestStreak} days\n🏆 Trophies: ${unlockedCount}/${achievements.length} Unlocked\n✅ Total Habit Check-ins: ${totalHabitCheckins}`;
+    const text = `🌟 OrbitGoals Profile Summary\n👤 ${profile.name || 'Achiever'} (${rankInfo.title})\n⚡ Level ${levelInfo.level} · ${userXp.toLocaleString()} XP\n🔥 Best Habit Streak: ${highestStreak} days\n🏆 Trophies: ${unlockedCount}/${allTrophies.length} Unlocked\n✅ Total Habit Check-ins: ${totalHabitCheckins}`;
     navigator.clipboard?.writeText(text);
     setCopiedToast(true);
     sound.playPop();
@@ -257,7 +191,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
       {/* Top Header */}
-      <header className="px-4 pt-8 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10">
+      <header
+        style={{ marginTop: '32px', marginLeft: '0px' }}
+        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
+      >
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -269,10 +206,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </button>
           <div>
             <h1 className="text-[19px] font-black tracking-tight text-on-surface leading-tight">
-              Player Profile
+              Player Profile & Trophies
             </h1>
             <p className="text-[10px] text-on-surface-variant font-medium">
-              Rank, trophies, history & streak momentum
+              1,000 Levels, Trophies, XP Scaling & Rank Mastery
             </p>
           </div>
         </div>
@@ -299,6 +236,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </button>
         </div>
       </header>
+
+      {/* Claim Toast / Celebration */}
+      {claimToast && (
+        <div className="px-4 pt-2">
+          <div className="p-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-primary text-black font-black text-xs flex items-center justify-between shadow-lg animate-fade-in border border-amber-300">
+            <span className="flex items-center gap-1.5">
+              <Gift className="w-4 h-4 animate-bounce" />
+              <span>Trophy Claimed: {claimToast.title}!</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-black/20 text-white font-mono">
+              +{claimToast.xp} XP
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Copied toast notification */}
       {copiedToast && (
@@ -353,17 +305,19 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </div>
           </div>
 
-          {/* XP PROGRESS BAR (Relocated from main screen to profile as requested) */}
+          {/* XP PROGRESS BAR (1,000 Levels Ascent) */}
           <div className="pt-2 border-t border-outline-variant/20 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1 text-[11px]">
                 <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-current" />
-                <span>Level {levelInfo.level} Progress</span>
+                <span>Level {levelInfo.level} / {MAX_LEVEL}</span>
               </span>
               <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-primary">
-                <span>{userXp} XP</span>
+                <span>{userXp.toLocaleString()} XP</span>
                 <span className="text-on-surface-variant font-normal text-[10px]">
-                  ({levelInfo.currentLevelXp}/{levelInfo.nextLevelXp} to Lv.{levelInfo.level + 1})
+                  {levelInfo.isMaxLevel
+                    ? '(Max Level Pinnacle!)'
+                    : `(${levelInfo.currentLevelXp.toLocaleString()}/${levelInfo.nextLevelXp.toLocaleString()} to Lv.${levelInfo.level + 1})`}
                 </span>
               </div>
             </div>
@@ -377,8 +331,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </div>
 
             <div className="flex items-center justify-between text-[10px] font-medium text-on-surface-variant">
-              <span>+10 XP per habit check-off</span>
-              <span>+50 XP per goal step</span>
+              <span>{levelInfo.isMaxLevel ? 'Ultimate Legend' : `${levelInfo.xpToNextLevel.toLocaleString()} XP to next level`}</span>
+              <span className="text-amber-600 dark:text-amber-400 font-bold">Scaling Curve Active</span>
             </div>
           </div>
         </div>
@@ -388,7 +342,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
             <div className="flex items-center justify-center gap-1 text-amber-600 dark:text-amber-400">
               <Zap className="w-3.5 h-3.5 fill-current" />
-              <span className="text-xs font-black font-mono tabular-nums">{userXp}</span>
+              <span className="text-xs font-black font-mono tabular-nums">{userXp.toLocaleString()}</span>
             </div>
             <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider block mt-0.5">
               Total XP
@@ -441,7 +395,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <Trophy className="w-3.5 h-3.5" />
+            <TrophyIcon className="w-3.5 h-3.5" />
             <span>Trophies ({unlockedCount})</span>
           </button>
 
@@ -480,80 +434,169 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </button>
         </div>
 
-        {/* TAB CONTENT: 1. ACHIEVEMENTS & TROPHIES */}
+        {/* TAB CONTENT: 1. ACHIEVEMENTS & TROPHIES GALLERY */}
         {activeTab === 'achievements' && (
-          <div className="space-y-2">
+          <div className="space-y-3">
+            {/* Trophies Header & Claimable alert */}
             <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                Unlockable Trophies ({unlockedCount}/{achievements.length})
-              </span>
-              <span className="text-[11px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                <span>Earn Bonus XP</span>
-              </span>
-            </div>
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+                  <TrophyIcon className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Trophies ({unlockedCount}/{allTrophies.length})</span>
+                </span>
+                <p className="text-[10px] text-on-surface-variant font-medium">
+                  {claimableCount > 0 ? `🎉 ${claimableCount} trophies ready to claim!` : 'Unlock trophies across habits, streaks & levels'}
+                </p>
+              </div>
 
-            <div className="space-y-2">
-              {achievements.map((ach) => (
-                <div
-                  key={ach.id}
-                  className={`p-3 rounded-2xl border transition-all ${
-                    ach.isUnlocked
-                      ? 'bg-gradient-to-r from-amber-500/10 via-surface-container to-surface-container-low border-amber-500/30'
-                      : 'bg-surface-container-low border-outline-variant/30 opacity-75'
+              {claimableCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowClaimableOnly(!showClaimableOnly)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-black flex items-center gap-1 transition-all cursor-pointer shadow-xs ${
+                    showClaimableOnly
+                      ? 'bg-amber-500 text-black border border-amber-300 animate-pulse'
+                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <Gift className="w-3 h-3" />
+                  <span>{claimableCount} Claimable</span>
+                </button>
+              )}
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {[
+                { id: 'all', label: `All (${allTrophies.length})` },
+                { id: 'streaks', label: '🔥 Streaks' },
+                { id: 'sets', label: '⚡ Sets' },
+                { id: 'goals', label: '🎯 Goals' },
+                { id: 'levels', label: '👑 Levels' },
+                { id: 'creator', label: '🎬 Creator' },
+                { id: 'special', label: '✨ Special' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setTrophyCategory(cat.id);
+                    sound.playPop();
+                  }}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
+                    trophyCategory === cat.id
+                      ? 'bg-primary text-on-primary border-primary shadow-xs'
+                      : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-high'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Trophies Grid / List */}
+            <div className="space-y-2">
+              {allTrophies
+                .filter((t) => {
+                  if (showClaimableOnly && (!t.unlocked || t.claimed)) return false;
+                  if (trophyCategory === 'all') return true;
+                  return t.category === trophyCategory;
+                })
+                .map((trophy) => {
+                  const tierStyle = TIER_CONFIG[trophy.tier] || TIER_CONFIG.bronze;
+                  const canClaim = trophy.unlocked && !trophy.claimed;
+                  const pct = Math.min(100, Math.round((trophy.currentProgress / trophy.maxProgress) * 100));
+
+                  return (
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 border ${
-                        ach.isUnlocked
-                          ? 'bg-amber-500/20 border-amber-500/40 shadow-xs'
-                          : 'bg-surface-container-high border-outline-variant/30 grayscale'
+                      key={trophy.id}
+                      className={`p-3 rounded-2xl border transition-all ${
+                        trophy.claimed
+                          ? 'bg-surface-container/70 border-outline-variant/30'
+                          : canClaim
+                          ? 'bg-gradient-to-r from-amber-500/15 via-surface-container to-primary/10 border-amber-400/60 shadow-md ring-1 ring-amber-400/30'
+                          : 'bg-surface-container-low border-outline-variant/30 opacity-80'
                       }`}
                     >
-                      {ach.icon}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-sm font-bold text-on-surface truncate">
-                          {ach.title}
-                        </h4>
-                        {ach.isUnlocked ? (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-black text-[10px] shrink-0 flex items-center gap-1">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                            <span>Unlocked</span>
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded shrink-0">
-                            +{ach.xpReward} XP
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-on-surface-variant mt-0.5 leading-snug">
-                        {ach.description}
-                      </p>
-
-                      {/* Progress Bar for Locked */}
-                      {!ach.isUnlocked && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center justify-between text-[10px] font-medium text-on-surface-variant">
-                            <span>Progress</span>
-                            <span className="font-mono">{ach.progressText}</span>
-                          </div>
-                          <div className="w-full bg-surface-container-highest rounded-full h-1 overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-primary transition-all duration-300"
-                              style={{ width: `${ach.progress}%` }}
-                            />
-                          </div>
+                      <div className="flex items-start gap-3">
+                        {/* Trophy Icon */}
+                        <div
+                          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 border ${
+                            canClaim
+                              ? 'bg-gradient-to-tr from-amber-500/30 to-yellow-400/20 border-amber-400 shadow-sm animate-bounce-short'
+                              : trophy.unlocked
+                              ? 'bg-surface-container-high border-outline-variant/40'
+                              : 'bg-surface-container-low border-outline-variant/20 grayscale opacity-60'
+                          }`}
+                        >
+                          {trophy.badge}
                         </div>
-                      )}
+
+                        {/* Trophy Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <h4 className="text-sm font-black text-on-surface truncate">
+                                {trophy.title}
+                              </h4>
+                              {/* Tier Badge */}
+                              <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-bold uppercase border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
+                                {tierStyle.label}
+                              </span>
+                            </div>
+
+                            {/* Status or Claim Button */}
+                            {canClaim ? (
+                              <button
+                                type="button"
+                                onClick={() => handleClaimTrophy(trophy)}
+                                className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-xs flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer animate-pulse"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                <span>CLAIM +{trophy.xpReward} XP</span>
+                              </button>
+                            ) : trophy.claimed ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] flex items-center gap-1 border border-emerald-500/30">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                                <span>Claimed (+{trophy.xpReward} XP)</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                +{trophy.xpReward} XP
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-on-surface-variant mt-0.5 leading-snug">
+                            {trophy.description}
+                          </p>
+
+                          {/* Progress Bar */}
+                          {!trophy.claimed && (
+                            <div className="mt-2 space-y-1">
+                              <div className="flex items-center justify-between text-[10px] font-medium text-on-surface-variant">
+                                <span>{canClaim ? 'Ready to claim!' : 'Progress'}</span>
+                                <span className="font-mono tabular-nums">
+                                  {trophy.currentProgress.toLocaleString()} / {trophy.maxProgress.toLocaleString()} ({pct}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${
+                                    canClaim
+                                      ? 'bg-gradient-to-r from-amber-400 to-yellow-300'
+                                      : 'bg-primary'
+                                  }`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           </div>
         )}

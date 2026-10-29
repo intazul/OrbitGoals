@@ -58,6 +58,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         enabled: false,
         pin: '0000',
         biometricEnabled: false,
+        autoLockMinutes: 0,
       }
     );
   };
@@ -102,6 +103,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       enabled: appLockEnabled,
       pin: cleanPin || '0000',
       biometricEnabled: false,
+      autoLockMinutes: 0,
     };
 
     sound.playSuccessChime();

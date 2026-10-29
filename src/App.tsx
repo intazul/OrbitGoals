@@ -52,6 +52,8 @@ import {
   ChevronRight,
   Link,
   Layers,
+  Lock,
+  Edit2,
 } from 'lucide-react';
 
 export default function App() {
@@ -83,6 +85,7 @@ export default function App() {
   >('dashboard');
   const [calendarGoalId, setCalendarGoalId] = useState<string | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
+  const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
 
   // Floating XP indicator state
   const [floatingXp, setFloatingXp] = useState<{ text: string; id: number } | null>(null);
@@ -127,6 +130,62 @@ export default function App() {
       root.classList.remove('low-power-mode');
     }
   }, [settings.lowPowerMode]);
+
+  // Auto-Lock monitoring effect: handles "Immediately" or configured minutes
+  useEffect(() => {
+    if (!profile.onboarded || !security.enabled) return;
+
+    let lastInteractionTime = Date.now();
+
+    const handleUserActivity = () => {
+      lastInteractionTime = Date.now();
+    };
+
+    const handleVisibilityOrBlur = () => {
+      if (document.visibilityState === 'hidden') {
+        sessionStorage.setItem('orbitgoals_last_blur', String(Date.now()));
+      } else if (document.visibilityState === 'visible') {
+        const blurStr = sessionStorage.getItem('orbitgoals_last_blur');
+        const blurTime = blurStr ? parseInt(blurStr, 10) : Date.now();
+        const diffMs = Date.now() - blurTime;
+        const autoLockMin = typeof security.autoLockMinutes === 'number' ? security.autoLockMinutes : 0;
+
+        if (autoLockMin === 0) {
+          // Immediately on switch or reopening
+          setIsLocked(true);
+        } else if (autoLockMin > 0) {
+          const timeoutMs = autoLockMin * 60 * 1000;
+          if (diffMs >= timeoutMs) {
+            setIsLocked(true);
+          }
+        }
+      }
+    };
+
+    // Periodic idle check while app stays open
+    const interval = setInterval(() => {
+      const autoLockMin = typeof security.autoLockMinutes === 'number' ? security.autoLockMinutes : 0;
+      if (autoLockMin > 0) {
+        const idleMs = Date.now() - lastInteractionTime;
+        if (idleMs >= autoLockMin * 60 * 1000) {
+          setIsLocked(true);
+        }
+      }
+    }, 10000);
+
+    window.addEventListener('pointerdown', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    window.addEventListener('scroll', handleUserActivity);
+    document.addEventListener('visibilitychange', handleVisibilityOrBlur);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('pointerdown', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityOrBlur);
+    };
+  }, [profile.onboarded, security.enabled, security.autoLockMinutes]);
 
   // Persist Goals
   const updateGoals = (newGoals: Goal[]) => {
@@ -391,13 +450,15 @@ export default function App() {
     triggerHaptic('medium');
   };
 
-  // Increment or Decrement Goal Value (+50 XP per step)
+  // Increment or Decrement Goal Value (dynamic XP per step from settings or goal)
   const handleUpdateGoalValue = (goalId: string, delta: number) => {
     let hitMilestone = false;
     let milestoneTitle = '';
+    let goalXp = settings.goalXpPerStep || XP_PER_GOAL_STEP;
 
     const newGoals = goals.map((goal) => {
       if (goal.id !== goalId) return goal;
+      if (goal.xpReward) goalXp = goal.xpReward;
       const newVal = Math.max(0, goal.currentValue + delta);
       const wasCompleted = goal.currentValue >= goal.targetValue;
       const isNowCompleted = newVal >= goal.targetValue;
@@ -436,11 +497,11 @@ export default function App() {
     if (delta > 0) {
       sound.playPop();
       triggerHaptic('light');
-      handleAdjustXp(XP_PER_GOAL_STEP, 'Goal progress step');
+      handleAdjustXp(goalXp, 'Goal progress step');
     } else if (delta < 0) {
       sound.playPop();
       triggerHaptic('light');
-      handleAdjustXp(-XP_PER_GOAL_STEP, 'Goal step reverted');
+      handleAdjustXp(-goalXp, 'Goal step reverted');
     }
 
     if (hitMilestone) {
@@ -473,11 +534,36 @@ export default function App() {
     }
   };
 
-  // Save New Goal (with optional auto-created linked habit)
+  // Save New or Edited Goal (with optional auto-created linked habit)
   const handleSaveGoal = (
     goalData: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>,
     autoCreateHabit?: boolean
   ) => {
+    if (editingGoal) {
+      const updatedGoals = goals.map((g) => {
+        if (g.id !== editingGoal.id) return g;
+        const history = [...(g.history || [])];
+        const todayHistoryIdx = history.findIndex((h) => h.date === todayStr);
+        if (todayHistoryIdx >= 0) {
+          history[todayHistoryIdx].value = goalData.currentValue;
+        } else {
+          history.push({ date: todayStr, value: goalData.currentValue });
+        }
+        return {
+          ...g,
+          ...goalData,
+          history,
+        };
+      });
+      updateGoals(updatedGoals);
+      setEditingGoal(undefined);
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setScreenView('dashboard');
+      setActiveTab('goals');
+      return;
+    }
+
     const goalId = `goal-${Date.now()}`;
     const newGoal: Goal = {
       ...goalData,
@@ -512,7 +598,7 @@ export default function App() {
         targetValue: isYouTube ? 1 : (isFitness ? 30 : Math.min(goalData.targetValue, 10)),
         unit: goalData.unit,
         stepValue: isYouTube ? 1 : (isFitness ? 10 : 1),
-        xpPerSet: isYouTube ? 50 : 10,
+        xpPerSet: isYouTube ? 50 : (settings.habitXpPerSet || 10),
         todayProgress: 0,
         progressHistory: {},
         linkedGoalId: goalId,
@@ -619,19 +705,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Full Screen Mode: Add Habit */}
-          {screenView === 'add-habit' && (
-            <AddHabitScreen
-              onBack={() => {
-                setEditingHabit(undefined);
-                setScreenView('dashboard');
-              }}
-              onSaveHabit={handleSaveHabit}
-              existingHabit={editingHabit}
-              goals={goals}
-            />
-          )}
-
           {/* Full Screen Mode: Habits Studio */}
           {screenView === 'habits' && (
             <HabitsScreen
@@ -650,15 +723,6 @@ export default function App() {
             />
           )}
 
-          {/* Full Screen Mode: Add Goal Tab */}
-          {screenView === 'add-goal' && (
-            <AddGoalScreen
-              onBack={() => setScreenView('dashboard')}
-              onSaveGoal={handleSaveGoal}
-              currency={settings.currency}
-            />
-          )}
-
           {/* Full Screen Mode: Goals View */}
           {screenView === 'goals' && (
             <GoalsScreen
@@ -667,6 +731,11 @@ export default function App() {
               onOpenCalendar={handleOpenCalendar}
               onUpdateGoalValue={handleUpdateGoalValue}
               onDeleteGoal={handleDeleteGoal}
+              onEditGoal={(g) => {
+                setEditingGoal(g);
+                setScreenView('add-goal');
+                sound.playPop();
+              }}
               currency={settings.currency}
             />
           )}
@@ -713,13 +782,13 @@ export default function App() {
             />
           )}
 
-          {/* Main Single Screen: Dashboard */}
-          {screenView === 'dashboard' && (
+          {/* Main Single Screen: Dashboard & Bottom Sheet host */}
+          {(screenView === 'dashboard' || screenView === 'add-habit' || screenView === 'add-goal') && (
             <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface">
               {/* Sticky Dashboard Header Bar */}
               <header
-                style={{ marginTop: '21px', marginLeft: '0px' }}
-                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-[21px] ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
+                style={{ marginTop: '32px', marginLeft: '0px' }}
+                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-8 ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
               >
                 {/* Brand / Profile Launcher Button (Clicking Name or Avatar opens Profile) */}
                   <button
@@ -754,7 +823,7 @@ export default function App() {
                     </div>
                   </button>
 
-                  {/* Action Icons in Header: Habits/Goals Toggle Button, Calendar, Settings */}
+                  {/* Action Icons in Header: Habits/Goals Toggle Button, Calendar, Lock, Settings */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     {/* Habit / Goals Switcher Button */}
                     <button
@@ -787,6 +856,21 @@ export default function App() {
                     >
                       <Calendar className="w-4 h-4 text-primary" />
                     </button>
+
+                    {/* Quick Lock Button (Immediate lock) */}
+                    {security.enabled && (
+                      <button
+                        onClick={() => {
+                          setIsLocked(true);
+                          sound.playLockTick();
+                          triggerHaptic('medium');
+                        }}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:text-primary hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+                        title="Lock App Immediately"
+                      >
+                        <Lock className="w-4 h-4 text-primary" />
+                      </button>
+                    )}
 
                     {/* Settings Option Button */}
                     <button
@@ -957,7 +1041,11 @@ export default function App() {
                   {/* BIG ADAPTING "ADD HABIT" OR "ADD GOAL" BUTTON */}
                   {activeTab === 'habits' ? (
                     <button
-                      onClick={() => setScreenView('add-habit')}
+                      onClick={() => {
+                        setEditingHabit(undefined);
+                        setScreenView('add-habit');
+                        sound.playPop();
+                      }}
                       className="w-full py-3 px-4 rounded-2xl bg-primary text-on-primary font-black text-sm shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[46px]"
                     >
                       <div className="w-5 h-5 rounded-full bg-on-primary/15 flex items-center justify-center">
@@ -965,12 +1053,16 @@ export default function App() {
                       </div>
                       <span className="text-[16px]">Add Habit</span>
                       <span className="text-[11px] font-bold bg-on-primary/20 px-2 py-0.5 rounded-full">
-                        +10 XP
+                        +{settings.habitXpPerSet ?? 10} XP
                       </span>
                     </button>
                   ) : (
                     <button
-                      onClick={() => setScreenView('add-goal')}
+                      onClick={() => {
+                        setEditingGoal(undefined);
+                        setScreenView('add-goal');
+                        sound.playPop();
+                      }}
                       className="w-full py-3 px-4 rounded-2xl bg-primary text-on-primary font-black text-sm shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[46px]"
                     >
                       <div className="w-5 h-5 rounded-full bg-on-primary/15 flex items-center justify-center">
@@ -978,7 +1070,7 @@ export default function App() {
                       </div>
                       <span className="text-[16px]">Add Goal</span>
                       <span className="text-[11px] font-bold bg-on-primary/20 px-2 py-0.5 rounded-full">
-                        +50 XP / step
+                        +{settings.goalXpPerStep ?? 50} XP / step
                       </span>
                     </button>
                   )}
@@ -1132,6 +1224,18 @@ export default function App() {
 
                             {/* Actions */}
                             <div className="flex items-center gap-0.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingHabit(habit);
+                                  setScreenView('add-habit');
+                                  sound.playPop();
+                                }}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface active:scale-95 transition-all cursor-pointer"
+                                title="Edit habit"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteHabit(habit.id)}
@@ -1313,7 +1417,7 @@ export default function App() {
                                 </span>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">
-                                    +50 XP / step
+                                    +{goal.xpReward || settings.goalXpPerStep || 50} XP / step
                                   </span>
                                   {goal.linkedHabitId && (
                                     <span className="text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded-full inline-flex items-center gap-0.5">
@@ -1325,7 +1429,7 @@ export default function App() {
                               </div>
                             </div>
 
-                            {/* Right compact controls: Calendar Heat Zone, Minus, Plus, Delete */}
+                            {/* Right compact controls: Calendar Heat Zone, Minus, Plus, Edit, Delete */}
                             <div className="flex items-center gap-1 shrink-0">
                               {/* Calendar Heat Zone button for this individual goal */}
                               <button
@@ -1346,13 +1450,26 @@ export default function App() {
                                 <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                               </button>
 
-                              {/* Plus button to add 1 unit (+50 XP) */}
+                              {/* Plus button to add 1 unit */}
                               <button
                                 onClick={() => handleUpdateGoalValue(goal.id, 1)}
                                 className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface text-primary hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
-                                title="Add 1 unit (+1 step, +50 XP)"
+                                title={`Add 1 unit (+1 step, +${goal.xpReward || settings.goalXpPerStep || 50} XP)`}
                               >
                                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                              </button>
+
+                              {/* Edit goal */}
+                              <button
+                                onClick={() => {
+                                  setEditingGoal(goal);
+                                  setScreenView('add-goal');
+                                  sound.playPop();
+                                }}
+                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface text-on-surface-variant hover:text-primary hover:bg-surface-container-high active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
+                                title="Edit Goal"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Delete goal */}
@@ -1411,6 +1528,33 @@ export default function App() {
                 )}
               </div>
             </div>
+          )}
+
+          {/* Bottom Sheet Popup: Add Habit (slides up smoothly below screen) */}
+          {screenView === 'add-habit' && (
+            <AddHabitScreen
+              onBack={() => {
+                setEditingHabit(undefined);
+                setScreenView('dashboard');
+              }}
+              onSaveHabit={handleSaveHabit}
+              existingHabit={editingHabit}
+              goals={goals}
+            />
+          )}
+
+          {/* Bottom Sheet Popup: Add Goal (slides up smoothly below screen) */}
+          {screenView === 'add-goal' && (
+            <AddGoalScreen
+              onBack={() => {
+                setEditingGoal(undefined);
+                setScreenView('dashboard');
+              }}
+              onSaveGoal={handleSaveGoal}
+              currency={settings.currency}
+              existingGoal={editingGoal}
+              defaultXpPerStep={settings.goalXpPerStep || 50}
+            />
           )}
         </>
       )}

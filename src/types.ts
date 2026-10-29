@@ -84,10 +84,28 @@ export interface AvatarItem {
   styleClass?: string;
 }
 
+export type TrophyTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'mythic' | 'cosmic';
+
+export interface Trophy {
+  id: string;
+  title: string;
+  description: string;
+  category: 'streaks' | 'sets' | 'goals' | 'levels' | 'creator' | 'special';
+  tier: TrophyTier;
+  badge: string;
+  xpReward: number;
+  currentProgress: number;
+  maxProgress: number;
+  unlocked: boolean;
+  claimed: boolean;
+}
+
 export interface SecurityConfig {
   enabled: boolean;
   pin: string;
   biometricEnabled: boolean;
+  autoLockMinutes: number; // 0 = Immediately, 1 = 1 min, 5 = 5 min, 15 = 15 min, -1 = Never / Manual
+  lastActiveTimestamp?: number;
 }
 
 export interface UserProfile {
@@ -103,6 +121,8 @@ export interface UserProfile {
   xp?: number;
   xpToNextLevel?: number;
   streakShields?: number;
+  claimedTrophyIds?: string[];
+  totalSetsCompleted?: number;
   equippedItems?: {
     hat: string;
     outfit: string;
@@ -169,4 +189,6 @@ export interface AppSettings {
   streakSaverTime: string;
   currency: string;
   fastTapMode: boolean;
+  goalXpPerStep?: number; // Configurable XP per goal step
+  habitXpPerSet?: number; // Configurable XP per habit set
 }

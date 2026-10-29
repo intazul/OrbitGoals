@@ -26,6 +26,8 @@ import {
   HelpCircle,
   ShieldCheck,
   AlertCircle,
+  Zap,
+  Sparkles,
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -171,8 +173,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
       {/* Settings Top Header with Back Button - Space Upwards */}
       <header
-        style={{ marginTop: '20px', marginLeft: '0px' }}
-        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-5 pt-8 pb-3 shrink-0 flex items-center justify-between gap-3"
+        style={{ marginTop: '32px', marginLeft: '0px' }}
+        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-8 pt-6 pb-3 shrink-0 flex items-center justify-between gap-3"
       >
         <button
           onClick={onBack}
@@ -271,19 +273,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </button>
         </div>
 
-        {/* 2. Security & App Lock (Passcode) */}
+        {/* 2. Security & App Lock (Passcode & Auto-Lock Timer) */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
               <Lock className="w-4 h-4" />
               <span>Security & App Lock</span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-              Protected
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              security.enabled
+                ? 'bg-primary/10 text-primary border border-primary/20'
+                : 'bg-surface-container text-on-surface-variant'
+            }`}>
+              {security.enabled ? 'Protected' : 'Disabled'}
             </span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {/* Lock on opening app toggle */}
             <div className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-outline-variant/20">
               <div className="flex items-center gap-3">
@@ -292,10 +298,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
                 <div>
                   <span className="text-sm font-bold text-on-surface block leading-tight">
-                    Lock on Opening App
+                    Require App Passcode
                   </span>
                   <span className="text-xs text-on-surface-variant">
-                    Require 4-digit passcode on launch (3 tries max)
+                    Require 4-digit passcode to protect habits & goals
                   </span>
                 </div>
               </div>
@@ -311,6 +317,58 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
               />
             </div>
+
+            {/* Auto-Lock Duration Selection: Immediately or within minutes */}
+            {security.enabled && (
+              <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-primary" />
+                    <span>Auto-Lock Timeout</span>
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                    {security.autoLockMinutes === 0
+                      ? '⚡ Immediately'
+                      : security.autoLockMinutes === -1
+                      ? 'Manual Only'
+                      : `⏱️ Within ${security.autoLockMinutes} min`}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-on-surface-variant leading-tight">
+                  Choose when to automatically lock the app after switching or leaving:
+                </p>
+
+                <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+                  {[
+                    { minutes: 0, label: 'Immediate' },
+                    { minutes: 1, label: '1 min' },
+                    { minutes: 5, label: '5 min' },
+                    { minutes: 15, label: '15 min' },
+                  ].map((opt) => {
+                    const isSelected = security.autoLockMinutes === opt.minutes;
+                    return (
+                      <button
+                        key={opt.minutes}
+                        type="button"
+                        onClick={() => {
+                          onUpdateSecurity({ autoLockMinutes: opt.minutes });
+                          sound.playPop();
+                          triggerHaptic('light');
+                        }}
+                        className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary text-on-primary border-primary shadow-xs scale-102'
+                            : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Change Passcode & Lock Now Buttons */}
             <div className="grid grid-cols-2 gap-2 pt-1">
@@ -329,7 +387,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
               <button
                 onClick={onLockNow}
-                className="py-2.5 px-3 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container text-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                className="py-2.5 px-3 rounded-2xl bg-primary/10 border border-primary/30 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>Lock App Now</span>
@@ -504,6 +562,133 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 checked={settings.lowPowerMode}
                 onChange={(e) => onUpdateSettings({ lowPowerMode: e.target.checked })}
                 className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 6b. XP Step Rates & Gamification Tuning */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+              <Zap className="w-4 h-4 fill-current" />
+              <span>XP Step Rates & Gamification</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              Level 1,000 Scaling
+            </span>
+          </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            Customize the amount of XP earned per goal step and habit set. Tune progression speed to match your routine.
+          </p>
+
+          {/* Goal XP per Step Setting */}
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>Goal Step XP Reward</span>
+              </span>
+              <span className="text-xs font-black font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                +{settings.goalXpPerStep ?? 50} XP / step
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+              {[25, 50, 100, 200].map((xpVal) => {
+                const isSelected = (settings.goalXpPerStep ?? 50) === xpVal;
+                return (
+                  <button
+                    key={xpVal}
+                    type="button"
+                    onClick={() => {
+                      onUpdateSettings({ goalXpPerStep: xpVal });
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
+                      isSelected
+                        ? 'bg-primary text-on-primary border-primary shadow-xs scale-102'
+                        : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                    }`}
+                  >
+                    +{xpVal} XP
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[11px] text-on-surface-variant font-medium shrink-0">Custom XP:</span>
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                value={settings.goalXpPerStep ?? 50}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val >= 1) {
+                    onUpdateSettings({ goalXpPerStep: Math.min(1000, val) });
+                  }
+                }}
+                className="w-full py-1.5 px-3 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono text-xs font-bold focus:outline-none focus:border-primary"
+                placeholder="Enter custom XP (1-1000)"
+              />
+            </div>
+          </div>
+
+          {/* Habit XP per Set Setting */}
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                <span>Habit Set XP Reward</span>
+              </span>
+              <span className="text-xs font-black font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg">
+                +{settings.habitXpPerSet ?? 10} XP / set
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+              {[5, 10, 25, 50].map((xpVal) => {
+                const isSelected = (settings.habitXpPerSet ?? 10) === xpVal;
+                return (
+                  <button
+                    key={xpVal}
+                    type="button"
+                    onClick={() => {
+                      onUpdateSettings({ habitXpPerSet: xpVal });
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
+                      isSelected
+                        ? 'bg-primary text-on-primary border-primary shadow-xs scale-102'
+                        : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                    }`}
+                  >
+                    +{xpVal} XP
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[11px] text-on-surface-variant font-medium shrink-0">Custom XP:</span>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={settings.habitXpPerSet ?? 10}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val >= 1) {
+                    onUpdateSettings({ habitXpPerSet: Math.min(500, val) });
+                  }
+                }}
+                className="w-full py-1.5 px-3 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono text-xs font-bold focus:outline-none focus:border-primary"
+                placeholder="Enter custom XP (1-500)"
               />
             </div>
           </div>

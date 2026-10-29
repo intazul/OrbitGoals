@@ -1,6 +1,6 @@
 import React from 'react';
 import { Goal } from '../types';
-import { ArrowLeft, Plus, Minus, Target, Trash2, Calendar, Sparkles } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Target, Trash2, Calendar, Sparkles, Edit2 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { GoalIcon } from './GoalIcon';
 
@@ -10,6 +10,7 @@ interface GoalsScreenProps {
   onOpenCalendar: (goalId?: string) => void;
   onUpdateGoalValue: (goalId: string, delta: number) => void;
   onDeleteGoal: (goalId: string) => void;
+  onEditGoal?: (goal: Goal) => void;
   currency: string;
 }
 
@@ -19,6 +20,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
   onOpenCalendar,
   onUpdateGoalValue,
   onDeleteGoal,
+  onEditGoal,
   currency,
 }) => {
   const formatFrequency = (goal: Goal) => {
@@ -37,8 +39,8 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
     <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
       {/* Top Header with Back Button (Add Goal removed from top right) */}
       <header
-        style={{ marginTop: '20px', marginLeft: '0px' }}
-        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-5 pt-8 pb-3 shrink-0 flex items-center justify-between gap-3"
+        style={{ marginTop: '32px', marginLeft: '0px' }}
+        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-8 pt-6 pb-3 shrink-0 flex items-center justify-between gap-3"
       >
         <button
           onClick={onBack}
@@ -136,6 +138,20 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
                     >
                       <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                     </button>
+
+                    {/* Edit goal */}
+                    {onEditGoal && (
+                      <button
+                        onClick={() => {
+                          onEditGoal(goal);
+                          sound.playPop();
+                        }}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
+                        title="Edit Goal"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
 
                     {/* Delete goal */}
                     <button

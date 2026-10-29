@@ -163,6 +163,8 @@ export const storage = {
             enabled: parsed.enabled !== undefined ? Boolean(parsed.enabled) : DEFAULT_SECURITY.enabled,
             pin: typeof parsed.pin === 'string' && parsed.pin.length === 4 ? parsed.pin : DEFAULT_SECURITY.pin,
             biometricEnabled: parsed.biometricEnabled !== undefined ? Boolean(parsed.biometricEnabled) : DEFAULT_SECURITY.biometricEnabled,
+            autoLockMinutes: typeof parsed.autoLockMinutes === 'number' ? parsed.autoLockMinutes : 0,
+            lastActiveTimestamp: typeof parsed.lastActiveTimestamp === 'number' ? parsed.lastActiveTimestamp : undefined,
           };
         }
       }
@@ -219,7 +221,15 @@ export const storage = {
   getSettings(): AppSettings {
     try {
       const data = localStorage.getItem(KEYS.SETTINGS);
-      if (data) return JSON.parse(data);
+      if (data) {
+        const parsed = JSON.parse(data);
+        return {
+          ...INITIAL_SETTINGS,
+          ...parsed,
+          goalXpPerStep: typeof parsed.goalXpPerStep === 'number' ? parsed.goalXpPerStep : 50,
+          habitXpPerSet: typeof parsed.habitXpPerSet === 'number' ? parsed.habitXpPerSet : 10,
+        };
+      }
     } catch {
       // ignore
     }

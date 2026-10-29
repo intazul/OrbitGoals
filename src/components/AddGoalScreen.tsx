@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Target, ChevronDown, ChevronUp, Check, Plus, Sparkles } from 'lucide-react';
+import { ArrowLeft, Target, ChevronDown, ChevronUp, Check, Plus, Sparkles, X } from 'lucide-react';
 import { Goal, GoalFrequency } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
 import { AVAILABLE_GOAL_ICONS, GoalIcon } from './GoalIcon';
@@ -8,6 +8,8 @@ interface AddGoalScreenProps {
   onBack: () => void;
   onSaveGoal: (goal: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>, autoCreateHabit?: boolean) => void;
   currency: string;
+  existingGoal?: Goal;
+  defaultXpPerStep?: number;
 }
 
 const QUICK_NAME_OPTIONS = [
@@ -27,19 +29,23 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   onBack,
   onSaveGoal,
   currency,
+  existingGoal,
+  defaultXpPerStep = 50,
 }) => {
-  const [title, setTitle] = useState('');
-  const [targetValue, setTargetValue] = useState<number>(1);
-  const [unit, setUnit] = useState('times');
-  const [category, setCategory] = useState<string>('creator');
+  const [title, setTitle] = useState(existingGoal?.title || '');
+  const [targetValue, setTargetValue] = useState<number>(existingGoal?.targetValue ?? 1);
+  const [currentValue, setCurrentValue] = useState<number>(existingGoal?.currentValue ?? 0);
+  const [unit, setUnit] = useState(existingGoal?.unit || 'times');
+  const [category, setCategory] = useState<string>(existingGoal?.category || 'creator');
   const [customCategoryInput, setCustomCategoryInput] = useState('');
   const [isAddingCustomCategory, setIsAddingCustomCategory] = useState(false);
-  const [frequency, setFrequency] = useState<GoalFrequency>('daily');
-  const [frequencyDays, setFrequencyDays] = useState<string[]>([]);
-  const [selectedIcon, setSelectedIcon] = useState('youtube');
-  const [color, setColor] = useState('#ef4444');
+  const [frequency, setFrequency] = useState<GoalFrequency>(existingGoal?.frequency || 'daily');
+  const [frequencyDays, setFrequencyDays] = useState<string[]>(existingGoal?.frequencyDays || []);
+  const [selectedIcon, setSelectedIcon] = useState(existingGoal?.icon || 'youtube');
+  const [color, setColor] = useState(existingGoal?.color || '#ef4444');
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
-  const [createLinkedHabit, setCreateLinkedHabit] = useState<boolean>(true);
+  const [createLinkedHabit, setCreateLinkedHabit] = useState<boolean>(!existingGoal);
+  const [xpReward, setXpReward] = useState<number>(existingGoal?.xpReward ?? defaultXpPerStep);
 
   const handleSelectQuickName = (item: typeof QUICK_NAME_OPTIONS[0]) => {
     setTitle(item.name);
@@ -75,22 +81,23 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
     onSaveGoal(
       {
         title: title.trim(),
-        description: `Target: ${targetValue} ${unit.trim() || 'units'} (${frequency === 'long_term' ? 'Long Term · Every Day' : frequency})`,
+        description: existingGoal?.description || `Target: ${targetValue} ${unit.trim() || 'units'} (${frequency === 'long_term' ? 'Long Term · Every Day' : frequency})`,
         category: category.trim() || 'general',
         targetValue,
-        currentValue: 0,
+        currentValue: Math.max(0, currentValue),
         unit: unit.trim() || 'units',
         frequency,
         frequencyDays: frequency === 'weekly' && frequencyDays.length > 0 ? frequencyDays : undefined,
         color,
         icon: selectedIcon,
-        priority: 'high',
-        difficulty: 'medium',
-        xpReward: 50,
-        subtasks: [],
-        notes: '',
+        priority: existingGoal?.priority || 'high',
+        difficulty: existingGoal?.difficulty || 'medium',
+        xpReward: Math.max(1, xpReward),
+        subtasks: existingGoal?.subtasks || [],
+        notes: existingGoal?.notes || '',
+        linkedHabitId: existingGoal?.linkedHabitId,
       },
-      createLinkedHabit
+      !existingGoal && createLinkedHabit
     );
 
     sound.playSuccessChime();
@@ -101,30 +108,51 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   const currentIconObj = AVAILABLE_GOAL_ICONS.find((i) => i.id === selectedIcon) || AVAILABLE_GOAL_ICONS[0];
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
-      {/* Top Header with Back Button */}
-      <header
-        style={{ marginTop: '20px', marginLeft: '0px' }}
-        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-5 pt-8 pb-3 shrink-0 flex items-center justify-between gap-3"
-      >
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 py-2 px-3 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer font-bold text-sm min-h-[44px]"
-        >
-          <ArrowLeft className="w-5 h-5 text-primary stroke-[2.5]" />
-          <span>Back</span>
-        </button>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      {/* Click outside to dismiss backdrop */}
+      <div className="flex-1 w-full" onClick={onBack} />
 
-        <h1 className="text-lg font-black text-on-surface tracking-tight">
-          Create Goal
-        </h1>
+      {/* Bottom Sheet Modal Container */}
+      <div className="w-full max-h-[90vh] bg-surface text-on-surface rounded-t-[32px] border-t border-x border-outline-variant/30 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 relative z-10">
+        {/* Grab Handle Pill */}
+        <div className="w-12 h-1.5 rounded-full bg-outline-variant/60 mx-auto mt-2.5 mb-1 shrink-0" />
 
-        <div className="w-16" /> {/* Balance spacer */}
-      </header>
+        {/* Top Header */}
+        <header className="px-4 py-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/95 backdrop-blur-md">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-bold shrink-0">
+              <Target className="w-4 h-4" />
+            </div>
+            <div>
+              <h1 className="text-base font-black tracking-tight text-on-surface leading-tight">
+                {existingGoal ? 'Edit Target Goal' : 'New Target Goal'}
+              </h1>
+              <p className="text-[10px] text-on-surface-variant font-medium">
+                {existingGoal ? 'Modify target, units, progress & rewards' : 'Set milestones & earn +XP per step'}
+              </p>
+            </div>
+          </div>
 
-      {/* Form Content */}
-      <div className="flex-1 px-4 py-5 space-y-5 overflow-y-auto pb-10">
-        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-black shrink-0">
+              <Sparkles className="w-3 h-3 animate-pulse" />
+              <span>+{xpReward} XP / step</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all active:scale-95 cursor-pointer"
+              title="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </header>
+
+        {/* Form Content */}
+        <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto pb-10">
+          <form onSubmit={handleSubmit} className="space-y-4">
           {/* Goal Name Input with Scrollable Chips right inside the typing area */}
           <div className="space-y-2 bg-surface-container-low p-4 rounded-3xl border border-outline-variant/30 shadow-xs">
             <label className="text-xs font-bold text-on-surface block">
@@ -417,31 +445,64 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
             )}
           </div>
 
-          {/* Connected Daily Habit Toggle Card */}
-          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Sparkles className="w-4 h-4" />
-              </div>
+          {/* Progress & XP tuning when editing */}
+          {existingGoal && (
+            <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 grid grid-cols-2 gap-3 shadow-xs">
               <div>
-                <span className="text-xs font-bold text-on-surface block leading-tight">
-                  Connect to Daily Habit (+50 XP)
-                </span>
-                <span className="text-[10px] text-on-surface-variant block mt-0.5">
-                  Auto-create daily habit with sets (e.g. video uploads or reps) that syncs progress
-                </span>
+                <label className="text-xs font-bold text-on-surface block mb-1">
+                  Current Progress ({unit})
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={currentValue}
+                  onChange={(e) => setCurrentValue(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/30 text-sm font-bold text-on-surface font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-on-surface block mb-1">
+                  XP / Step Reward
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={xpReward}
+                  onChange={(e) => setXpReward(Math.max(1, parseInt(e.target.value) || 10))}
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/30 text-sm font-bold text-amber-600 dark:text-amber-400 font-mono"
+                />
               </div>
             </div>
-            <input
-              type="checkbox"
-              checked={createLinkedHabit}
-              onChange={(e) => {
-                setCreateLinkedHabit(e.target.checked);
-                sound.playPop();
-              }}
-              className="w-4 h-4 accent-primary rounded cursor-pointer shrink-0"
-            />
-          </div>
+          )}
+
+          {/* Connected Daily Habit Toggle Card (only for new goals) */}
+          {!existingGoal && (
+            <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-on-surface block leading-tight">
+                    Connect to Daily Habit (+50 XP)
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant block mt-0.5">
+                    Auto-create daily habit with sets (e.g. video uploads or reps) that syncs progress
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={createLinkedHabit}
+                onChange={(e) => {
+                  setCreateLinkedHabit(e.target.checked);
+                  sound.playPop();
+                }}
+                className="w-4 h-4 accent-primary rounded cursor-pointer shrink-0"
+              />
+            </div>
+          )}
 
           {/* Action Submit Button */}
           <div className="pt-2">
@@ -449,11 +510,13 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
               type="submit"
               className="w-full py-4 px-6 rounded-2xl bg-primary text-on-primary font-black text-sm sm:text-base shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[56px]"
             >
-              <span>Create Goal</span>
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>{existingGoal ? 'Save Goal Changes' : 'Create Goal'}</span>
             </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  </div>
+);
 };
