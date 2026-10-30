@@ -386,6 +386,21 @@ export const storage = {
     };
   },
 
+  /**
+   * Manually reset daily habit progress for testing or on-demand reset
+   */
+  resetDailyHabitsProgress(): Habit[] {
+    const today = new Date().toISOString().split('T')[0];
+    const habits = this.getHabits();
+    const updated = habits.map((h) => ({
+      ...h,
+      todayProgress: 0,
+      completedDates: (h.completedDates || []).filter((d) => d !== today),
+    }));
+    this.saveHabits(updated);
+    return updated;
+  },
+
   exportFullBackup(): string {
     const backup = {
       app: 'OrbitGoals',

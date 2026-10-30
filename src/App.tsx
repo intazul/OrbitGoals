@@ -631,6 +631,19 @@ export default function App() {
     sound.playPop();
   };
 
+  // Manual / On-Demand Daily Habit Reset
+  const handleManualDailyHabitReset = () => {
+    const updated = storage.resetDailyHabitsProgress();
+    setHabits(updated);
+    sound.playSuccessChime();
+    triggerHaptic('success');
+    notificationManager.sendNotification(
+      '🌅 Daily Habits Reset',
+      'All daily habit progress has been reset for today.',
+      'milestone'
+    );
+  };
+
   // Save New or Edited Goal (with optional auto-created linked habit)
   const handleSaveGoal = (
     goalData: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>,
@@ -864,6 +877,7 @@ export default function App() {
               onReplayTour={() => setIsReplayingTour(true)}
               onLockNow={() => setIsLocked(true)}
               onRestoreBackup={handleRestoreBackup}
+              onResetDailyHabits={handleManualDailyHabitReset}
             />
           )}
 

@@ -25,19 +25,9 @@ import {
   AlertCircle,
   Zap,
   Sparkles,
-  Fingerprint,
   Copy,
   CheckCheck,
-  Loader2,
 } from 'lucide-react';
-import {
-  checkBiometricAvailability,
-  enrollFingerprint,
-  verifyFingerprint,
-  removeBiometricCredential,
-  hasEnrolledBiometric,
-  BiometricCheckResult,
-} from '../utils/biometrics';
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -58,6 +48,7 @@ interface SettingsScreenProps {
     settings: AppSettings;
     security: SecurityConfig;
   }) => void;
+  onResetDailyHabits?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -73,22 +64,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onReplayTour,
   onLockNow,
   onRestoreBackup,
+  onResetDailyHabits,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupSuccessMsg, setBackupSuccessMsg] = useState<string | null>(null);
   const [backupErrorMsg, setBackupErrorMsg] = useState<string | null>(null);
-
-  // Real Hardware Fingerprint Scanner State
-  const [biometricInfo, setBiometricInfo] = useState<BiometricCheckResult | null>(null);
-  const [isEnrollingBiometric, setIsEnrollingBiometric] = useState<boolean>(false);
-  const [isTestingBiometric, setIsTestingBiometric] = useState<boolean>(false);
-  const [biometricFeedback, setBiometricFeedback] = useState<string | null>(null);
-
-  useEffect(() => {
-    checkBiometricAvailability().then((res) => {
-      setBiometricInfo(res);
-    });
-  }, []);
 
   // Profile Edit Modal State
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
@@ -102,90 +82,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [confirmPin, setConfirmPin] = useState<string>('');
   const [pinChangeError, setPinChangeError] = useState<string | null>(null);
   const [pinChangeSuccess, setPinChangeSuccess] = useState<boolean>(false);
-
-  // Toggle Fingerprint Biometrics with Real Hardware Scanner Scan
-  const handleToggleBiometric = async (enable: boolean) => {
-    if (!enable) {
-      removeBiometricCredential();
-      onUpdateSecurity({ biometricEnabled: false });
-      sound.playPop();
-      triggerHaptic('light');
-      setBiometricFeedback('Fingerprint authentication disabled.');
-      setTimeout(() => setBiometricFeedback(null), 3000);
-      return;
-    }
-
-    if (!biometricInfo?.hasPlatformScanner) {
-      sound.playErrorTone();
-      triggerHaptic('medium');
-      setBiometricFeedback(
-        biometricInfo?.reason ||
-          'No real hardware fingerprint scanner detected on this device. Fingerprint requires a physical biometric sensor.'
-      );
-      setTimeout(() => setBiometricFeedback(null), 4500);
-      return;
-    }
-
-    setIsEnrollingBiometric(true);
-    setBiometricFeedback('Touch your device fingerprint sensor now...');
-    sound.playPop();
-
-    try {
-      const enrollResult = await enrollFingerprint('orbitgoals-user', profile.name || 'User');
-      if (enrollResult.success) {
-        onUpdateSecurity({ biometricEnabled: true });
-        sound.playSuccessChime();
-        triggerHaptic('success');
-        setBiometricFeedback('Fingerprint successfully registered and active!');
-        setTimeout(() => setBiometricFeedback(null), 4000);
-      } else if (enrollResult.cancelled) {
-        setBiometricFeedback('Fingerprint scan cancelled.');
-        setTimeout(() => setBiometricFeedback(null), 3000);
-      } else {
-        sound.playErrorTone();
-        triggerHaptic('medium');
-        setBiometricFeedback(enrollResult.error || 'Failed to register fingerprint.');
-        setTimeout(() => setBiometricFeedback(null), 4000);
-      }
-    } catch {
-      setBiometricFeedback('An unexpected error occurred during fingerprint enrollment.');
-      setTimeout(() => setBiometricFeedback(null), 3000);
-    } finally {
-      setIsEnrollingBiometric(false);
-    }
-  };
-
-  // Test Real Fingerprint Scanner
-  const handleTestBiometric = async () => {
-    if (isTestingBiometric) return;
-    setIsTestingBiometric(true);
-    setBiometricFeedback('Place finger on device scanner to test...');
-    sound.playPop();
-    triggerHaptic('light');
-
-    try {
-      const testResult = await verifyFingerprint();
-      if (testResult.success) {
-        sound.playSuccessChime();
-        triggerHaptic('success');
-        setBiometricFeedback('Real fingerprint verified successfully! Sensor is working.');
-        setTimeout(() => setBiometricFeedback(null), 4000);
-      } else if (testResult.cancelled) {
-        setBiometricFeedback('Test cancelled.');
-        setTimeout(() => setBiometricFeedback(null), 3000);
-      } else {
-        sound.playErrorTone();
-        triggerHaptic('medium');
-        setBiometricFeedback(testResult.error || 'Fingerprint verification failed.');
-        setTimeout(() => setBiometricFeedback(null), 4000);
-      }
-    } catch {
-      setBiometricFeedback('Biometric sensor test failed.');
-      setTimeout(() => setBiometricFeedback(null), 3000);
-    } finally {
-      setIsTestingBiometric(false);
-    }
-  };
 
   // Smooth JSON Backup Export
   const handleExport = () => {
@@ -528,7 +424,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                           sound.playPop();
                           triggerHaptic('light');
                         }}
-                        className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
+                        className={`py-2 px-1 rounded-xl text-[10px] font-bold transition-all border text-center cursor-pointer ${
                           isSelected
                             ? 'bg-primary text-on-primary border-primary shadow-xs scale-102'
                             : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
@@ -541,82 +437,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
               </div>
             )}
-
-            {/* Real Hardware Fingerprint Scanner Toggle & Testing */}
-            <div className="p-3.5 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-surface-container text-primary flex items-center justify-center shrink-0">
-                    <Fingerprint className="w-5 h-5 stroke-[2.2]" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-on-surface block leading-tight">
-                      Fingerprint Authentication
-                    </span>
-                    <span className="text-xs text-on-surface-variant">
-                      Unlock with device's real hardware biometric scanner
-                    </span>
-                  </div>
-                </div>
-
-                <input
-                  type="checkbox"
-                  checked={security.biometricEnabled}
-                  onChange={(e) => handleToggleBiometric(e.target.checked)}
-                  disabled={isEnrollingBiometric}
-                  className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
-                />
-              </div>
-
-              {/* Hardware Status Banner */}
-              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-outline-variant/20">
-                <span className="text-on-surface-variant font-medium">Scanner Hardware:</span>
-                <span
-                  className={`font-bold flex items-center gap-1 ${
-                    biometricInfo?.hasPlatformScanner
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-amber-600 dark:text-amber-400'
-                  }`}
-                >
-                  {biometricInfo?.hasPlatformScanner ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span>Real Biometric Sensor Detected</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Hardware Scanner Not Detected</span>
-                    </>
-                  )}
-                </span>
-              </div>
-
-              {/* Test Scanner Button */}
-              {security.biometricEnabled && (
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={handleTestBiometric}
-                    disabled={isTestingBiometric}
-                    className="w-full py-2 px-3 rounded-xl bg-primary/10 border border-primary/25 text-primary text-xs font-bold hover:bg-primary/20 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {isTestingBiometric ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Fingerprint className="w-3.5 h-3.5" />
-                    )}
-                    <span>{isTestingBiometric ? 'Testing Scanner...' : 'Test Fingerprint Sensor'}</span>
-                  </button>
-                </div>
-              )}
-
-              {biometricFeedback && (
-                <div className="p-2.5 rounded-xl bg-surface-container border border-outline-variant/25 text-primary font-bold text-[11px] text-center animate-in fade-in leading-snug">
-                  {biometricFeedback}
-                </div>
-              )}
-            </div>
 
             {/* Change Passcode & Lock Now Buttons */}
             <div className="grid grid-cols-2 gap-2 pt-1">
@@ -642,6 +462,62 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </button>
             </div>
           </div>
+        </div>
+
+        {/* 3. Daily Habit Reset (00:00 Midnight) */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+              <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+              <span>Daily Habit Reset</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+              Active · 00:00 AM
+            </span>
+          </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            All daily habits automatically reset their check-in progress at 00:00:01 midnight. Your active streaks are preserved, and missed habits are guarded by your Streak Shields ({profile.streakShields ?? 2} available).
+          </p>
+
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-on-surface flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-primary" />
+                <span>Automatic Schedule:</span>
+              </span>
+              <span className="font-mono font-bold text-primary">Everyday at 00:00 AM</span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-on-surface flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Streak Shield Protection:</span>
+              </span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {profile.streakShields ?? 2} Shields Active
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onResetDailyHabits) {
+                onResetDailyHabits();
+              } else {
+                storage.resetDailyHabitsProgress();
+              }
+              sound.playSuccessChime();
+              triggerHaptic('success');
+              setBackupSuccessMsg('Daily habits progress reset! Ready for fresh check-ins today.');
+              setTimeout(() => setBackupSuccessMsg(null), 3500);
+            }}
+            className="w-full py-2.5 px-3 rounded-2xl bg-surface border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-2xs"
+          >
+            <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+            <span>Reset Daily Habits Now (Manual Test/Reset)</span>
+          </button>
         </div>
 
 
