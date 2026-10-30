@@ -1,4 +1,4 @@
-import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, SecurityConfig } from '../types';
+import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, SecurityConfig, TimeCapsule } from '../types';
 
 export const AVATAR_IMAGES = {
   creator: '/src/assets/images/avatar_creator_master_1792734990553.jpg',
@@ -272,3 +272,17 @@ export const INITIAL_SETTINGS: AppSettings = {
   goalXpPerStep: 50,
   habitXpPerSet: 10,
 };
+
+export const INITIAL_CAPSULES: TimeCapsule[] = [
+  {
+    id: 'capsule-genesis-1',
+    title: 'The Journey Begins',
+    date: new Date().toISOString().split('T')[0],
+    reflection: 'Welcome to OrbitGoals! Started my growth journey to conquer daily routines, scale levels, and achieve ambitious dreams.',
+    category: 'milestone',
+    sticker: '🚀',
+    tag: 'Genesis',
+    xpBonus: 100,
+    createdAt: new Date().toISOString(),
+  },
+];

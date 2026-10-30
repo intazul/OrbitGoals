@@ -171,6 +171,23 @@ export interface CommunityChallenge {
   leaderboard: { rank: number; name: string; avatar: string; score: string }[];
 }
 
+export type CapsuleCategory = 'milestone' | 'goal' | 'streak' | 'level' | 'win';
+
+export interface TimeCapsule {
+  id: string;
+  title: string;
+  date: string; // ISO 'YYYY-MM-DD'
+  reflection: string;
+  category: CapsuleCategory;
+  photoUrl?: string; // Base64 image data URL
+  sticker?: string; // Emoji sticker e.g. '🚀', '🏆', '💎'
+  tag?: string;
+  linkedGoalTitle?: string;
+  linkedHabitTitle?: string;
+  xpBonus: number;
+  createdAt: string;
+}
+
 export interface DailyReflection {
   date: string;
   mood: 'great' | 'good' | 'neutral' | 'tough';

@@ -77,12 +77,9 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-[19px] font-black tracking-tight text-on-surface leading-tight">
+            <h1 className="text-[19px] font-black tracking-tight text-on-surface leading-none whitespace-nowrap">
               Habits Studio
             </h1>
-            <p className="text-[10px] text-on-surface-variant font-medium">
-              Daily sets, rep targets & synced goals
-            </p>
           </div>
         </div>
 

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Goal, Habit, AppSettings, UserProfile, SecurityConfig, HabitTimeOfDay } from './types';
+import { Goal, Habit, AppSettings, UserProfile, SecurityConfig, HabitTimeOfDay, TimeCapsule } from './types';
 import { storage } from './utils/storage';
 import { sound, triggerHaptic } from './utils/sound';
 import { fireConfetti } from './utils/confetti';
@@ -27,6 +27,7 @@ import { AddHabitScreen } from './components/AddHabitScreen';
 import { HabitsScreen } from './components/HabitsScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { SettingsScreen } from './components/SettingsScreen';
+import { ScrapbookScreen } from './components/ScrapbookScreen';
 import { LockScreen } from './components/LockScreen';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { ToastContainer } from './components/ToastContainer';
@@ -54,6 +55,7 @@ import {
   Layers,
   Lock,
   Edit2,
+  Camera,
 } from 'lucide-react';
 
 export default function App() {
@@ -62,6 +64,7 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>(() => storage.getSettings());
   const [profile, setProfile] = useState<UserProfile>(() => storage.getProfile());
   const [security, setSecurity] = useState<SecurityConfig>(() => storage.getSecurity());
+  const [capsules, setCapsules] = useState<TimeCapsule[]>(() => storage.getTimeCapsules());
 
   // First time opening: show onboarding if not onboarded yet
   const [isOnboarding, setIsOnboarding] = useState<boolean>(() => !storage.getProfile().onboarded);
@@ -79,9 +82,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'habits' | 'goals'>('habits');
   const [habitFilter, setHabitFilter] = useState<'all' | HabitTimeOfDay>('all');
 
-  // Screen View: 'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile'
+  // Screen View: 'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook'
   const [screenView, setScreenView] = useState<
-    'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile'
+    'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook'
   >('dashboard');
   const [calendarGoalId, setCalendarGoalId] = useState<string | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
@@ -130,6 +133,57 @@ export default function App() {
       root.classList.remove('low-power-mode');
     }
   }, [settings.lowPowerMode]);
+
+  // Daily habit reset at 00:00 midnight
+  useEffect(() => {
+    const performMidnightReset = () => {
+      const result = storage.checkAndResetDailyHabits();
+      if (result.didReset) {
+        setHabits(result.habits);
+        sound.playSuccessChime();
+        notificationManager.sendNotification(
+          '🌅 Daily Habit Reset',
+          result.shieldUsed
+            ? 'New day started! Your habit streak was protected by a Streak Shield.'
+            : 'New day started! Your daily habit progress has reset for today.',
+          'milestone'
+        );
+      }
+    };
+
+    // 1. Initial check when app mounts
+    performMidnightReset();
+
+    // 2. Schedule timeout to the next exact 00:00:01 midnight
+    let midnightTimer: NodeJS.Timeout;
+    const scheduleNextMidnight = () => {
+      const now = new Date();
+      const nextMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        0,
+        0,
+        1
+      );
+      const msUntilMidnight = Math.max(1000, nextMidnight.getTime() - now.getTime());
+
+      midnightTimer = setTimeout(() => {
+        performMidnightReset();
+        scheduleNextMidnight(); // Schedule next day's 00:00
+      }, msUntilMidnight);
+    };
+
+    scheduleNextMidnight();
+
+    // 3. 60-second periodic heartbeat in case the device was asleep over midnight
+    const heartbeat = setInterval(performMidnightReset, 60000);
+
+    return () => {
+      clearTimeout(midnightTimer);
+      clearInterval(heartbeat);
+    };
+  }, []);
 
   // Auto-Lock monitoring effect: handles "Immediately" or configured minutes
   useEffect(() => {
@@ -534,6 +588,49 @@ export default function App() {
     }
   };
 
+  // Restore complete backup data into React state smoothly
+  const handleRestoreBackup = (data: {
+    goals: Goal[];
+    habits: Habit[];
+    profile: UserProfile;
+    settings: AppSettings;
+    security: SecurityConfig;
+  }) => {
+    if (data.goals) setGoals(data.goals);
+    if (data.habits) setHabits(data.habits);
+    if (data.profile) setProfile(data.profile);
+    if (data.settings) setSettings(data.settings);
+    if (data.security) setSecurity(data.security);
+    setCapsules(storage.getTimeCapsules());
+  };
+
+  // Add Time Capsule Memory
+  const handleAddCapsule = (capsuleData: Omit<TimeCapsule, 'id' | 'createdAt'>) => {
+    const newCapsule: TimeCapsule = {
+      ...capsuleData,
+      id: `capsule-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [newCapsule, ...capsules];
+    setCapsules(updated);
+    storage.saveTimeCapsules(updated);
+    handleAdjustXp(capsuleData.xpBonus || 100, `Milestone capsule: ${capsuleData.title}`);
+    fireConfetti(2200);
+    notificationManager.sendNotification(
+      '📸 Milestone Saved!',
+      `Added "${capsuleData.title}" to your Growth Scrapbook (+100 XP)`,
+      'milestone'
+    );
+  };
+
+  // Delete Time Capsule Memory
+  const handleDeleteCapsule = (id: string) => {
+    const updated = capsules.filter((c) => c.id !== id);
+    setCapsules(updated);
+    storage.saveTimeCapsules(updated);
+    sound.playPop();
+  };
+
   // Save New or Edited Goal (with optional auto-created linked habit)
   const handleSaveGoal = (
     goalData: Omit<Goal, 'id' | 'createdAt' | 'completedDates' | 'history'>,
@@ -766,6 +863,7 @@ export default function App() {
               onUpdateSecurity={handleUpdateSecurity}
               onReplayTour={() => setIsReplayingTour(true)}
               onLockNow={() => setIsLocked(true)}
+              onRestoreBackup={handleRestoreBackup}
             />
           )}
 
@@ -779,6 +877,20 @@ export default function App() {
               onUpdateProfile={handleUpdateProfile}
               onToggleHabit={handleToggleHabit}
               onRestoreStarterHabits={handleRestoreStarterHabits}
+              onOpenScrapbook={() => setScreenView('scrapbook')}
+            />
+          )}
+
+          {/* Full Screen Mode: Growth Scrapbook & Time Capsules View */}
+          {screenView === 'scrapbook' && (
+            <ScrapbookScreen
+              capsules={capsules}
+              goals={goals}
+              habits={habits}
+              profile={profile}
+              onBack={() => setScreenView('dashboard')}
+              onAddCapsule={handleAddCapsule}
+              onDeleteCapsule={handleDeleteCapsule}
             />
           )}
 
@@ -823,7 +935,7 @@ export default function App() {
                     </div>
                   </button>
 
-                  {/* Action Icons in Header: Habits/Goals Toggle Button, Calendar, Lock, Settings */}
+                  {/* Action Icons in Header: Habits/Goals Toggle Button, Calendar, Scrapbook, Lock, Settings */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     {/* Habit / Goals Switcher Button */}
                     <button
@@ -855,6 +967,20 @@ export default function App() {
                       title="Open Habits & Goals Calendar"
                     >
                       <Calendar className="w-4 h-4 text-primary" />
+                    </button>
+
+                    {/* Growth Scrapbook Launcher */}
+                    <button
+                      onClick={() => {
+                        setScreenView('scrapbook');
+                        sound.playPop();
+                        triggerHaptic('light');
+                      }}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30 relative"
+                      title="Open Growth Scrapbook & Time Capsules"
+                    >
+                      <Camera className="w-4 h-4 text-primary" />
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500" />
                     </button>
 
                     {/* Quick Lock Button (Immediate lock) */}

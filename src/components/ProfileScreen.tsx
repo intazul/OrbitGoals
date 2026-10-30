@@ -42,6 +42,7 @@ interface ProfileScreenProps {
   onUpdateProfile: (updates: Partial<UserProfile>) => void;
   onToggleHabit: (habitId: string) => void;
   onRestoreStarterHabits?: () => void;
+  onOpenScrapbook?: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -52,6 +53,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onUpdateProfile,
   onToggleHabit,
   onRestoreStarterHabits,
+  onOpenScrapbook,
 }) => {
   const [activeTab, setActiveTab] = useState<'achievements' | 'recent' | 'ongoing'>('achievements');
   const [isEditing, setIsEditing] = useState(false);
@@ -205,8 +207,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-[19px] font-black tracking-tight text-on-surface leading-tight">
-              Player Profile & Trophies
+            <h1 className="text-[18px] font-black tracking-tight text-on-surface leading-tight">
+              Player Profile
             </h1>
             <p className="text-[10px] text-on-surface-variant font-medium">
               1,000 Levels, Trophies, XP Scaling & Rank Mastery
@@ -379,6 +381,36 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Growth Scrapbook & Time Capsules Shortcut Card */}
+        {onOpenScrapbook && (
+          <button
+            type="button"
+            onClick={() => {
+              onOpenScrapbook();
+              sound.playPop();
+            }}
+            className="w-full p-3.5 rounded-3xl bg-gradient-to-r from-amber-500/15 via-primary/10 to-purple-500/15 border border-primary/25 hover:border-primary/50 text-on-surface flex items-center justify-between transition-all active:scale-98 shadow-2xs group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/20 text-primary flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                📸
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-black text-on-surface block leading-tight">
+                  Growth Scrapbook & Time Capsules
+                </span>
+                <span className="text-xs text-on-surface-variant">
+                  Capture milestones, memories & earn +100 XP
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-primary text-xs font-bold">
+              <span>View</span>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </button>
+        )}
 
         {/* SEGMENTED TAB SWITCH: Achievements | Recent Completed | Ongoing Habits */}
         <div className="grid grid-cols-3 p-1 rounded-2xl bg-surface-container border border-outline-variant/30 shadow-inner gap-1">

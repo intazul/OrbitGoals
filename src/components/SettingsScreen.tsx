@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { AppSettings, UserProfile, SecurityConfig } from '../types';
+import React, { useRef, useState, useEffect } from 'react';
+import { AppSettings, UserProfile, SecurityConfig, Goal, Habit } from '../types';
 import { storage } from '../utils/storage';
 import { sound, triggerHaptic } from '../utils/sound';
 import {
@@ -9,12 +9,10 @@ import {
   Volume2,
   VolumeX,
   Smartphone,
-  BatteryCharging,
   Download,
   Upload,
   RotateCcw,
   Check,
-  DollarSign,
   Palette,
   Sliders,
   Database,
@@ -23,12 +21,23 @@ import {
   KeyRound,
   User,
   Calendar,
-  HelpCircle,
   ShieldCheck,
   AlertCircle,
   Zap,
   Sparkles,
+  Fingerprint,
+  Copy,
+  CheckCheck,
+  Loader2,
 } from 'lucide-react';
+import {
+  checkBiometricAvailability,
+  enrollFingerprint,
+  verifyFingerprint,
+  removeBiometricCredential,
+  hasEnrolledBiometric,
+  BiometricCheckResult,
+} from '../utils/biometrics';
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -42,6 +51,13 @@ interface SettingsScreenProps {
   onUpdateSecurity: (updates: Partial<SecurityConfig>) => void;
   onReplayTour: () => void;
   onLockNow: () => void;
+  onRestoreBackup?: (backupData: {
+    goals: Goal[];
+    habits: Habit[];
+    profile: UserProfile;
+    settings: AppSettings;
+    security: SecurityConfig;
+  }) => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -56,9 +72,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onUpdateSecurity,
   onReplayTour,
   onLockNow,
+  onRestoreBackup,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupSuccessMsg, setBackupSuccessMsg] = useState<string | null>(null);
+  const [backupErrorMsg, setBackupErrorMsg] = useState<string | null>(null);
+
+  // Real Hardware Fingerprint Scanner State
+  const [biometricInfo, setBiometricInfo] = useState<BiometricCheckResult | null>(null);
+  const [isEnrollingBiometric, setIsEnrollingBiometric] = useState<boolean>(false);
+  const [isTestingBiometric, setIsTestingBiometric] = useState<boolean>(false);
+  const [biometricFeedback, setBiometricFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkBiometricAvailability().then((res) => {
+      setBiometricInfo(res);
+    });
+  }, []);
 
   // Profile Edit Modal State
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
@@ -73,39 +103,174 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [pinChangeError, setPinChangeError] = useState<string | null>(null);
   const [pinChangeSuccess, setPinChangeSuccess] = useState<boolean>(false);
 
-  const handleExport = () => {
-    const dataStr = storage.exportFullBackup();
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `orbitgoals_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    sound.playSuccessChime();
-    triggerHaptic('success');
-    setBackupSuccessMsg('Backup downloaded successfully!');
-    setTimeout(() => setBackupSuccessMsg(null), 3000);
+  // Toggle Fingerprint Biometrics with Real Hardware Scanner Scan
+  const handleToggleBiometric = async (enable: boolean) => {
+    if (!enable) {
+      removeBiometricCredential();
+      onUpdateSecurity({ biometricEnabled: false });
+      sound.playPop();
+      triggerHaptic('light');
+      setBiometricFeedback('Fingerprint authentication disabled.');
+      setTimeout(() => setBiometricFeedback(null), 3000);
+      return;
+    }
+
+    if (!biometricInfo?.hasPlatformScanner) {
+      sound.playErrorTone();
+      triggerHaptic('medium');
+      setBiometricFeedback(
+        biometricInfo?.reason ||
+          'No real hardware fingerprint scanner detected on this device. Fingerprint requires a physical biometric sensor.'
+      );
+      setTimeout(() => setBiometricFeedback(null), 4500);
+      return;
+    }
+
+    setIsEnrollingBiometric(true);
+    setBiometricFeedback('Touch your device fingerprint sensor now...');
+    sound.playPop();
+
+    try {
+      const enrollResult = await enrollFingerprint('orbitgoals-user', profile.name || 'User');
+      if (enrollResult.success) {
+        onUpdateSecurity({ biometricEnabled: true });
+        sound.playSuccessChime();
+        triggerHaptic('success');
+        setBiometricFeedback('Fingerprint successfully registered and active!');
+        setTimeout(() => setBiometricFeedback(null), 4000);
+      } else if (enrollResult.cancelled) {
+        setBiometricFeedback('Fingerprint scan cancelled.');
+        setTimeout(() => setBiometricFeedback(null), 3000);
+      } else {
+        sound.playErrorTone();
+        triggerHaptic('medium');
+        setBiometricFeedback(enrollResult.error || 'Failed to register fingerprint.');
+        setTimeout(() => setBiometricFeedback(null), 4000);
+      }
+    } catch {
+      setBiometricFeedback('An unexpected error occurred during fingerprint enrollment.');
+      setTimeout(() => setBiometricFeedback(null), 3000);
+    } finally {
+      setIsEnrollingBiometric(false);
+    }
   };
 
+  // Test Real Fingerprint Scanner
+  const handleTestBiometric = async () => {
+    if (isTestingBiometric) return;
+    setIsTestingBiometric(true);
+    setBiometricFeedback('Place finger on device scanner to test...');
+    sound.playPop();
+    triggerHaptic('light');
+
+    try {
+      const testResult = await verifyFingerprint();
+      if (testResult.success) {
+        sound.playSuccessChime();
+        triggerHaptic('success');
+        setBiometricFeedback('Real fingerprint verified successfully! Sensor is working.');
+        setTimeout(() => setBiometricFeedback(null), 4000);
+      } else if (testResult.cancelled) {
+        setBiometricFeedback('Test cancelled.');
+        setTimeout(() => setBiometricFeedback(null), 3000);
+      } else {
+        sound.playErrorTone();
+        triggerHaptic('medium');
+        setBiometricFeedback(testResult.error || 'Fingerprint verification failed.');
+        setTimeout(() => setBiometricFeedback(null), 4000);
+      }
+    } catch {
+      setBiometricFeedback('Biometric sensor test failed.');
+      setTimeout(() => setBiometricFeedback(null), 3000);
+    } finally {
+      setIsTestingBiometric(false);
+    }
+  };
+
+  // Smooth JSON Backup Export
+  const handleExport = () => {
+    try {
+      const dataStr = storage.exportFullBackup();
+      const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orbitgoals_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setBackupSuccessMsg('Backup JSON exported and downloaded successfully!');
+      setBackupErrorMsg(null);
+      setTimeout(() => setBackupSuccessMsg(null), 3500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setBackupErrorMsg(`Export error: ${msg}`);
+      setTimeout(() => setBackupErrorMsg(null), 4000);
+    }
+  };
+
+  // Copy JSON Backup to Clipboard
+  const handleCopyBackup = () => {
+    try {
+      const dataStr = storage.exportFullBackup();
+      navigator.clipboard?.writeText(dataStr);
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setBackupSuccessMsg('Backup JSON copied to clipboard!');
+      setBackupErrorMsg(null);
+      setTimeout(() => setBackupSuccessMsg(null), 3000);
+    } catch {
+      setBackupErrorMsg('Could not copy to clipboard.');
+      setTimeout(() => setBackupErrorMsg(null), 3000);
+    }
+  };
+
+  // Smooth JSON Backup Import (Deep validation, zero reload freeze)
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset input value so same file can be selected again if needed
+    e.target.value = '';
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      const success = storage.importFullBackup(content);
-      if (success) {
+      const result = storage.importFullBackup(content);
+
+      if (result.success && result.data) {
         sound.playSuccessChime();
         triggerHaptic('success');
-        setBackupSuccessMsg('Data restored successfully! Refreshing...');
-        setTimeout(() => {
-          window.location.reload();
-        }, 1200);
+
+        // Immediately update React state smoothly without requiring hard reload
+        if (onRestoreBackup) {
+          onRestoreBackup(result.data);
+        }
+
+        setBackupSuccessMsg(
+          `Backup restored smoothly! Restored ${result.counts?.goals || 0} Goals & ${
+            result.counts?.habits || 0
+          } Habits.`
+        );
+        setBackupErrorMsg(null);
+        setTimeout(() => setBackupSuccessMsg(null), 5000);
       } else {
-        alert('Invalid backup file. Please provide a valid OrbitGoals JSON backup.');
+        sound.playErrorTone();
+        triggerHaptic('medium');
+        setBackupErrorMsg(result.error || 'Invalid backup file format. Please use a valid OrbitGoals JSON.');
+        setTimeout(() => setBackupErrorMsg(null), 5000);
       }
     };
+
+    reader.onerror = () => {
+      setBackupErrorMsg('Failed to read the selected file.');
+      setTimeout(() => setBackupErrorMsg(null), 4000);
+    };
+
     reader.readAsText(file);
   };
 
@@ -197,6 +362,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
             <Check className="w-4 h-4 shrink-0 stroke-[3]" />
             <span>{backupSuccessMsg}</span>
+          </div>
+        )}
+
+        {backupErrorMsg && (
+          <div className="p-3.5 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5]" />
+            <span>{backupErrorMsg}</span>
           </div>
         )}
 
@@ -370,6 +542,82 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
             )}
 
+            {/* Real Hardware Fingerprint Scanner Toggle & Testing */}
+            <div className="p-3.5 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-surface-container text-primary flex items-center justify-center shrink-0">
+                    <Fingerprint className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-on-surface block leading-tight">
+                      Fingerprint Authentication
+                    </span>
+                    <span className="text-xs text-on-surface-variant">
+                      Unlock with device's real hardware biometric scanner
+                    </span>
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={security.biometricEnabled}
+                  onChange={(e) => handleToggleBiometric(e.target.checked)}
+                  disabled={isEnrollingBiometric}
+                  className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer disabled:opacity-50"
+                />
+              </div>
+
+              {/* Hardware Status Banner */}
+              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-outline-variant/20">
+                <span className="text-on-surface-variant font-medium">Scanner Hardware:</span>
+                <span
+                  className={`font-bold flex items-center gap-1 ${
+                    biometricInfo?.hasPlatformScanner
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  {biometricInfo?.hasPlatformScanner ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Real Biometric Sensor Detected</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>Hardware Scanner Not Detected</span>
+                    </>
+                  )}
+                </span>
+              </div>
+
+              {/* Test Scanner Button */}
+              {security.biometricEnabled && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleTestBiometric}
+                    disabled={isTestingBiometric}
+                    className="w-full py-2 px-3 rounded-xl bg-primary/10 border border-primary/25 text-primary text-xs font-bold hover:bg-primary/20 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isTestingBiometric ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Fingerprint className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isTestingBiometric ? 'Testing Scanner...' : 'Test Fingerprint Sensor'}</span>
+                  </button>
+                </div>
+              )}
+
+              {biometricFeedback && (
+                <div className="p-2.5 rounded-xl bg-surface-container border border-outline-variant/25 text-primary font-bold text-[11px] text-center animate-in fade-in leading-snug">
+                  {biometricFeedback}
+                </div>
+              )}
+            </div>
+
             {/* Change Passcode & Lock Now Buttons */}
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
@@ -396,33 +644,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        {/* 3. Replay Introduction Tour */}
-        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-2.5 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
-            <HelpCircle className="w-4 h-4" />
-            <span>App Introduction & Guide</span>
-          </div>
-
-          <button
-            onClick={onReplayTour}
-            className="w-full p-3 rounded-2xl bg-surface border border-outline-variant/20 hover:bg-surface-container text-on-surface flex items-center justify-between active:scale-98 transition-all cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <HelpCircle className="w-4 h-4" />
-              </div>
-              <div className="text-left">
-                <span className="text-sm font-bold text-on-surface block leading-tight">
-                  Replay Feature Introduction
-                </span>
-                <span className="text-xs text-on-surface-variant">
-                  View the welcome walkthrough & feature guide
-                </span>
-              </div>
-            </div>
-            <span className="text-xs font-bold text-primary">View Tour</span>
-          </button>
-        </div>
 
         {/* 4. Appearance & Theme */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
@@ -507,60 +728,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onUpdateSettings({ hapticsEnabled: e.target.checked });
                   triggerHaptic('light');
                 }}
-                className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 6. Preferences & Currency */}
-        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
-            <DollarSign className="w-4 h-4" />
-            <span>Preferences & Currency</span>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-bold text-on-surface block mb-1.5">
-                Default Currency Symbol
-              </label>
-              <div className="grid grid-cols-5 gap-2">
-                {['$', '€', '£', '¥', '₹'].map((curr) => (
-                  <button
-                    key={curr}
-                    onClick={() => {
-                      onUpdateSettings({ currency: curr });
-                      sound.playPop();
-                    }}
-                    className={`py-2 rounded-xl text-sm font-black font-mono transition-all cursor-pointer ${
-                      settings.currency === curr
-                        ? 'bg-primary text-on-primary font-bold shadow-xs'
-                        : 'bg-surface border border-outline-variant/30 text-on-surface'
-                    }`}
-                  >
-                    {curr}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Low power mode toggle */}
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-outline-variant/20">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-surface-container text-on-surface flex items-center justify-center">
-                  <BatteryCharging className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <span className="text-sm font-bold text-on-surface block leading-tight">Battery Saver Mode</span>
-                  <span className="text-xs text-on-surface-variant">Smooth 60 FPS for older devices</span>
-                </div>
-              </div>
-
-              <input
-                type="checkbox"
-                checked={settings.lowPowerMode}
-                onChange={(e) => onUpdateSettings({ lowPowerMode: e.target.checked })}
                 className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
               />
             </div>
@@ -710,10 +877,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <Download className="w-5 h-5 text-primary" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Export JSON Backup</span>
-                  <span className="text-xs text-on-surface-variant">Save goals to a file</span>
+                  <span className="text-xs text-on-surface-variant">Download complete backup file (.json)</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-primary">Export</span>
+              <span className="text-xs font-bold text-primary px-2.5 py-1 rounded-xl bg-primary/10">Download</span>
+            </button>
+
+            <button
+              onClick={handleCopyBackup}
+              className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <Copy className="w-5 h-5 text-primary" />
+                <div className="text-left">
+                  <span className="text-sm font-bold text-on-surface block leading-tight">Copy Backup JSON</span>
+                  <span className="text-xs text-on-surface-variant">Copy full backup text to device clipboard</span>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-primary px-2.5 py-1 rounded-xl bg-primary/10">Copy</span>
             </button>
 
             <button
@@ -724,16 +905,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <Upload className="w-5 h-5 text-primary" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Restore from Backup</span>
-                  <span className="text-xs text-on-surface-variant">Import an existing JSON file</span>
+                  <span className="text-xs text-on-surface-variant">Import an existing OrbitGoals JSON file</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-primary">Import</span>
+              <span className="text-xs font-bold text-primary px-2.5 py-1 rounded-xl bg-primary/10">Import</span>
             </button>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleImport}
-              accept=".json"
+              accept=".json,application/json"
               className="hidden"
             />
 

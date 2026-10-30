@@ -1,7 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, SecurityConfig } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
-import { Lock, ShieldCheck, Delete, KeyRound, AlertCircle, RotateCcw, ShieldAlert } from 'lucide-react';
+import {
+  Lock,
+  ShieldCheck,
+  Delete,
+  KeyRound,
+  AlertCircle,
+  RotateCcw,
+  ShieldAlert,
+  Fingerprint,
+  Loader2,
+} from 'lucide-react';
+import {
+  verifyFingerprint,
+  checkBiometricAvailability,
+  hasEnrolledBiometric,
+} from '../utils/biometrics';
 
 interface LockScreenProps {
   profile: UserProfile;
@@ -23,6 +38,60 @@ export const LockScreen: React.FC<LockScreenProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
   const [showForgotModal, setShowForgotModal] = useState<boolean>(false);
+
+  // Real Hardware Fingerprint Scanner State
+  const [hasScannerHardware, setHasScannerHardware] = useState<boolean>(false);
+  const [isScanningBiometric, setIsScanningBiometric] = useState<boolean>(false);
+  const [biometricFeedback, setBiometricFeedback] = useState<string | null>(null);
+
+  // Check device biometric sensor on mount
+  useEffect(() => {
+    let isMounted = true;
+    checkBiometricAvailability().then((res) => {
+      if (isMounted) {
+        setHasScannerHardware(res.hasPlatformScanner);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Handle Hardware Fingerprint Authentication
+  const handleScanFingerprint = async () => {
+    if (unlockSuccess || isScanningBiometric) return;
+
+    setIsScanningBiometric(true);
+    setBiometricFeedback('Touch device fingerprint scanner...');
+    sound.playPop();
+    triggerHaptic('light');
+
+    try {
+      const result = await verifyFingerprint();
+      if (result.success) {
+        setUnlockSuccess(true);
+        setBiometricFeedback('Fingerprint verified!');
+        sound.playUnlock();
+        triggerHaptic('success');
+        setTimeout(() => {
+          onUnlock();
+        }, 350);
+      } else if (result.cancelled) {
+        setBiometricFeedback('Scan cancelled. Use PIN below.');
+        setTimeout(() => setBiometricFeedback(null), 3000);
+      } else {
+        sound.playErrorTone();
+        triggerHaptic('medium');
+        setBiometricFeedback(result.error || 'Fingerprint not recognized.');
+        setTimeout(() => setBiometricFeedback(null), 3500);
+      }
+    } catch {
+      setBiometricFeedback('Biometric scanner error.');
+      setTimeout(() => setBiometricFeedback(null), 3000);
+    } finally {
+      setIsScanningBiometric(false);
+    }
+  };
 
   // Handle keypad digit tap
   const handleDigitTap = (digit: string) => {
@@ -199,6 +268,36 @@ export const LockScreen: React.FC<LockScreenProps> = ({
             </div>
           )}
         </div>
+
+        {/* Hardware Fingerprint Scanner Quick Launch */}
+        {(security.biometricEnabled || hasScannerHardware) && (
+          <div className="flex flex-col items-center gap-1.5 pt-1">
+            <button
+              type="button"
+              onClick={handleScanFingerprint}
+              disabled={unlockSuccess || isScanningBiometric}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary/10 border border-primary/30 text-primary font-bold text-xs hover:bg-primary/20 active:scale-95 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              title="Authenticate using hardware fingerprint scanner"
+            >
+              {isScanningBiometric ? (
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              ) : (
+                <Fingerprint className="w-4 h-4 text-primary animate-pulse" />
+              )}
+              <span>
+                {isScanningBiometric
+                  ? 'Scanning Fingerprint...'
+                  : 'Unlock with Fingerprint'}
+              </span>
+            </button>
+
+            {biometricFeedback && (
+              <p className="text-[11px] font-bold text-primary animate-in fade-in text-center max-w-[260px]">
+                {biometricFeedback}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Bottom Section: Numeric Keypad (1-9, Clear, 0, Backspace) */}
@@ -215,14 +314,28 @@ export const LockScreen: React.FC<LockScreenProps> = ({
             </button>
           ))}
 
-          {/* Bottom row: Clear (C) / 0 / Backspace */}
+          {/* Bottom row: Fingerprint / Clear / 0 / Backspace */}
           <button
-            onClick={handleClear}
-            disabled={unlockSuccess || pin.length === 0}
-            className="h-13 rounded-2xl bg-surface-container/60 hover:bg-surface-container-high active:scale-92 transition-all flex items-center justify-center text-on-surface-variant hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border border-outline-variant/20 font-bold text-sm"
-            title="Clear"
+            onClick={() => {
+              if (pin.length > 0) {
+                handleClear();
+              } else if (hasScannerHardware || security.biometricEnabled) {
+                handleScanFingerprint();
+              } else {
+                handleClear();
+              }
+            }}
+            disabled={unlockSuccess}
+            className="h-13 rounded-2xl bg-surface-container/60 hover:bg-surface-container-high active:scale-92 transition-all flex items-center justify-center text-on-surface-variant hover:text-on-surface cursor-pointer border border-outline-variant/20 font-bold text-sm"
+            title={pin.length > 0 ? 'Clear' : (hasScannerHardware || security.biometricEnabled) ? 'Scan Fingerprint' : 'Clear'}
           >
-            Clear
+            {pin.length > 0 ? (
+              'Clear'
+            ) : (hasScannerHardware || security.biometricEnabled) ? (
+              <Fingerprint className="w-5 h-5 text-primary" />
+            ) : (
+              'Clear'
+            )}
           </button>
 
           <button

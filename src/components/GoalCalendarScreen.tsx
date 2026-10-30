@@ -142,13 +142,10 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
           <div className="w-8 h-8 rounded-xl bg-primary text-on-primary flex items-center justify-center font-bold shadow-xs">
             <CalendarIcon className="w-4 h-4" />
           </div>
-          <div className="text-left">
-            <h1 className="text-base font-black text-on-surface tracking-tight leading-tight">
+          <div className="min-w-0">
+            <h1 className="text-base font-black text-on-surface tracking-tight leading-none whitespace-nowrap">
               Progress Calendar
             </h1>
-            <p className="text-[10px] text-on-surface-variant font-medium">
-              Habits & Goals Contrast View
-            </p>
           </div>
         </div>
 

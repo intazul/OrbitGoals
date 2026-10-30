@@ -1,5 +1,5 @@
-import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, DailyReflection, SecurityConfig } from '../types';
-import { INITIAL_GOALS, INITIAL_HABITS, INITIAL_USER_PROFILE, AVATAR_CATALOG, INITIAL_CHALLENGES, INITIAL_SETTINGS, DEFAULT_SECURITY } from './initialData';
+import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, DailyReflection, SecurityConfig, TimeCapsule } from '../types';
+import { INITIAL_GOALS, INITIAL_HABITS, INITIAL_USER_PROFILE, AVATAR_CATALOG, INITIAL_CHALLENGES, INITIAL_SETTINGS, DEFAULT_SECURITY, INITIAL_CAPSULES } from './initialData';
 
 const KEYS = {
   GOALS: 'orbitgoals_data_goals_v3',
@@ -10,6 +10,7 @@ const KEYS = {
   CHALLENGES: 'orbitgoals_data_challenges_v1',
   SETTINGS: 'orbitgoals_data_settings_v1',
   REFLECTIONS: 'orbitgoals_data_reflections_v1',
+  CAPSULES: 'orbitgoals_data_capsules_v1',
 };
 
 export const storage = {
@@ -270,10 +271,127 @@ export const storage = {
     }
   },
 
+  getTimeCapsules(): TimeCapsule[] {
+    try {
+      const data = localStorage.getItem(KEYS.CAPSULES);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          return parsed.map((c: Partial<TimeCapsule>) => ({
+            id: c.id || `capsule-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            title: c.title || 'Milestone Memory',
+            date: c.date || new Date().toISOString().split('T')[0],
+            reflection: c.reflection || '',
+            category: c.category || 'milestone',
+            photoUrl: c.photoUrl,
+            sticker: c.sticker || '🏆',
+            tag: c.tag,
+            linkedGoalTitle: c.linkedGoalTitle,
+            linkedHabitTitle: c.linkedHabitTitle,
+            xpBonus: typeof c.xpBonus === 'number' ? c.xpBonus : 100,
+            createdAt: c.createdAt || new Date().toISOString(),
+          }));
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return INITIAL_CAPSULES;
+  },
+
+  saveTimeCapsules(capsules: TimeCapsule[]) {
+    try {
+      localStorage.setItem(KEYS.CAPSULES, JSON.stringify(capsules));
+    } catch {
+      // ignore
+    }
+  },
+
+  /**
+   * Daily 00:00 Habit Reset Check:
+   * Compares today's date with the last recorded active date.
+   * If a new day has arrived (after midnight 00:00):
+   * - Resets all habit todayProgress to 0
+   * - Checks streak validity for the previous day
+   * - Updates stored habits and records today as the new active date.
+   */
+  checkAndResetDailyHabits(customTodayStr?: string): {
+    didReset: boolean;
+    habits: Habit[];
+    lastActiveDate: string | null;
+    shieldUsed: boolean;
+  } {
+    const today = customTodayStr || new Date().toISOString().split('T')[0];
+    const lastActive = localStorage.getItem('orbitgoals_last_active_date');
+    const habits = this.getHabits();
+
+    if (!lastActive) {
+      localStorage.setItem('orbitgoals_last_active_date', today);
+      return { didReset: false, habits, lastActiveDate: null, shieldUsed: false };
+    }
+
+    if (lastActive === today) {
+      return { didReset: false, habits, lastActiveDate: lastActive, shieldUsed: false };
+    }
+
+    // It is a new day (00:00 rollover has occurred)!
+    // Compute yesterday's date
+    const todayObj = new Date(today);
+    const yesterdayObj = new Date(todayObj);
+    yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+    const yesterdayStr = yesterdayObj.toISOString().split('T')[0];
+
+    const profile = this.getProfile();
+    let shieldsAvailable = profile.streakShields || 0;
+    let anyShieldUsed = false;
+
+    const updatedHabits = habits.map((habit) => {
+      const completedDates = habit.completedDates || [];
+      const completedYesterday = completedDates.includes(yesterdayStr);
+      let streakDays = habit.streakDays || 0;
+
+      // If habit was not completed yesterday and has a streak
+      if (!completedYesterday && streakDays > 0) {
+        if (shieldsAvailable > 0) {
+          shieldsAvailable -= 1;
+          anyShieldUsed = true;
+          // Streak preserved by shield!
+        } else {
+          streakDays = 0;
+        }
+      }
+
+      return {
+        ...habit,
+        todayProgress: 0, // Reset today's progress to 0 for the fresh day!
+        streakDays,
+      };
+    });
+
+    if (anyShieldUsed) {
+      this.saveProfile({
+        ...profile,
+        streakShields: shieldsAvailable,
+      });
+    }
+
+    this.saveHabits(updatedHabits);
+    localStorage.setItem('orbitgoals_last_active_date', today);
+
+    return {
+      didReset: true,
+      habits: updatedHabits,
+      lastActiveDate: lastActive,
+      shieldUsed: anyShieldUsed,
+    };
+  },
+
   exportFullBackup(): string {
     const backup = {
-      version: '1.2',
+      app: 'OrbitGoals',
+      version: '2.1',
       exportedAt: new Date().toISOString(),
+      timestamp: Date.now(),
       goals: this.getGoals(),
       habits: this.getHabits(),
       profile: this.getProfile(),
@@ -282,24 +400,94 @@ export const storage = {
       challenges: this.getChallenges(),
       settings: this.getSettings(),
       reflections: this.getReflections(),
+      capsules: this.getTimeCapsules(),
     };
     return JSON.stringify(backup, null, 2);
   },
 
-  importFullBackup(jsonString: string): boolean {
+  importFullBackup(jsonString: string): {
+    success: boolean;
+    error?: string;
+    counts?: { goals: number; habits: number; profileName?: string };
+    data?: {
+      goals: Goal[];
+      habits: Habit[];
+      profile: UserProfile;
+      settings: AppSettings;
+      security: SecurityConfig;
+    };
+  } {
     try {
+      if (!jsonString || typeof jsonString !== 'string') {
+        return { success: false, error: 'Empty or invalid file content.' };
+      }
+
       const backup = JSON.parse(jsonString);
-      if (backup.goals) this.saveGoals(backup.goals);
-      if (backup.habits) this.saveHabits(backup.habits);
-      if (backup.profile) this.saveProfile(backup.profile);
-      if (backup.security) this.saveSecurity(backup.security);
-      if (backup.avatars) this.saveAvatarCatalog(backup.avatars);
-      if (backup.challenges) this.saveChallenges(backup.challenges);
-      if (backup.settings) this.saveSettings(backup.settings);
-      if (backup.reflections) this.saveReflections(backup.reflections);
-      return true;
-    } catch {
-      return false;
+      if (!backup || typeof backup !== 'object') {
+        return { success: false, error: 'Invalid JSON backup format.' };
+      }
+
+      // Restore Goals
+      if (Array.isArray(backup.goals)) {
+        this.saveGoals(backup.goals);
+      }
+      // Restore Habits
+      if (Array.isArray(backup.habits)) {
+        this.saveHabits(backup.habits);
+      }
+      // Restore Profile
+      if (backup.profile && typeof backup.profile === 'object') {
+        this.saveProfile(backup.profile);
+      }
+      // Restore Security
+      if (backup.security && typeof backup.security === 'object') {
+        this.saveSecurity(backup.security);
+      }
+      // Restore Avatars
+      if (Array.isArray(backup.avatars)) {
+        this.saveAvatarCatalog(backup.avatars);
+      }
+      // Restore Challenges
+      if (Array.isArray(backup.challenges)) {
+        this.saveChallenges(backup.challenges);
+      }
+      // Restore Settings
+      if (backup.settings && typeof backup.settings === 'object') {
+        this.saveSettings(backup.settings);
+      }
+      // Restore Reflections
+      if (Array.isArray(backup.reflections)) {
+        this.saveReflections(backup.reflections);
+      }
+      // Restore Capsules
+      if (Array.isArray(backup.capsules)) {
+        this.saveTimeCapsules(backup.capsules);
+      }
+
+      const restoredGoals = this.getGoals();
+      const restoredHabits = this.getHabits();
+      const restoredProfile = this.getProfile();
+      const restoredSettings = this.getSettings();
+      const restoredSecurity = this.getSecurity();
+
+      return {
+        success: true,
+        counts: {
+          goals: restoredGoals.length,
+          habits: restoredHabits.length,
+          profileName: restoredProfile.name || 'User',
+        },
+        data: {
+          goals: restoredGoals,
+          habits: restoredHabits,
+          profile: restoredProfile,
+          settings: restoredSettings,
+          security: restoredSecurity,
+        },
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, error: `Import failed: ${msg}` };
     }
   },
 
@@ -312,5 +500,8 @@ export const storage = {
     localStorage.removeItem(KEYS.CHALLENGES);
     localStorage.removeItem(KEYS.SETTINGS);
     localStorage.removeItem(KEYS.REFLECTIONS);
+    localStorage.removeItem(KEYS.CAPSULES);
+    localStorage.removeItem('orbitgoals_last_active_date');
+    localStorage.removeItem('orbitgoals_biometric_credential_id');
   },
 };
