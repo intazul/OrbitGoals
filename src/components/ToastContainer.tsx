@@ -12,7 +12,7 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 max-w-[380px] w-[90%] pointer-events-none">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col-reverse gap-2 max-w-[380px] w-[90%] pointer-events-none">
       {toasts.map((toast) => {
         const getIcon = () => {
           if (toast.type === 'streak') return <Flame className="w-5 h-5 text-amber-500 fill-amber-500" />;
@@ -24,7 +24,7 @@ export const ToastContainer: React.FC = () => {
         return (
           <div
             key={toast.id}
-            className="pointer-events-auto bg-surface-container-highest text-on-surface rounded-2xl p-3.5 shadow-xl border border-outline-variant/40 flex items-start gap-3 transition-all duration-300 animate-in fade-in slide-in-from-top-4"
+            className="pointer-events-auto bg-surface-container-highest text-on-surface rounded-2xl p-3.5 shadow-xl border border-outline-variant/40 flex items-start gap-3 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
           >
             <div className="p-2 rounded-xl bg-surface-container-lowest shrink-0 shadow-2xs">
               {getIcon()}

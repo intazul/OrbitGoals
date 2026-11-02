@@ -16,6 +16,7 @@ import {
   Minus,
   Link,
   Target,
+  ChevronRight,
 } from 'lucide-react';
 
 interface HabitsScreenProps {
@@ -26,6 +27,7 @@ interface HabitsScreenProps {
   onLogHabitSet?: (habitId: string, delta: number) => void;
   onDeleteHabit: (habitId: string) => void;
   onEditHabit?: (habit: Habit) => void;
+  onSelectHabit?: (habit: Habit) => void;
   todayStr: string;
   goals?: Goal[];
 }
@@ -38,6 +40,7 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
   onLogHabitSet,
   onDeleteHabit,
   onEditHabit,
+  onSelectHabit,
   todayStr,
   goals = [],
 }) => {
@@ -158,35 +161,41 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
           ))}
         </div>
 
-        {/* Habit Cards */}
-        <div className="space-y-3">
+        {/* Habit Cards - Summarised with Percentage and Tap for Full Info */}
+        <div className="space-y-2.5">
           {filteredHabits.map((habit) => {
             const isDoneToday = (habit.completedDates || []).includes(todayStr);
             const isSets = habit.trackingType === 'sets';
             const target = habit.targetValue || 30;
             const current = typeof habit.todayProgress === 'number' ? habit.todayProgress : (isDoneToday ? target : 0);
-            const step = habit.stepValue || (habit.unit === 'videos' ? 1 : 10);
-            const xpReward = habit.xpPerSet || (habit.unit === 'videos' ? 50 : 10);
-            const isTargetExceeded = current > target;
-            const pct = Math.min(100, Math.round((current / target) * 100));
+            const pct = isSets ? Math.min(100, Math.round((current / target) * 100)) : (isDoneToday ? 100 : 0);
 
             return (
               <div
                 key={habit.id}
-                className={`rounded-2xl border p-3.5 shadow-xs space-y-3 transition-all ${
+                onClick={() => {
+                  if (onSelectHabit) {
+                    onSelectHabit(habit);
+                    sound.playPop();
+                  }
+                }}
+                className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99] ${
                   isDoneToday
                     ? 'bg-surface-container-low/80 border-primary/30'
                     : 'bg-surface-container-low border-outline-variant/30'
                 }`}
               >
-                {/* Row 1: Checkbox/Icon, Title & Linked Goal, Actions */}
-                <div className="flex items-start justify-between gap-2.5">
-                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                {/* Summary Row: Check circle, Icon & Title, % Pill, Streak, Chevron */}
+                <div className="flex items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {/* Toggle Button */}
                     <button
                       type="button"
-                      onClick={() => handleToggle(habit.id)}
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer active:scale-90 mt-0.5 ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggle(habit.id);
+                      }}
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer active:scale-90 ${
                         isDoneToday
                           ? 'border-transparent text-white shadow-xs'
                           : 'border-outline-variant/50 hover:border-primary text-transparent bg-surface'
@@ -195,20 +204,21 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                       title={isDoneToday ? 'Mark as incomplete' : 'Mark completed today'}
                     >
                       <Check
-                        className={`w-4 h-4 stroke-[3] transition-transform ${
+                        className={`w-3.5 h-3.5 stroke-[3] transition-transform ${
                           isDoneToday ? 'scale-100 text-white' : 'scale-0'
                         }`}
                       />
                     </button>
 
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${habit.color}15`, color: habit.color }}
+                    >
+                      <GoalIcon iconId={habit.icon} className="w-3.5 h-3.5" color={habit.color} />
+                    </div>
+
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <div
-                          className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: `${habit.color}15`, color: habit.color }}
-                        >
-                          <GoalIcon iconId={habit.icon} className="w-3 h-3" color={habit.color} />
-                        </div>
                         <span
                           className={`text-sm font-bold truncate ${
                             isDoneToday ? 'line-through text-on-surface-variant' : 'text-on-surface'
@@ -217,163 +227,48 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                           {habit.title}
                         </span>
 
-                        {/* Streak Pill */}
-                        <span
-                          className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-black tabular-nums ${
-                            habit.streakDays > 0
-                              ? 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30'
-                              : 'bg-surface text-on-surface-variant border border-outline-variant/20'
-                          }`}
-                        >
-                          <Flame className="w-2.5 h-2.5 fill-current" />
-                          <span>{habit.streakDays}d</span>
-                        </span>
-                      </div>
-
-                      {/* Description or motivation */}
-                      {habit.description && (
-                        <p className="text-[11px] text-on-surface-variant mt-0.5 leading-snug line-clamp-1">
-                          {habit.description}
-                        </p>
-                      )}
-
-                      {/* Connected Goal Badge */}
-                      {habit.linkedGoalTitle && (
-                        <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold">
-                          <Link className="w-2.5 h-2.5" />
-                          <span>Connected to: {habit.linkedGoalTitle} (+50 XP synced)</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Top-right Edit & Delete */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    {onEditHabit && (
-                      <button
-                        type="button"
-                        onClick={() => onEditHabit(habit)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface active:scale-95 transition-all cursor-pointer"
-                        title="Edit habit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => onDeleteHabit(habit.id)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-red-500 hover:bg-surface active:scale-95 transition-all cursor-pointer"
-                      title="Delete habit"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* SETS INTERACTIVE LOGGER SECTION (If trackingType === 'sets') */}
-                {isSets && (
-                  <div className="p-2.5 rounded-xl bg-surface border border-outline-variant/20 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono font-black text-on-surface">
-                          {current} / {target} {habit.unit || 'reps'}
-                        </span>
-                        {isTargetExceeded && (
-                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                            +{current - target} Exceeded!
+                        {habit.streakDays > 0 && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-black tabular-nums bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
+                            <Flame className="w-2.5 h-2.5 fill-current" />
+                            <span>{habit.streakDays}d</span>
                           </span>
                         )}
                       </div>
-
-                      <div className="flex items-center gap-1 text-[11px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                        <Sparkles className="w-3 h-3" />
-                        <span>+{xpReward} XP / set</span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${pct}%`,
-                          backgroundColor: isDoneToday ? '#10b981' : habit.color,
-                        }}
-                      />
-                    </div>
-
-                    {/* Quick Set Logging Controls */}
-                    <div className="flex items-center justify-between gap-2 pt-0.5">
-                      {/* Minus Set button */}
-                      <button
-                        type="button"
-                        onClick={() => onLogHabitSet && onLogHabitSet(habit.id, -step)}
-                        disabled={current <= 0}
-                        className="px-2.5 py-1.5 rounded-lg bg-surface-container text-red-500 hover:bg-surface-container-high border border-outline-variant/20 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                        title={`Subtract ${step} ${habit.unit || 'reps'}`}
-                      >
-                        <Minus className="w-3 h-3 stroke-[2.5]" />
-                        <span>-{step}</span>
-                      </button>
-
-                      {/* Alternate Half Step Button if step >= 10 */}
-                      {step >= 10 && (
-                        <button
-                          type="button"
-                          onClick={() => onLogHabitSet && onLogHabitSet(habit.id, 5)}
-                          className="px-2.5 py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high border border-outline-variant/20 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
-                          title="Log +5 reps set (+5 XP)"
-                        >
-                          <Plus className="w-3 h-3 stroke-[2.5] text-primary" />
-                          <span>+5 {habit.unit || 'reps'}</span>
-                        </button>
-                      )}
-
-                      {/* Plus Main Set button */}
-                      <button
-                        type="button"
-                        onClick={() => onLogHabitSet && onLogHabitSet(habit.id, step)}
-                        className="flex-1 py-1.5 px-3 rounded-lg bg-primary text-on-primary text-xs font-black flex items-center justify-center gap-1.5 hover:brightness-105 active:scale-95 transition-all cursor-pointer shadow-xs"
-                        title={`Log set of +${step} ${habit.unit || 'reps'} (+${xpReward} XP)`}
-                      >
-                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        <span>Log Set (+{step} {habit.unit || 'reps'})</span>
-                        <span className="text-[10px] bg-on-primary/20 px-1 rounded ml-1">+{xpReward} XP</span>
-                      </button>
                     </div>
                   </div>
-                )}
 
-                {/* 7-day mini matrix */}
-                <div className="pt-1 flex items-center justify-between text-[9px] text-on-surface-variant">
-                  <span className="font-bold uppercase tracking-wider text-[8px]">
-                    Week Progress:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {weekDays.map((d) => {
-                      const completed = (habit.completedDates || []).includes(d.dateStr);
-                      return (
-                        <div
-                          key={d.dateStr}
-                          className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black transition-all ${
-                            completed
-                              ? 'text-white'
-                              : d.isToday
-                              ? 'border border-primary text-primary bg-surface'
-                              : 'bg-surface border border-outline-variant/20 text-on-surface-variant opacity-40'
-                          }`}
-                          style={completed ? { backgroundColor: habit.color } : undefined}
-                          title={`${d.dateStr}: ${completed ? 'Done' : 'Missed'}`}
-                        >
-                          {completed ? '✓' : ''}
-                        </div>
-                      );
-                    })}
+                  {/* Right summary: % Pill & Chevron */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black tabular-nums border ${
+                        pct === 100
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                          : pct > 0
+                          ? 'bg-primary/10 text-primary border-primary/20'
+                          : 'bg-surface text-on-surface-variant border-outline-variant/30'
+                      }`}
+                    >
+                      {pct}%
+                    </span>
+
+                    <ChevronRight className="w-4 h-4 text-on-surface-variant opacity-60" />
                   </div>
+                </div>
+
+                {/* Sleek Progress Bar */}
+                <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${pct}%`,
+                      backgroundColor: isDoneToday ? '#10b981' : habit.color,
+                    }}
+                  />
                 </div>
               </div>
             );
           })}
+        </div>
 
           {filteredHabits.length === 0 && (
             <div className="text-center py-10 bg-surface-container-low rounded-3xl border border-outline-variant/30 p-6 space-y-3">
@@ -396,6 +291,5 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
           )}
         </div>
       </div>
-    </div>
   );
 };

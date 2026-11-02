@@ -25,6 +25,8 @@ import { GoalsScreen } from './components/GoalsScreen';
 import { GoalCalendarScreen } from './components/GoalCalendarScreen';
 import { AddHabitScreen } from './components/AddHabitScreen';
 import { HabitsScreen } from './components/HabitsScreen';
+import { HabitDetailScreen } from './components/HabitDetailScreen';
+import { GoalDetailScreen } from './components/GoalDetailScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { ScrapbookScreen } from './components/ScrapbookScreen';
@@ -82,13 +84,15 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'habits' | 'goals'>('habits');
   const [habitFilter, setHabitFilter] = useState<'all' | HabitTimeOfDay>('all');
 
-  // Screen View: 'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook'
+  // Screen View: 'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook' | 'habit-detail' | 'goal-detail'
   const [screenView, setScreenView] = useState<
-    'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook'
+    'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook' | 'habit-detail' | 'goal-detail'
   >('dashboard');
   const [calendarGoalId, setCalendarGoalId] = useState<string | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
   const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
+  const [selectedHabitForDetail, setSelectedHabitForDetail] = useState<Habit | null>(null);
+  const [selectedGoalForDetail, setSelectedGoalForDetail] = useState<Goal | null>(null);
 
   // Floating XP indicator state
   const [floatingXp, setFloatingXp] = useState<{ text: string; id: number } | null>(null);
@@ -732,6 +736,19 @@ export default function App() {
     triggerHaptic('light');
   };
 
+  const handleToggleSubtask = (goalId: string, subtaskId: string) => {
+    const updated = goals.map((g) => {
+      if (g.id !== goalId) return g;
+      const subtasks = (g.subtasks || []).map((s) =>
+        s.id === subtaskId ? { ...s, completed: !s.completed } : s
+      );
+      return { ...g, subtasks };
+    });
+    updateGoals(updated);
+    sound.playPop();
+    triggerHaptic('light');
+  };
+
   const formatFrequency = (goal: Goal) => {
     if (goal.frequency === 'long_term') return 'Long Term · Every Day';
     if (goal.frequency === 'weekly') {
@@ -805,14 +822,66 @@ export default function App() {
       {/* 4. ACTIVE APP SCREENS (When Unlocked) */}
       {!isOnboarding && !isReplayingTour && !isLocked && (
         <>
-          {/* Floating XP Animation Pill */}
+          {/* Floating XP Animation Pill - Anchored at the bottom of the screen */}
           {floatingXp && (
-            <div className="absolute top-16 right-5 z-50 pointer-events-none animate-bounce">
-              <div className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black text-xs shadow-lg flex items-center gap-1.5 border border-amber-300">
+            <div className="fixed bottom-20 right-6 z-50 pointer-events-none animate-bounce">
+              <div className="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black text-xs shadow-xl flex items-center gap-1.5 border border-amber-300">
                 <Sparkles className="w-3.5 h-3.5 fill-current" />
                 <span>{floatingXp.text}</span>
               </div>
             </div>
+          )}
+
+          {/* Full Screen Mode: Habit Details (Complete Information from Beginning) */}
+          {screenView === 'habit-detail' && selectedHabitForDetail && (
+            <HabitDetailScreen
+              habit={habits.find((h) => h.id === selectedHabitForDetail.id) || selectedHabitForDetail}
+              todayStr={todayStr}
+              onBack={() => setScreenView('dashboard')}
+              onToggleHabit={handleToggleHabit}
+              onLogHabitSet={handleLogHabitSet}
+              onDeleteHabit={(id) => {
+                handleDeleteHabit(id);
+                setScreenView('dashboard');
+              }}
+              onEditHabit={(h) => {
+                setEditingHabit(h);
+                setScreenView('add-habit');
+              }}
+              linkedGoal={goals.find((g) => g.id === selectedHabitForDetail.linkedGoalId)}
+              onOpenGoalDetail={(g) => {
+                setSelectedGoalForDetail(g);
+                setScreenView('goal-detail');
+                sound.playPop();
+              }}
+            />
+          )}
+
+          {/* Full Screen Mode: Goal Details (Complete Information from Beginning) */}
+          {screenView === 'goal-detail' && selectedGoalForDetail && (
+            <GoalDetailScreen
+              goal={goals.find((g) => g.id === selectedGoalForDetail.id) || selectedGoalForDetail}
+              currency={settings.currency}
+              onBack={() => setScreenView('dashboard')}
+              onUpdateGoalValue={handleUpdateGoalValue}
+              onToggleSubtask={handleToggleSubtask}
+              onOpenCalendar={handleOpenCalendar}
+              onDeleteGoal={(id) => {
+                handleDeleteGoal(id);
+                setScreenView('dashboard');
+              }}
+              onEditGoal={(g) => {
+                setEditingGoal(g);
+                setScreenView('add-goal');
+                sound.playPop();
+              }}
+              linkedHabit={habits.find((h) => h.id === selectedGoalForDetail.linkedHabitId)}
+              onOpenHabitDetail={(h) => {
+                setSelectedHabitForDetail(h);
+                setScreenView('habit-detail');
+                sound.playPop();
+              }}
+            />
           )}
 
           {/* Full Screen Mode: Habits Studio */}
@@ -829,6 +898,11 @@ export default function App() {
                 setEditingHabit(h);
                 setScreenView('add-habit');
               }}
+              onSelectHabit={(h) => {
+                setSelectedHabitForDetail(h);
+                setScreenView('habit-detail');
+                sound.playPop();
+              }}
               goals={goals}
             />
           )}
@@ -844,6 +918,11 @@ export default function App() {
               onEditGoal={(g) => {
                 setEditingGoal(g);
                 setScreenView('add-goal');
+                sound.playPop();
+              }}
+              onSelectGoal={(g) => {
+                setSelectedGoalForDetail(g);
+                setScreenView('goal-detail');
                 sound.playPop();
               }}
               currency={settings.currency}
@@ -949,31 +1028,8 @@ export default function App() {
                     </div>
                   </button>
 
-                  {/* Action Icons in Header: Habits/Goals Toggle Button, Calendar, Scrapbook, Lock, Settings */}
+                  {/* Action Icons in Header: Calendar, Scrapbook, Settings */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Habit / Goals Switcher Button */}
-                    <button
-                      onClick={() => {
-                        setActiveTab((prev) => (prev === 'habits' ? 'goals' : 'habits'));
-                        sound.playPop();
-                        triggerHaptic('light');
-                      }}
-                      className="h-9 px-2.5 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 border border-outline-variant/30 font-black text-xs"
-                      title="Switch between Habits and Goals"
-                    >
-                      {activeTab === 'habits' ? (
-                        <>
-                          <Repeat className="w-3.5 h-3.5 text-primary stroke-[2.5]" />
-                          <span className="text-[12px]">Habits</span>
-                        </>
-                      ) : (
-                        <>
-                          <Target className="w-3.5 h-3.5 text-primary stroke-[2.5]" />
-                          <span className="text-[12px]">Goals</span>
-                        </>
-                      )}
-                    </button>
-
                     {/* Calendar Launcher */}
                     <button
                       onClick={() => handleOpenCalendar()}
@@ -996,21 +1052,6 @@ export default function App() {
                       <Camera className="w-4 h-4 text-primary" />
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500" />
                     </button>
-
-                    {/* Quick Lock Button (Immediate lock) */}
-                    {security.enabled && (
-                      <button
-                        onClick={() => {
-                          setIsLocked(true);
-                          sound.playLockTick();
-                          triggerHaptic('medium');
-                        }}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:text-primary hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
-                        title="Lock App Immediately"
-                      >
-                        <Lock className="w-4 h-4 text-primary" />
-                      </button>
-                    )}
 
                     {/* Settings Option Button */}
                     <button
@@ -1271,218 +1312,116 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* HABITS TAB CONTENT */}
+                {/* HABITS TAB CONTENT - Summarised with percentage and tap to open full details */}
                 {activeTab === 'habits' && (
                   <>
-                    {filteredHabits.map((habit) => {
-                      const isDoneToday = (habit.completedDates || []).includes(todayStr);
-                      const isSets = habit.trackingType === 'sets';
-                      const target = habit.targetValue || 30;
-                      const current = typeof habit.todayProgress === 'number' ? habit.todayProgress : (isDoneToday ? target : 0);
-                      const step = habit.stepValue || (habit.unit === 'videos' ? 1 : 10);
-                      const xpReward = habit.xpPerSet || (habit.unit === 'videos' ? 50 : 10);
-                      const isTargetExceeded = current > target;
-                      const pct = Math.min(100, Math.round((current / target) * 100));
+                    <div className="space-y-2.5">
+                      {filteredHabits.map((habit) => {
+                        const isDoneToday = (habit.completedDates || []).includes(todayStr);
+                        const isSets = habit.trackingType === 'sets';
+                        const target = habit.targetValue || 30;
+                        const current = typeof habit.todayProgress === 'number' ? habit.todayProgress : (isDoneToday ? target : 0);
+                        const pct = isSets ? Math.min(100, Math.round((current / target) * 100)) : (isDoneToday ? 100 : 0);
 
-                      return (
-                        <div
-                          key={habit.id}
-                          className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all ${
-                            isDoneToday
-                              ? 'bg-surface-container-low/75 border-primary/30 opacity-95'
-                              : 'bg-surface-container-low border-outline-variant/30'
-                          }`}
-                        >
-                          {/* Row 1: Checkbox, Icon, Title, Streaks, Delete */}
-                          <div className="flex items-center justify-between gap-2.5">
-                            {/* Interactive Checkbox Button */}
-                            <button
-                              type="button"
-                              onClick={() => handleToggleHabit(habit.id)}
-                              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer active:scale-90 ${
-                                isDoneToday
-                                  ? 'border-transparent text-white shadow-xs'
-                                  : 'border-outline-variant/50 hover:border-primary text-transparent bg-surface'
-                              }`}
-                              style={isDoneToday ? { backgroundColor: habit.color } : undefined}
-                              title={isDoneToday ? 'Mark as incomplete' : 'Mark as completed'}
-                            >
-                              <Check
-                                className={`w-4 h-4 stroke-[3] transition-transform ${
-                                  isDoneToday ? 'scale-100 text-white' : 'scale-0'
-                                }`}
-                              />
-                            </button>
+                        return (
+                          <div
+                            key={habit.id}
+                            onClick={() => {
+                              setSelectedHabitForDetail(habit);
+                              setScreenView('habit-detail');
+                              sound.playPop();
+                              triggerHaptic('light');
+                            }}
+                            className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99] ${
+                              isDoneToday
+                                ? 'bg-surface-container-low/80 border-primary/30'
+                                : 'bg-surface-container-low border-outline-variant/30'
+                            }`}
+                          >
+                            {/* Summary Row: Check circle, Icon & Title, % Pill, Streak, Chevron */}
+                            <div className="flex items-center justify-between gap-2.5">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                {/* Interactive Quick Check Toggle Button */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleHabit(habit.id);
+                                  }}
+                                  className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer active:scale-90 ${
+                                    isDoneToday
+                                      ? 'border-transparent text-white shadow-xs'
+                                      : 'border-outline-variant/50 hover:border-primary text-transparent bg-surface'
+                                  }`}
+                                  style={isDoneToday ? { backgroundColor: habit.color } : undefined}
+                                  title={isDoneToday ? 'Mark as incomplete' : 'Mark as completed today'}
+                                >
+                                  <Check
+                                    className={`w-3.5 h-3.5 stroke-[3] transition-transform ${
+                                      isDoneToday ? 'scale-100 text-white' : 'scale-0'
+                                    }`}
+                                  />
+                                </button>
 
-                            {/* Habit details */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <div
-                                  className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                                   style={{ backgroundColor: `${habit.color}15`, color: habit.color }}
                                 >
-                                  <GoalIcon iconId={habit.icon} className="w-3 h-3" color={habit.color} />
+                                  <GoalIcon iconId={habit.icon} className="w-3.5 h-3.5" color={habit.color} />
                                 </div>
-                                <span
-                                  className={`text-sm font-bold truncate ${
-                                    isDoneToday ? 'line-through text-on-surface-variant' : 'text-on-surface'
-                                  }`}
-                                >
-                                  {habit.title}
-                                </span>
-                              </div>
 
-                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap">
-                                <span
-                                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-black tabular-nums ${
-                                    habit.streakDays > 0
-                                      ? 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30'
-                                      : 'bg-surface text-on-surface-variant border border-outline-variant/20'
-                                  }`}
-                                >
-                                  <Flame className="w-2.5 h-2.5 fill-current" />
-                                  <span>{habit.streakDays}d streak</span>
-                                </span>
-
-                                <span className="capitalize px-1.5 py-0.5 rounded bg-surface text-on-surface-variant font-medium border border-outline-variant/20">
-                                  {habit.timeOfDay}
-                                </span>
-
-                                <span className="font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded">
-                                  +{xpReward} XP {isSets ? '/ set' : ''}
-                                </span>
-                              </div>
-
-                              {/* Connected Goal Badge */}
-                              {habit.linkedGoalTitle && (
-                                <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-[9px] font-bold">
-                                  <Link className="w-2.5 h-2.5" />
-                                  <span>Connected: {habit.linkedGoalTitle} (+50 XP synced)</span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center gap-0.5 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingHabit(habit);
-                                  setScreenView('add-habit');
-                                  sound.playPop();
-                                }}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface active:scale-95 transition-all cursor-pointer"
-                                title="Edit habit"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteHabit(habit.id)}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-red-500 hover:bg-surface active:scale-95 transition-all cursor-pointer"
-                                title="Delete habit"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Sets Logger on Dashboard card */}
-                          {isSets && (
-                            <div className="p-2 rounded-xl bg-surface border border-outline-variant/20 space-y-1.5">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-mono font-black text-on-surface text-[11px]">
-                                  {current} / {target} {habit.unit || 'reps'}
-                                  {isTargetExceeded && (
-                                    <span className="ml-1 text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-1 py-0.5 rounded">
-                                      +{current - target} exceeded!
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span
+                                      className={`text-sm font-bold truncate ${
+                                        isDoneToday ? 'line-through text-on-surface-variant' : 'text-on-surface'
+                                      }`}
+                                    >
+                                      {habit.title}
                                     </span>
-                                  )}
-                                </span>
-                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                                  +{xpReward} XP / set
-                                </span>
+
+                                    {habit.streakDays > 0 && (
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-black tabular-nums bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
+                                        <Flame className="w-2.5 h-2.5 fill-current" />
+                                        <span>{habit.streakDays}d</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
 
-                              {/* Progress bar */}
-                              <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className="h-full rounded-full transition-all duration-300"
-                                  style={{
-                                    width: `${pct}%`,
-                                    backgroundColor: isDoneToday ? '#10b981' : habit.color,
-                                  }}
-                                />
-                              </div>
-
-                              {/* Quick set logging controls */}
-                              <div className="flex items-center justify-between gap-1.5 pt-0.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleLogHabitSet(habit.id, -step)}
-                                  disabled={current <= 0}
-                                  className="px-2 py-1 rounded-lg bg-surface-container text-red-500 hover:bg-surface-container-high text-xs font-bold active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                                  title={`Subtract ${step}`}
+                              {/* Right summary: % Pill & Chevron */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black tabular-nums border ${
+                                    pct === 100
+                                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                      : pct > 0
+                                      ? 'bg-primary/10 text-primary border-primary/20'
+                                      : 'bg-surface text-on-surface-variant border-outline-variant/30'
+                                  }`}
                                 >
-                                  <Minus className="w-3 h-3 stroke-[2.5]" />
-                                  <span>-{step}</span>
-                                </button>
+                                  {pct}%
+                                </span>
 
-                                {step >= 10 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleLogHabitSet(habit.id, 5)}
-                                    className="px-2 py-1 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high text-xs font-bold active:scale-95 transition-all cursor-pointer"
-                                    title="Add +5 set"
-                                  >
-                                    +5 {habit.unit || 'reps'}
-                                  </button>
-                                )}
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleLogHabitSet(habit.id, step)}
-                                  className="flex-1 py-1 px-2.5 rounded-lg bg-primary text-on-primary text-xs font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer shadow-xs"
-                                  title={`Log set of +${step} (+${xpReward} XP)`}
-                                >
-                                  <Plus className="w-3 h-3 stroke-[3]" />
-                                  <span>+{step} {habit.unit || 'reps'}</span>
-                                  <span className="text-[9px] bg-on-primary/20 px-1 rounded ml-1">+{xpReward} XP</span>
-                                </button>
+                                <ChevronRight className="w-4 h-4 text-on-surface-variant opacity-60" />
                               </div>
                             </div>
-                          )}
 
-                          {/* Row 2: 7-day mini matrix */}
-                          <div className="pt-1.5 border-t border-outline-variant/20 flex items-center justify-between text-[9px] text-on-surface-variant">
-                            <span className="font-bold uppercase tracking-wider text-[8px]">
-                              Week Progress:
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              {weekDays.map((d) => {
-                                const completed = (habit.completedDates || []).includes(d.dateStr);
-                                return (
-                                  <div
-                                    key={d.dateStr}
-                                    className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] font-black transition-all ${
-                                      completed
-                                        ? 'text-white'
-                                        : d.isToday
-                                        ? 'border border-primary text-primary bg-surface'
-                                        : 'bg-surface border border-outline-variant/20 text-on-surface-variant opacity-40'
-                                    }`}
-                                    style={completed ? { backgroundColor: habit.color } : undefined}
-                                    title={`${d.dateStr}: ${completed ? 'Done' : 'Missed'}`}
-                                  >
-                                    {completed ? '✓' : ''}
-                                  </div>
-                                );
-                              })}
+                            {/* Sleek Progress Bar */}
+                            <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${pct}%`,
+                                  backgroundColor: isDoneToday ? '#10b981' : habit.color,
+                                }}
+                              />
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
 
                     {filteredHabits.length === 0 && habits.length > 0 && (
                       <div className="text-center py-8 bg-surface-container-low rounded-3xl border border-outline-variant/30 p-5 space-y-2.5">
@@ -1532,126 +1471,106 @@ export default function App() {
                   </>
                 )}
 
-                {/* GOALS TAB CONTENT */}
+                {/* GOALS TAB CONTENT - Summarised with percentage and tap to open full details */}
                 {activeTab === 'goals' && (
                   <>
-                    {goals.map((goal) => {
-                      const target = typeof goal.targetValue === 'number' && !isNaN(goal.targetValue) && goal.targetValue > 0 ? goal.targetValue : 1;
-                      const current = typeof goal.currentValue === 'number' && !isNaN(goal.currentValue) ? Math.max(0, goal.currentValue) : 0;
-                      const pct = Math.min(100, Math.max(0, Math.round((current / target) * 100)));
+                    <div className="space-y-2.5">
+                      {goals.map((goal) => {
+                        const target = typeof goal.targetValue === 'number' && !isNaN(goal.targetValue) && goal.targetValue > 0 ? goal.targetValue : 1;
+                        const current = typeof goal.currentValue === 'number' && !isNaN(goal.currentValue) ? Math.max(0, goal.currentValue) : 0;
+                        const pct = Math.min(100, Math.max(0, Math.round((current / target) * 100)));
 
-                      return (
-                        <div
-                          key={goal.id}
-                          className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-3 shadow-xs space-y-2 transition-all"
-                        >
-                          {/* Single Non-Stacking Top Row: Icon, Title, and Action Controls */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center shrink-0 border border-outline-variant/20">
-                                <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-sm font-bold text-on-surface truncate block">
-                                  {goal.title}
-                                </span>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">
-                                    +{goal.xpReward || settings.goalXpPerStep || 50} XP / step
-                                  </span>
-                                  {goal.linkedHabitId && (
-                                    <span className="text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded-full inline-flex items-center gap-0.5">
-                                      <Sparkles className="w-2.5 h-2.5" />
-                                      <span>Habit Synced</span>
+                        return (
+                          <div
+                            key={goal.id}
+                            onClick={() => {
+                              setSelectedGoalForDetail(goal);
+                              setScreenView('goal-detail');
+                              sound.playPop();
+                              triggerHaptic('light');
+                            }}
+                            className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99]"
+                          >
+                            {/* Single Row: Icon, Title & % Pill, Quick Steppers, Chevron */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div
+                                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border border-outline-variant/20"
+                                  style={{ backgroundColor: `${goal.color}15`, color: goal.color }}
+                                >
+                                  <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-sm font-bold text-on-surface truncate">
+                                      {goal.title}
                                     </span>
-                                  )}
+                                    {goal.linkedHabitId && (
+                                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded-full">
+                                        <Sparkles className="w-2.5 h-2.5" />
+                                        <span>Synced</span>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2 mt-0.5 text-xs">
+                                    <span className="font-mono font-black text-primary text-[11px] tabular-nums">
+                                      {pct}% Complete
+                                    </span>
+                                    <span className="font-mono tabular-nums text-on-surface-variant text-[11px] truncate">
+                                      {goal.category === 'finance' ? settings.currency : ''}
+                                      {current.toLocaleString()} / {goal.category === 'finance' ? settings.currency : ''}
+                                      {target.toLocaleString()} {goal.unit || 'units'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
+
+                              {/* Compact Right Control Buttons: Minus, Plus, Chevron */}
+                              <div className="flex items-center gap-1 shrink-0">
+                                {/* Minus button to subtract 1 unit */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateGoalValue(goal.id, -1);
+                                  }}
+                                  disabled={current <= 0}
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface text-red-500 hover:bg-surface-container font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  title="Subtract 1 unit (-1)"
+                                >
+                                  <Minus className="w-3 h-3 stroke-[2.5]" />
+                                </button>
+
+                                {/* Plus button to add 1 unit */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateGoalValue(goal.id, 1);
+                                  }}
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-on-primary font-black active:scale-95 transition-all cursor-pointer shadow-xs hover:brightness-105"
+                                  title="Add 1 unit (+1)"
+                                >
+                                  <Plus className="w-3 h-3 stroke-[3]" />
+                                </button>
+
+                                <ChevronRight className="w-4 h-4 text-on-surface-variant opacity-60 ml-0.5" />
+                              </div>
                             </div>
 
-                            {/* Right compact controls: Calendar Heat Zone, Minus, Plus, Edit, Delete */}
-                            <div className="flex items-center gap-1 shrink-0">
-                              {/* Calendar Heat Zone button for this individual goal */}
-                              <button
-                                onClick={() => handleOpenCalendar(goal.id)}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface text-on-surface-variant hover:text-primary active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
-                                title="View Goal Heat Zone Calendar"
-                              >
-                                <Calendar className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Minus button to subtract 1 unit if mistakenly added */}
-                              <button
-                                onClick={() => handleUpdateGoalValue(goal.id, -1)}
-                                disabled={current <= 0}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface text-red-500 hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                title="Subtract 1 unit (-1)"
-                              >
-                                <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                              </button>
-
-                              {/* Plus button to add 1 unit */}
-                              <button
-                                onClick={() => handleUpdateGoalValue(goal.id, 1)}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface text-primary hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
-                                title={`Add 1 unit (+1 step, +${goal.xpReward || settings.goalXpPerStep || 50} XP)`}
-                              >
-                                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                              </button>
-
-                              {/* Edit goal */}
-                              <button
-                                onClick={() => {
-                                  setEditingGoal(goal);
-                                  setScreenView('add-goal');
-                                  sound.playPop();
-                                }}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface text-on-surface-variant hover:text-primary hover:bg-surface-container-high active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
-                                title="Edit Goal"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Delete goal */}
-                              <button
-                                onClick={() => handleDeleteGoal(goal.id)}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl text-on-surface-variant hover:text-red-500 hover:bg-surface active:scale-95 transition-all cursor-pointer"
-                                title="Delete goal"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                            {/* Progress Bar */}
+                            <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{ width: `${pct}%`, backgroundColor: goal.color }}
+                              />
                             </div>
                           </div>
-
-                          {/* Second Row: Fits in one line */}
-                          <div className="flex items-center justify-between gap-2 text-xs whitespace-nowrap">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="font-mono font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[11px] tabular-nums shrink-0">
-                                {pct}% Complete
-                              </span>
-
-                              <span className="font-mono tabular-nums text-on-surface font-semibold text-xs truncate">
-                                {goal.category === 'finance' ? settings.currency : ''}
-                                {current.toLocaleString()} / {goal.category === 'finance' ? settings.currency : ''}
-                                {target.toLocaleString()} {goal.unit || 'units'}
-                              </span>
-                            </div>
-
-                            <span className="text-[10px] font-medium text-on-surface-variant px-1.5 py-0.5 rounded bg-surface shrink-0 truncate max-w-[130px]">
-                              {formatFrequency(goal)}
-                            </span>
-                          </div>
-
-                          {/* Progress Bar */}
-                          <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-300"
-                              style={{ width: `${pct}%`, backgroundColor: goal.color }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
 
                     {goals.length === 0 && (
                       <div className="text-center py-10 bg-surface-container-low rounded-3xl border border-dashed border-outline-variant/40 p-6 space-y-3">

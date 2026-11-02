@@ -1,6 +1,6 @@
 import React from 'react';
 import { Goal } from '../types';
-import { ArrowLeft, Plus, Minus, Target, Trash2, Calendar, Sparkles, Edit2 } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Target, Trash2, Calendar, Sparkles, Edit2, ChevronRight } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { GoalIcon } from './GoalIcon';
 
@@ -11,6 +11,7 @@ interface GoalsScreenProps {
   onUpdateGoalValue: (goalId: string, delta: number) => void;
   onDeleteGoal: (goalId: string) => void;
   onEditGoal?: (goal: Goal) => void;
+  onSelectGoal?: (goal: Goal) => void;
   currency: string;
 }
 
@@ -21,6 +22,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
   onUpdateGoalValue,
   onDeleteGoal,
   onEditGoal,
+  onSelectGoal,
   currency,
 }) => {
   const formatFrequency = (goal: Goal) => {
@@ -80,7 +82,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
           </span>
         </div>
 
-        {/* Goals List - Single-line non-stacking clean layout */}
+        {/* Goals List - Clean Summarised Cards with Tap to Open Full Details */}
         <div className="space-y-2.5">
           {goals.map((goal) => {
             const target = typeof goal.targetValue === 'number' && !isNaN(goal.targetValue) && goal.targetValue > 0 ? goal.targetValue : 1;
@@ -90,102 +92,81 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
             return (
               <div
                 key={goal.id}
-                className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-3 shadow-xs space-y-2.5 transition-all"
+                onClick={() => {
+                  if (onSelectGoal) {
+                    onSelectGoal(goal);
+                    sound.playPop();
+                  }
+                }}
+                className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99]"
               >
-                {/* Single Non-Stacking Top Row: Icon, Title, and Action Buttons */}
+                {/* Single Row: Icon, Title & % Pill, Quick Steppers, Chevron */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
-                    <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/20">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border border-outline-variant/20"
+                      style={{ backgroundColor: `${goal.color}15`, color: goal.color }}
+                    >
                       <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
                     </div>
-                    <span className="text-sm font-bold text-on-surface truncate">
-                      {goal.title}
-                    </span>
-                    {goal.linkedHabitId && (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
-                        <Sparkles className="w-2.5 h-2.5" />
-                        <span>Daily Habit Synced</span>
-                      </span>
-                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-bold text-on-surface truncate">
+                          {goal.title}
+                        </span>
+                        {goal.linkedHabitId && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded-full">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            <span>Synced</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-0.5 text-xs">
+                        <span className="font-mono font-black text-primary text-[11px] tabular-nums">
+                          {pct}% Complete
+                        </span>
+                        <span className="font-mono tabular-nums text-on-surface-variant text-[11px] truncate">
+                          {goal.category === 'finance' ? currency : ''}
+                          {current.toLocaleString()} / {goal.category === 'finance' ? currency : ''}
+                          {target.toLocaleString()} {goal.unit || 'units'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Compact Right Control Buttons */}
+                  {/* Compact Right Control Buttons: Minus, Plus, Chevron */}
                   <div className="flex items-center gap-1 shrink-0">
-                    {/* View Calendar Heat Zone */}
+                    {/* Minus button to subtract 1 unit */}
                     <button
-                      onClick={() => onOpenCalendar(goal.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:text-primary active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
-                      title="View Heat Zone Calendar"
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* Minus button to subtract one if mistakenly added */}
-                    <button
-                      onClick={() => onUpdateGoalValue(goal.id, -1)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateGoalValue(goal.id, -1);
+                      }}
                       disabled={current <= 0}
-                      className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-red-500 hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface text-red-500 hover:bg-surface-container font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       title="Subtract 1 unit (-1)"
                     >
-                      <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <Minus className="w-3 h-3 stroke-[2.5]" />
                     </button>
 
                     {/* Plus button to add 1 unit */}
                     <button
-                      onClick={() => onUpdateGoalValue(goal.id, 1)}
-                      className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-primary hover:bg-surface-container-high font-bold active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateGoalValue(goal.id, 1);
+                      }}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-on-primary font-black active:scale-95 transition-all cursor-pointer shadow-xs hover:brightness-105"
                       title="Add 1 unit (+1)"
                     >
-                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <Plus className="w-3 h-3 stroke-[3]" />
                     </button>
 
-                    {/* Edit goal */}
-                    {onEditGoal && (
-                      <button
-                        onClick={() => {
-                          onEditGoal(goal);
-                          sound.playPop();
-                        }}
-                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
-                        title="Edit Goal"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {/* Delete goal */}
-                    <button
-                      onClick={() => {
-                        if (confirm(`Delete "${goal.title}"?`)) {
-                          onDeleteGoal(goal.id);
-                          sound.playPop();
-                        }
-                      }}
-                      className="w-8 h-8 flex items-center justify-center rounded-xl text-on-surface-variant hover:text-red-500 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
-                      title="Delete Goal"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <ChevronRight className="w-4 h-4 text-on-surface-variant opacity-60 ml-0.5" />
                   </div>
-                </div>
-
-                {/* Second Row: Fits perfectly in one line without stacking */}
-                <div className="flex items-center justify-between gap-2 text-xs whitespace-nowrap">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-mono font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg text-xs tabular-nums shrink-0">
-                      {pct}% Complete
-                    </span>
-
-                    <span className="font-mono tabular-nums text-on-surface font-semibold text-xs truncate">
-                      {goal.category === 'finance' ? currency : ''}
-                      {current.toLocaleString()} / {goal.category === 'finance' ? currency : ''}
-                      {target.toLocaleString()} {goal.unit || 'units'}
-                    </span>
-                  </div>
-
-                  <span className="text-[10px] font-medium text-on-surface-variant px-2 py-0.5 rounded-md bg-surface-container shrink-0 truncate max-w-[130px]">
-                    {formatFrequency(goal)}
-                  </span>
                 </div>
 
                 {/* Progress Bar */}

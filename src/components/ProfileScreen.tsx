@@ -239,28 +239,27 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
       </header>
 
-      {/* Claim Toast / Celebration */}
-      {claimToast && (
-        <div className="px-4 pt-2">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-primary text-black font-black text-xs flex items-center justify-between shadow-lg animate-fade-in border border-amber-300">
-            <span className="flex items-center gap-1.5">
-              <Gift className="w-4 h-4 animate-bounce" />
-              <span>Trophy Claimed: {claimToast.title}!</span>
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-black/20 text-white font-mono">
-              +{claimToast.xp} XP
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Bottom Popup Notifications (Claim Trophy & Copied Summary) */}
+      {(claimToast || copiedToast) && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 max-w-[380px] w-[90%] pointer-events-none">
+          {claimToast && (
+            <div className="pointer-events-auto p-3 rounded-2xl bg-gradient-to-r from-amber-500 to-primary text-black font-black text-xs flex items-center justify-between shadow-xl animate-in fade-in slide-in-from-bottom-4 border border-amber-300">
+              <span className="flex items-center gap-1.5">
+                <Gift className="w-4 h-4 animate-bounce" />
+                <span>Trophy Claimed: {claimToast.title}!</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-black/20 text-white font-mono">
+                +{claimToast.xp} XP
+              </span>
+            </div>
+          )}
 
-      {/* Copied toast notification */}
-      {copiedToast && (
-        <div className="px-4 pt-2">
-          <div className="p-2 rounded-xl bg-primary text-on-primary text-xs font-bold flex items-center justify-center gap-2 shadow-sm animate-fade-in">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Summary copied to clipboard!</span>
-          </div>
+          {copiedToast && (
+            <div className="pointer-events-auto p-3 rounded-2xl bg-surface-container-highest text-on-surface text-xs font-bold flex items-center justify-center gap-2 shadow-xl border border-outline-variant/40 animate-in fade-in slide-in-from-bottom-4">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              <span>Summary copied to clipboard!</span>
+            </div>
+          )}
         </div>
       )}
 
