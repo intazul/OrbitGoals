@@ -1,4 +1,5 @@
 import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, SecurityConfig, TimeCapsule } from '../types';
+import { generateRandomGamerTag } from './gamerNames';
 
 export const AVATAR_IMAGES = {
   creator: '/src/assets/images/avatar_creator_master_1792734990553.jpg',
@@ -144,8 +145,8 @@ export const DEFAULT_SECURITY: SecurityConfig = {
 };
 
 export const INITIAL_USER_PROFILE: UserProfile = {
-  name: '',
-  age: null,
+  name: generateRandomGamerTag(),
+  age: 24,
   onboarded: false,
   avatarId: 'cosmic-astronaut',
   title: 'Novice Achiever',

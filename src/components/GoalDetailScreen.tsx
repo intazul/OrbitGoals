@@ -8,10 +8,7 @@ import {
   Sparkles,
   Trash2,
   Edit2,
-  Plus,
-  Minus,
   CheckCircle2,
-  Circle,
   Clock,
   Target,
   Award,
@@ -22,7 +19,10 @@ import {
   Link,
   Flame,
   AlertCircle,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
+import { getGoogleCalendarUrlForGoal, downloadCalendarICS } from '../utils/calendarExport';
 
 interface GoalDetailScreenProps {
   goal: Goal;
@@ -49,8 +49,6 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
   linkedHabit,
   onOpenHabitDetail,
 }) => {
-  const [customDelta, setCustomDelta] = useState<string>('');
-
   const target = typeof goal.targetValue === 'number' && !isNaN(goal.targetValue) && goal.targetValue > 0 ? goal.targetValue : 1;
   const current = typeof goal.currentValue === 'number' && !isNaN(goal.currentValue) ? Math.max(0, goal.currentValue) : 0;
   const pct = Math.min(100, Math.max(0, Math.round((current / target) * 100)));
@@ -83,15 +81,6 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
     }
     if (g.frequency === 'monthly') return 'Monthly';
     return 'Daily';
-  };
-
-  const handleCustomSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = parseFloat(customDelta);
-    if (!isNaN(val) && val !== 0) {
-      onUpdateGoalValue(goal.id, val);
-      setCustomDelta('');
-    }
   };
 
   // Combine and sort history from beginning
@@ -180,7 +169,8 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                   {goal.category}
                 </span>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                  style={{ fontSize: '11px' }}
+                  className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                     goal.priority === 'high'
                       ? 'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30'
                       : 'bg-surface-container border border-outline-variant/30 text-on-surface-variant'
@@ -216,6 +206,34 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                 )}
                 <span>Created: {formatDate(goal.createdAt)}</span>
               </div>
+
+              {goal.deadline && (
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-outline-variant/20 flex-wrap">
+                  <a
+                    href={getGoogleCalendarUrlForGoal(goal)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-[11px] font-bold transition-all cursor-pointer"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Add to Google Calendar</span>
+                    <ExternalLink className="w-3 h-3 opacity-70" />
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      downloadCalendarICS([], [goal]);
+                      sound.playSuccessChime();
+                      triggerHaptic('success');
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-bold transition-all cursor-pointer border border-outline-variant/30"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export .ics</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -262,93 +280,13 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
             <div className="flex items-center justify-between text-[11px] text-on-surface-variant font-medium pt-0.5">
               <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Earn +{goal.xpReward || 50} XP with every step!</span>
+                <span style={{ fontSize: '9px', color: '#000000' }}>Earn +{goal.xpReward || 50} XP with every step!</span>
               </span>
               <span className="font-mono text-xs font-bold text-on-surface">
                 {goal.completedDates?.length || 0} days recorded
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Interactive Stepper & Value Adjuster */}
-        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                <Target className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-on-surface">Update Progress</h3>
-                <p className="text-[10px] text-on-surface-variant font-medium">
-                  Add steps or custom values to earn XP
-                </p>
-              </div>
-            </div>
-
-            <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
-              +{goal.xpReward || 50} XP / step
-            </span>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            <button
-              type="button"
-              onClick={() => onUpdateGoalValue(goal.id, -5)}
-              disabled={current <= 0}
-              className="py-2.5 rounded-xl bg-surface-container text-red-500 hover:bg-surface-container-high font-bold text-xs active:scale-95 transition-all cursor-pointer border border-outline-variant/30 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1"
-            >
-              <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>-5</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onUpdateGoalValue(goal.id, -1)}
-              disabled={current <= 0}
-              className="py-2.5 rounded-xl bg-surface-container text-red-500 hover:bg-surface-container-high font-bold text-xs active:scale-95 transition-all cursor-pointer border border-outline-variant/30 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1"
-            >
-              <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>-1</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onUpdateGoalValue(goal.id, 1)}
-              className="py-2.5 rounded-xl bg-primary text-on-primary font-black text-xs active:scale-95 transition-all cursor-pointer shadow-xs hover:brightness-105 flex items-center justify-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>+1</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onUpdateGoalValue(goal.id, 5)}
-              className="py-2.5 rounded-xl bg-primary text-on-primary font-black text-xs active:scale-95 transition-all cursor-pointer shadow-xs hover:brightness-105 flex items-center justify-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>+5</span>
-            </button>
-          </div>
-
-          {/* Custom amount stepper */}
-          <form onSubmit={handleCustomSubmit} className="flex items-center gap-2 pt-1">
-            <input
-              type="number"
-              step="any"
-              placeholder={`Custom amount (+/- ${goal.unit || 'units'})...`}
-              value={customDelta}
-              onChange={(e) => setCustomDelta(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-xl bg-surface border border-outline-variant/40 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
-            />
-            <button
-              type="submit"
-              disabled={!customDelta}
-              className="px-4 py-2 rounded-xl bg-surface-container font-bold text-xs text-primary hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30 disabled:opacity-40"
-            >
-              Log Step
-            </button>
-          </form>
         </div>
 
         {/* Subtasks Section (if any defined at creation) */}

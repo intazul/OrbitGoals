@@ -2,6 +2,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import { AppSettings, UserProfile, SecurityConfig, Goal, Habit } from '../types';
 import { storage } from '../utils/storage';
 import { sound, triggerHaptic } from '../utils/sound';
+import { downloadCalendarICS } from '../utils/calendarExport';
+import { downloadHabitsCSV, downloadGoalsCSV, downloadMarkdownSummary } from '../utils/dataExport';
+import { generateRandomGamerTag, cleanGamerTag } from '../utils/gamerNames';
 import {
   ArrowLeft,
   Moon,
@@ -27,6 +30,9 @@ import {
   Sparkles,
   Copy,
   CheckCheck,
+  FileSpreadsheet,
+  FileText,
+  Dices,
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -49,6 +55,8 @@ interface SettingsScreenProps {
     security: SecurityConfig;
   }) => void;
   onResetDailyHabits?: () => void;
+  habits?: Habit[];
+  goals?: Goal[];
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -65,6 +73,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onLockNow,
   onRestoreBackup,
   onResetDailyHabits,
+  habits = [],
+  goals = [],
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupSuccessMsg, setBackupSuccessMsg] = useState<string | null>(null);
@@ -75,6 +85,68 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [editName, setEditName] = useState<string>(profile.name);
   const [editAge, setEditAge] = useState<string>(profile.age ? String(profile.age) : '');
   const [profileSaveSuccess, setProfileSaveSuccess] = useState<boolean>(false);
+
+  // Feature 7: Calendar .ics Export Handler
+  const handleCalendarExport = () => {
+    try {
+      downloadCalendarICS(habits, goals);
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setBackupSuccessMsg(`Calendar schedule (.ics) exported! (${habits.length} habits, ${goals.length} goals)`);
+      setBackupErrorMsg(null);
+      setTimeout(() => setBackupSuccessMsg(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setBackupErrorMsg(`Calendar export error: ${msg}`);
+      setTimeout(() => setBackupErrorMsg(null), 4000);
+    }
+  };
+
+  // Feature 8: Full Data Export Handlers
+  const handleHabitsCSVExport = () => {
+    try {
+      downloadHabitsCSV(habits);
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setBackupSuccessMsg(`Habits CSV exported successfully! (${habits.length} records)`);
+      setBackupErrorMsg(null);
+      setTimeout(() => setBackupSuccessMsg(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setBackupErrorMsg(`Habits CSV export error: ${msg}`);
+      setTimeout(() => setBackupErrorMsg(null), 4000);
+    }
+  };
+
+  const handleGoalsCSVExport = () => {
+    try {
+      downloadGoalsCSV(goals);
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setBackupSuccessMsg(`Goals CSV exported successfully! (${goals.length} records)`);
+      setBackupErrorMsg(null);
+      setTimeout(() => setBackupSuccessMsg(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setBackupErrorMsg(`Goals CSV export error: ${msg}`);
+      setTimeout(() => setBackupErrorMsg(null), 4000);
+    }
+  };
+
+  const handleMarkdownExport = () => {
+    try {
+      downloadMarkdownSummary(habits, goals, profile);
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setBackupSuccessMsg('Markdown summary report (.md) downloaded! Compatible with Notion & Obsidian.');
+      setBackupErrorMsg(null);
+      setTimeout(() => setBackupSuccessMsg(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setBackupErrorMsg(`Markdown export error: ${msg}`);
+      setTimeout(() => setBackupErrorMsg(null), 4000);
+    }
+  };
 
   // Change PIN Modal State
   const [isChangingPin, setIsChangingPin] = useState<boolean>(false);
@@ -178,13 +250,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = editName.trim();
+    const cleanName = cleanGamerTag(editName) || generateRandomGamerTag();
     const cleanAge = parseInt(editAge, 10);
-
-    if (!cleanName) {
-      sound.playErrorTone();
-      return;
-    }
 
     onUpdateProfile({
       name: cleanName,
@@ -327,17 +394,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           <button
             onClick={() => {
-              onUpdateProfile({ name: 'Guest User', age: 24, title: 'Goal Pioneer' });
+              const gamerTag = generateRandomGamerTag();
+              onUpdateProfile({ name: gamerTag, age: 24, title: 'Goal Pioneer' });
               onUpdateSecurity({ enabled: false });
               sound.playSuccessChime();
               triggerHaptic('success');
-              setBackupSuccessMsg('Switched to Guest Login mode (no signup/login required)!');
+              setBackupSuccessMsg(`Generated unique gamer tag: ${gamerTag}!`);
               setTimeout(() => setBackupSuccessMsg(null), 3000);
             }}
             className="w-full py-2.5 px-3 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container text-primary font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
           >
-            <User className="w-4 h-4" />
-            <span>Switch to Guest Profile (No Login / Sign-up)</span>
+            <Dices className="w-4 h-4" />
+            <span>Generate New Gamer Tag (No Signup / No Login)</span>
           </button>
         </div>
 
@@ -737,11 +805,115 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        {/* 7. Data Backup & Storage */}
+        {/* 7. Google Calendar & Apple Calendar Sync (.ics Export) */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+              <Calendar className="w-4 h-4" />
+              <span>Google & Apple Calendar Sync</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+              RFC 5545 .ics Standard
+            </span>
+          </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            Export your recurring habit reminder windows and goal target deadlines directly into a downloadable standard calendar (.ics) file. Compatible with Google Calendar, Apple Calendar, Outlook, and Android calendar apps.
+          </p>
+
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-on-surface block">
+                Full Routine & Deadlines Schedule
+              </span>
+              <span className="text-[11px] text-on-surface-variant font-mono">
+                {habits.length} habits · {goals.length} goals included
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCalendarExport}
+              className="py-2 px-3.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer hover:brightness-105"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export .ics</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 8. Full Data Export (CSV Spreadsheets & Markdown Report) */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Full Data Export</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+              CSV & Markdown
+            </span>
+          </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            Extract your habits, milestones, and daily progress into universal formats for Excel, Google Sheets, Notion, or Obsidian.
+          </p>
+
+          <div className="space-y-2">
+            {/* Export Habits CSV */}
+            <button
+              type="button"
+              onClick={handleHabitsCSVExport}
+              className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="text-left">
+                  <span className="text-sm font-bold text-on-surface block leading-tight">Export Habits (CSV)</span>
+                  <span className="text-xs text-on-surface-variant">Frequencies, streaks, sets, categories ({habits.length} habits)</span>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-xl bg-emerald-500/10">.CSV</span>
+            </button>
+
+            {/* Export Goals CSV */}
+            <button
+              type="button"
+              onClick={handleGoalsCSVExport}
+              className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <FileSpreadsheet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="text-left">
+                  <span className="text-sm font-bold text-on-surface block leading-tight">Export Goals (CSV)</span>
+                  <span className="text-xs text-on-surface-variant">Targets, current value, completion %, deadlines ({goals.length} goals)</span>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-xl bg-indigo-500/10">.CSV</span>
+            </button>
+
+            {/* Export Markdown Summary */}
+            <button
+              type="button"
+              onClick={handleMarkdownExport}
+              className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <div className="text-left">
+                  <span className="text-sm font-bold text-on-surface block leading-tight">Export Markdown Report</span>
+                  <span className="text-xs text-on-surface-variant">Formatted audit & progress report for Notion, Obsidian & Docs</span>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-xl bg-purple-500/10">.MD</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 9. Full JSON Backup & Storage */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
             <Database className="w-4 h-4" />
-            <span>Data & Backup</span>
+            <span>Full JSON Backup & Storage</span>
           </div>
 
           <div className="space-y-2.5">
@@ -841,17 +1013,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-bold text-on-surface block mb-1">
-                  Your Name
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-on-surface block">
+                    Gamer Tag (Username)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tag = generateRandomGamerTag();
+                      setEditName(tag);
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Dices className="w-3.5 h-3.5" />
+                    <span>Roll Tag</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
                   value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="e.g. Alex Rivera"
-                  className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface text-sm font-semibold focus:outline-none focus:border-primary"
+                  onChange={(e) => setEditName(cleanGamerTag(e.target.value))}
+                  placeholder="e.g. ApexStriker404"
+                  className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface text-sm font-mono font-bold focus:outline-none focus:border-primary"
                 />
+                <span className="text-[10px] text-on-surface-variant block mt-1">
+                  Letters & numbers only · No spaces (e.g. CyberPhantom718)
+                </span>
               </div>
 
               <div>

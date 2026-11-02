@@ -353,7 +353,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     className="flex-1 py-2 rounded-xl bg-surface-container text-red-500 hover:bg-surface-container-high text-xs font-bold active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1 border border-outline-variant/30"
                   >
                     <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>-{step} {habit.unit || 'reps'}</span>
+                    <span>{step} {habit.unit || 'reps'}</span>
                   </button>
 
                   <button
@@ -362,7 +362,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     className="flex-1 py-2 rounded-xl bg-primary text-on-primary text-xs font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer shadow-xs hover:brightness-105"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                    <span>+{step} {habit.unit || 'reps'}</span>
+                    <span>{step} {habit.unit || 'reps'}</span>
                     <span className="text-[9px] bg-on-primary/20 px-1 rounded ml-1">+{xpReward} XP</span>
                   </button>
                 </div>

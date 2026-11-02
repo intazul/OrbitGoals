@@ -1,5 +1,6 @@
 import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, DailyReflection, SecurityConfig, TimeCapsule } from '../types';
 import { INITIAL_GOALS, INITIAL_HABITS, INITIAL_USER_PROFILE, AVATAR_CATALOG, INITIAL_CHALLENGES, INITIAL_SETTINGS, DEFAULT_SECURITY, INITIAL_CAPSULES } from './initialData';
+import { generateRandomGamerTag } from './gamerNames';
 
 const KEYS = {
   GOALS: 'orbitgoals_data_goals_v3',
@@ -125,9 +126,11 @@ export const storage = {
         if (parsed && typeof parsed === 'object') {
           const xp = typeof parsed.xp === 'number' ? parsed.xp : 0;
           const level = typeof parsed.level === 'number' ? parsed.level : Math.max(1, Math.floor(xp / 200) + 1);
+          const rawName = typeof parsed.name === 'string' ? parsed.name.trim() : '';
+          const name = rawName || generateRandomGamerTag();
           return {
-            name: typeof parsed.name === 'string' ? parsed.name : '',
-            age: typeof parsed.age === 'number' ? parsed.age : null,
+            name,
+            age: typeof parsed.age === 'number' ? parsed.age : 24,
             onboarded: Boolean(parsed.onboarded),
             avatarId: typeof parsed.avatarId === 'string' ? parsed.avatarId : 'cosmic-astronaut',
             avatarUrl: typeof parsed.avatarUrl === 'string' ? parsed.avatarUrl : undefined,
@@ -143,7 +146,10 @@ export const storage = {
     } catch {
       // ignore
     }
-    return INITIAL_USER_PROFILE;
+    return {
+      ...INITIAL_USER_PROFILE,
+      name: generateRandomGamerTag(),
+    };
   },
 
   saveProfile(profile: UserProfile) {

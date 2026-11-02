@@ -12,9 +12,11 @@ import {
   Flame,
   Check,
   Filter,
+  Download,
 } from 'lucide-react';
 import { GoalIcon } from './GoalIcon';
 import { sound, triggerHaptic } from '../utils/sound';
+import { downloadCalendarICS } from '../utils/calendarExport';
 
 interface GoalCalendarScreenProps {
   goals: Goal[];
@@ -38,6 +40,20 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
 
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDayStr, setSelectedDayStr] = useState<string>(todayStr);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  const handleExportCalendar = () => {
+    try {
+      downloadCalendarICS(habits, goals);
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      setExportNotice('Calendar schedule (.ics) downloaded!');
+      setTimeout(() => setExportNotice(null), 3500);
+    } catch {
+      setExportNotice('Could not export calendar.');
+      setTimeout(() => setExportNotice(null), 3500);
+    }
+  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -149,11 +165,26 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
           </div>
         </div>
 
-        <div className="w-16" />
+        <button
+          type="button"
+          onClick={handleExportCalendar}
+          className="flex items-center gap-1.5 py-2 px-3 rounded-2xl bg-primary text-on-primary hover:brightness-105 active:scale-95 transition-all cursor-pointer font-bold text-xs shadow-xs min-h-[44px]"
+          title="Export schedule to Apple/Google Calendar (.ics)"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Export</span>
+          <span>.ics</span>
+        </button>
       </header>
 
       {/* Main Content */}
       <div className="flex-1 px-4 pt-3 pb-12 space-y-4 overflow-y-auto">
+        {exportNotice && (
+          <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <Check className="w-4 h-4 shrink-0 stroke-[3]" />
+            <span>{exportNotice}</span>
+          </div>
+        )}
         {/* Month Summary Bar (Habits vs Goals Contrast) */}
         <div className="grid grid-cols-3 gap-2">
           {/* Habits KPI Card (Emerald Accent) */}

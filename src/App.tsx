@@ -957,6 +957,8 @@ export default function App() {
               onLockNow={() => setIsLocked(true)}
               onRestoreBackup={handleRestoreBackup}
               onResetDailyHabits={handleManualDailyHabitReset}
+              habits={habits}
+              goals={goals}
             />
           )}
 

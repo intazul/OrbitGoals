@@ -32,7 +32,9 @@ import {
   Plus,
   Camera,
   Gift,
+  Dices,
 } from 'lucide-react';
+import { generateRandomGamerTag, cleanGamerTag } from '../utils/gamerNames';
 
 interface ProfileScreenProps {
   profile: UserProfile;
@@ -171,7 +173,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateProfile({
-      name: editName.trim() || 'Achiever',
+      name: cleanGamerTag(editName) || generateRandomGamerTag(),
       age: editAge ? parseInt(editAge, 10) || null : null,
       title: editTitle.trim() || rankInfo.title,
       motto: editMotto.trim(),
@@ -845,17 +847,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <form onSubmit={handleSaveProfile} className="space-y-3">
 
               <div>
-                <label className="text-xs font-bold text-on-surface-variant block mb-1">
-                  Display Name
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-on-surface-variant block">
+                    Gamer Tag (Username)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tag = generateRandomGamerTag();
+                      setEditName(tag);
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Dices className="w-3.5 h-3.5" />
+                    <span>Roll Tag</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Your Name"
-                  className="w-full h-11 px-3.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface text-sm font-semibold focus:outline-none focus:border-primary"
+                  onChange={(e) => setEditName(cleanGamerTag(e.target.value))}
+                  placeholder="e.g. ApexStriker404"
+                  className="w-full h-11 px-3.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface text-sm font-mono font-bold focus:outline-none focus:border-primary"
                   required
                 />
+                <span className="text-[10px] text-on-surface-variant block mt-1">
+                  Letters & numbers only · No spaces (e.g. CyberPhantom718)
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

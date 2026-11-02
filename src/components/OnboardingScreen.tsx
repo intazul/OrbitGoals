@@ -12,7 +12,9 @@ import {
   Zap,
   ShieldCheck,
   Sparkles,
+  Dices,
 } from 'lucide-react';
+import { generateRandomGamerTag, cleanGamerTag } from '../utils/gamerNames';
 
 interface OnboardingScreenProps {
   onComplete: (profile: UserProfile, security: SecurityConfig) => void;
@@ -33,8 +35,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   // Step 1: Quick Optional Profile & Passcode Setup (non-scrollable)
   const [step, setStep] = useState<number>(0);
 
-  // Profile Form State
-  const [name, setName] = useState<string>(initialProfile?.name || '');
+  // Profile Form State (Defaults to a unique random gamer name with numbers, no spaces)
+  const [name, setName] = useState<string>(() => initialProfile?.name?.trim() || generateRandomGamerTag());
   const [age, setAge] = useState<string>(initialProfile?.age ? String(initialProfile.age) : '24');
   const [pin, setPin] = useState<string>(initialSecurity?.pin || '0000');
   const [appLockEnabled, setAppLockEnabled] = useState<boolean>(
@@ -42,14 +44,22 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   );
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const handleRollRandomName = () => {
+    const randomTag = generateRandomGamerTag();
+    setName(randomTag);
+    sound.playPop();
+    triggerHaptic('light');
+  };
+
   const handleContinueAsGuest = () => {
     sound.playSuccessChime();
     triggerHaptic('success');
     fireConfetti(2000);
+    const guestGamerName = generateRandomGamerTag();
     onComplete(
       {
         ...(initialProfile || {}),
-        name: 'Guest User',
+        name: guestGamerName,
         age: 24,
         onboarded: true,
         title: 'Goal Pioneer',
@@ -67,9 +77,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     e.preventDefault();
     setValidationError(null);
 
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      setValidationError('Please enter your name.');
+    // Enforce no spaces and ensure valid gamer tag
+    const cleanedGamerName = cleanGamerTag(name);
+    if (!cleanedGamerName) {
+      setValidationError('Please enter a username.');
       sound.playErrorTone();
       triggerHaptic('medium');
       return;
@@ -93,7 +104,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
     const updatedProfile: UserProfile = {
       ...(initialProfile || {}),
-      name: trimmedName,
+      name: cleanedGamerName,
       age: parsedAge,
       onboarded: true,
       title: 'Goal Achiever',
@@ -293,15 +304,29 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
               {/* Name & Age Row */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[11px] font-bold text-on-surface-variant block">Your Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Alex"
-                    maxLength={30}
-                    className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-sm font-semibold text-on-surface focus:outline-none focus:border-primary"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-on-surface-variant block">Player Username</label>
+                    <button
+                      type="button"
+                      onClick={handleRollRandomName}
+                      className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer active:scale-95"
+                      title="Roll a new random gamer name"
+                    >
+                      <Dices className="w-3 h-3 text-primary" />
+                      <span>Roll Tag</span>
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value.replace(/\s+/g, ''))}
+                      placeholder="e.g. ApexStriker404"
+                      maxLength={24}
+                      className="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-sm font-black font-mono text-on-surface focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <span className="text-[9px] text-on-surface-variant block">Unique gamer tag with numbers & no spaces</span>
                 </div>
                 <div className="col-span-1 space-y-1">
                   <label className="text-[11px] font-bold text-on-surface-variant block">Age</label>
