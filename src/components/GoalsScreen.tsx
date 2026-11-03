@@ -56,7 +56,10 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
           <div className="w-8 h-8 rounded-xl bg-primary text-on-primary flex items-center justify-center font-bold">
             <Target className="w-4 h-4" />
           </div>
-          <h1 className="text-lg font-black text-on-surface tracking-tight">
+          <h1
+            style={{ fontSize: '16px' }}
+            className="text-lg font-black text-on-surface tracking-tight"
+          >
             My Goals
           </h1>
         </div>

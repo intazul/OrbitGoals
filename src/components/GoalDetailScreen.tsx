@@ -21,8 +21,12 @@ import {
   AlertCircle,
   Download,
   ExternalLink,
+  Bell,
+  Volume2,
+  RotateCcw,
 } from 'lucide-react';
 import { getGoogleCalendarUrlForGoal, downloadCalendarICS } from '../utils/calendarExport';
+import { notificationManager } from '../utils/notifications';
 
 interface GoalDetailScreenProps {
   goal: Goal;
@@ -30,7 +34,9 @@ interface GoalDetailScreenProps {
   onUpdateGoalValue: (goalId: string, delta: number) => void;
   onToggleSubtask?: (goalId: string, subtaskId: string) => void;
   onDeleteGoal: (goalId: string) => void;
+  onResetGoal?: (goalId: string, resetHistory?: boolean) => void;
   onEditGoal?: (goal: Goal) => void;
+  onUpdateGoal?: (goalId: string, updates: Partial<Goal>) => void;
   onOpenCalendar?: (goalId?: string) => void;
   currency: string;
   linkedHabit?: Habit;
@@ -43,7 +49,9 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
   onUpdateGoalValue,
   onToggleSubtask,
   onDeleteGoal,
+  onResetGoal,
   onEditGoal,
+  onUpdateGoal,
   onOpenCalendar,
   currency,
   linkedHabit,
@@ -103,7 +111,10 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-[18px] font-black tracking-tight text-on-surface leading-none">
+            <h1
+              style={{ fontSize: '16px' }}
+              className="text-[18px] font-black tracking-tight text-on-surface leading-none"
+            >
               Goal Details
             </h1>
             <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
@@ -113,6 +124,21 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {onResetGoal && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm(`Reset current progress for "${goal.title}" to 0?`)) {
+                  onResetGoal(goal.id, false);
+                }
+              }}
+              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:text-amber-500 hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+              title="Reset goal progress to 0"
+            >
+              <RotateCcw className="w-4 h-4 text-amber-500" />
+            </button>
+          )}
+
           {onOpenCalendar && (
             <button
               type="button"
@@ -370,6 +396,77 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
           </div>
         )}
 
+        {/* Push Notification & Reminder Alert Card */}
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                <Bell className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-on-surface">Push Notification & Alert</h3>
+                <p className="text-[10px] text-on-surface-variant font-medium">
+                  {goal.reminderEnabled && goal.reminderTime
+                    ? `Active · ${goal.reminderTime} (${(goal.reminderDays || ['Daily']).join(', ')})`
+                    : 'Alert notifications disabled for this goal'}
+                </p>
+              </div>
+            </div>
+
+            {onUpdateGoal && (
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(goal.reminderEnabled)}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    onUpdateGoal(goal.id, {
+                      reminderEnabled: enabled,
+                      reminderTime: goal.reminderTime || '19:00',
+                    });
+                    sound.playPop();
+                    triggerHaptic('light');
+                    if (enabled && notificationManager.permission !== 'granted') {
+                      notificationManager.requestPermission();
+                    }
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-outline-variant/20 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                notificationManager.testAlert(
+                  goal.title,
+                  goal.reminderMessage || `Target check-in: "${goal.title}" (${goal.currentValue}/${goal.targetValue} ${goal.unit}). Log your progress! 🎯`,
+                  goal.reminderSound || 'chime',
+                  'goal'
+                );
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all cursor-pointer active:scale-95"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>Test Notification Alert</span>
+            </button>
+
+            {onEditGoal && (
+              <button
+                type="button"
+                onClick={() => onEditGoal(goal)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-outline-variant/30 text-on-surface hover:bg-surface-container text-xs font-bold transition-all cursor-pointer active:scale-95"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-primary" />
+                <span>Configure Alert Time & Days</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Complete Historical Timeline From Beginning */}
         <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
           <div className="flex items-center justify-between">
@@ -440,6 +537,67 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
               })}
             </div>
           )}
+        </div>
+
+        {/* Manage Goal: Reset & Delete Card */}
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-surface-container text-on-surface flex items-center justify-center font-bold shrink-0">
+              <RotateCcw className="w-4 h-4 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-on-surface">Manage Goal</h3>
+              <p className="text-[10px] text-on-surface-variant font-medium">
+                Reset progress or delete this goal
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            {onResetGoal && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Reset current progress for "${goal.title}" to 0 ${goal.unit || 'units'}?`)) {
+                    onResetGoal(goal.id, false);
+                  }
+                }}
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Progress to 0</span>
+              </button>
+            )}
+
+            {onResetGoal && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Full Reset: This will reset progress back to 0 and clear progress history for "${goal.title}". Continue?`)) {
+                    onResetGoal(goal.id, true);
+                  }
+                }}
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Full Reset (Start from Zero)</span>
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(`Are you sure you want to permanently delete "${goal.title}"?`)) {
+                onDeleteGoal(goal.id);
+                onBack();
+              }
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer mt-1"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete Goal Permanently</span>
+          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Habit, Goal } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
+import { notificationManager } from '../utils/notifications';
 import { GoalIcon } from './GoalIcon';
 import {
   ArrowLeft,
@@ -21,6 +22,9 @@ import {
   History,
   CheckCircle2,
   Circle,
+  Bell,
+  Volume2,
+  RotateCcw,
 } from 'lucide-react';
 
 interface HabitDetailScreenProps {
@@ -29,7 +33,9 @@ interface HabitDetailScreenProps {
   onToggleHabit: (habitId: string) => void;
   onLogHabitSet?: (habitId: string, delta: number) => void;
   onDeleteHabit: (habitId: string) => void;
+  onResetHabit?: (habitId: string, resetAll?: boolean) => void;
   onEditHabit?: (habit: Habit) => void;
+  onUpdateHabit?: (habitId: string, updates: Partial<Habit>) => void;
   todayStr: string;
   linkedGoal?: Goal;
   onOpenGoalDetail?: (goal: Goal) => void;
@@ -41,7 +47,9 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
   onToggleHabit,
   onLogHabitSet,
   onDeleteHabit,
+  onResetHabit,
   onEditHabit,
+  onUpdateHabit,
   todayStr,
   linkedGoal,
   onOpenGoalDetail,
@@ -117,7 +125,10 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-[18px] font-black tracking-tight text-on-surface leading-none">
+            <h1
+              style={{ fontSize: '16px' }}
+              className="text-[18px] font-black tracking-tight text-on-surface leading-none"
+            >
               Habit Details
             </h1>
             <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
@@ -127,6 +138,21 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {onResetHabit && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm(`Reset today's progress for "${habit.title}" to 0?`)) {
+                  onResetHabit(habit.id, false);
+                }
+              }}
+              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:text-amber-500 hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+              title="Reset today's progress"
+            >
+              <RotateCcw className="w-4 h-4 text-amber-500" />
+            </button>
+          )}
+
           {onEditHabit && (
             <button
               type="button"
@@ -184,7 +210,10 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
               </h2>
 
               {habit.description && (
-                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                <p
+                  style={{ fontSize: '11px' }}
+                  className="text-xs text-on-surface-variant mt-1 leading-relaxed"
+                >
                   {habit.description}
                 </p>
               )}
@@ -201,6 +230,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-on-surface">Today's Status:</span>
               <span
+                style={{ width: '106px' }}
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black ${
                   isDoneToday
                     ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
@@ -210,12 +240,12 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                 {isDoneToday ? (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Completed Today</span>
+                    <span style={{ fontSize: '9px' }}>Completed Today</span>
                   </>
                 ) : (
                   <>
                     <Circle className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Pending Check-in</span>
+                    <span style={{ fontSize: '9px' }}>Pending Check-in</span>
                   </>
                 )}
               </span>
@@ -374,7 +404,15 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     placeholder={`Custom amount (+/- ${habit.unit || 'reps'})...`}
                     value={customDelta}
                     onChange={(e) => setCustomDelta(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-surface border border-outline-variant/40 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
+                    className="rounded-xl bg-surface border border-outline-variant/40 font-mono text-on-surface focus:outline-none focus:border-primary"
+                    style={{
+                      width: '200.28125px',
+                      fontSize: '13px',
+                      paddingTop: '6px',
+                      paddingLeft: '11px',
+                      paddingRight: '8px',
+                      height: '33px',
+                    }}
                   />
                   <button
                     type="submit"
@@ -416,6 +454,77 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
             )}
           </div>
         )}
+
+        {/* Push Notification & Reminder Alert Card */}
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                <Bell className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-on-surface">Push Notification & Alert</h3>
+                <p className="text-[10px] text-on-surface-variant font-medium">
+                  {habit.reminderEnabled && habit.reminderTime
+                    ? `Active · ${habit.reminderTime} (${(habit.reminderDays || ['Daily']).join(', ')})`
+                    : 'Reminders disabled for this habit'}
+                </p>
+              </div>
+            </div>
+
+            {onUpdateHabit && (
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(habit.reminderEnabled)}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    onUpdateHabit(habit.id, {
+                      reminderEnabled: enabled,
+                      reminderTime: habit.reminderTime || '09:00',
+                    });
+                    sound.playPop();
+                    triggerHaptic('light');
+                    if (enabled && notificationManager.permission !== 'granted') {
+                      notificationManager.requestPermission();
+                    }
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-outline-variant/20 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                notificationManager.testAlert(
+                  habit.title,
+                  habit.reminderMessage || `Time for "${habit.title}"! Build your consistency streak 🔥`,
+                  habit.reminderSound || 'chime',
+                  'habit'
+                );
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all cursor-pointer active:scale-95"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>Test Notification Alert</span>
+            </button>
+
+            {onEditHabit && (
+              <button
+                type="button"
+                onClick={() => onEditHabit(habit)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-outline-variant/30 text-on-surface hover:bg-surface-container text-xs font-bold transition-all cursor-pointer active:scale-95"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-primary" />
+                <span>Configure Alert Time & Days</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Recent 14-Day Consistency Matrix */}
         <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-2.5">
@@ -526,6 +635,67 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
               })}
             </div>
           )}
+        </div>
+
+        {/* Manage Habit: Reset & Delete Card */}
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-surface-container text-on-surface flex items-center justify-center font-bold shrink-0">
+              <RotateCcw className="w-4 h-4 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-on-surface">Manage Habit</h3>
+              <p className="text-[10px] text-on-surface-variant font-medium">
+                Reset progress or delete this habit
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            {onResetHabit && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Reset today's progress on "${habit.title}" to 0?`)) {
+                    onResetHabit(habit.id, false);
+                  }
+                }}
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Today's Progress</span>
+              </button>
+            )}
+
+            {onResetHabit && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Full Reset: This will reset streak, history and progress back to 0 for "${habit.title}". Continue?`)) {
+                    onResetHabit(habit.id, true);
+                  }
+                }}
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset All Stats (Streak to 0)</span>
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(`Are you sure you want to permanently delete "${habit.title}"?`)) {
+                onDeleteHabit(habit.id);
+                onBack();
+              }
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer mt-1"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete Habit Permanently</span>
+          </button>
         </div>
       </div>
     </div>

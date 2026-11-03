@@ -80,7 +80,10 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-[19px] font-black tracking-tight text-on-surface leading-none whitespace-nowrap">
+            <h1
+              style={{ fontSize: '16px' }}
+              className="text-[19px] font-black tracking-tight text-on-surface leading-none whitespace-nowrap"
+            >
               Habits Studio
             </h1>
           </div>

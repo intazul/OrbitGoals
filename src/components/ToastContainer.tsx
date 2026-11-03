@@ -1,6 +1,6 @@
 import React, { useSyncExternalStore } from 'react';
 import { notificationManager } from '../utils/notifications';
-import { X, Flame, Award, Bell, Zap } from 'lucide-react';
+import { X, Flame, Award, Bell, Zap, Target } from 'lucide-react';
 
 export const ToastContainer: React.FC = () => {
   const toasts = useSyncExternalStore(
@@ -18,6 +18,8 @@ export const ToastContainer: React.FC = () => {
           if (toast.type === 'streak') return <Flame className="w-5 h-5 text-amber-500 fill-amber-500" />;
           if (toast.type === 'milestone') return <Award className="w-5 h-5 text-primary" />;
           if (toast.type === 'xp') return <Zap className="w-5 h-5 text-yellow-400" />;
+          if (toast.type === 'goal') return <Target className="w-5 h-5 text-emerald-500" />;
+          if (toast.type === 'habit') return <Bell className="w-5 h-5 text-primary" />;
           return <Bell className="w-5 h-5 text-secondary" />;
         };
 

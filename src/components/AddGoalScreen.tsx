@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Target, ChevronDown, ChevronUp, Check, Plus, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Target, ChevronDown, ChevronUp, Check, Plus, Sparkles, X, Bell, Volume2, Clock, Calendar } from 'lucide-react';
 import { Goal, GoalFrequency } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
+import { notificationManager } from '../utils/notifications';
 import { AVAILABLE_GOAL_ICONS, GoalIcon } from './GoalIcon';
 
 interface AddGoalScreenProps {
@@ -46,6 +47,19 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
   const [createLinkedHabit, setCreateLinkedHabit] = useState<boolean>(!existingGoal);
   const [xpReward, setXpReward] = useState<number>(existingGoal?.xpReward ?? defaultXpPerStep);
+  const [reminderEnabled, setReminderEnabled] = useState<boolean>(
+    existingGoal?.reminderEnabled ?? Boolean(existingGoal?.reminderTime)
+  );
+  const [reminderTime, setReminderTime] = useState<string>(existingGoal?.reminderTime || '19:00');
+  const [reminderDays, setReminderDays] = useState<string[]>(
+    existingGoal?.reminderDays && existingGoal.reminderDays.length > 0
+      ? existingGoal.reminderDays
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  );
+  const [reminderSound, setReminderSound] = useState<'chime' | 'bell' | 'melody' | 'silent'>(
+    existingGoal?.reminderSound || 'chime'
+  );
+  const [reminderMessage, setReminderMessage] = useState<string>(existingGoal?.reminderMessage || '');
 
   const handleSelectQuickName = (item: typeof QUICK_NAME_OPTIONS[0]) => {
     setTitle(item.name);
@@ -74,6 +88,14 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
     }
   };
 
+  const toggleReminderDay = (day: string) => {
+    sound.playPop();
+    triggerHaptic('light');
+    setReminderDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || targetValue <= 0) return;
@@ -96,6 +118,11 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         subtasks: existingGoal?.subtasks || [],
         notes: existingGoal?.notes || '',
         linkedHabitId: existingGoal?.linkedHabitId,
+        reminderTime: reminderEnabled ? reminderTime : undefined,
+        reminderEnabled,
+        reminderDays: reminderEnabled ? reminderDays : undefined,
+        reminderSound: reminderEnabled ? reminderSound : undefined,
+        reminderMessage: reminderEnabled && reminderMessage.trim() ? reminderMessage.trim() : undefined,
       },
       !existingGoal && createLinkedHabit
     );
@@ -108,51 +135,50 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
   const currentIconObj = AVAILABLE_GOAL_ICONS.find((i) => i.id === selectedIcon) || AVAILABLE_GOAL_ICONS[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      {/* Click outside to dismiss backdrop */}
-      <div className="flex-1 w-full" onClick={onBack} />
-
-      {/* Bottom Sheet Modal Container */}
-      <div className="w-full max-h-[90vh] bg-surface text-on-surface rounded-t-[32px] border-t border-x border-outline-variant/30 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 relative z-10">
-        {/* Grab Handle Pill */}
-        <div className="w-12 h-1.5 rounded-full bg-outline-variant/60 mx-auto mt-2.5 mb-1 shrink-0" />
-
-        {/* Top Header */}
-        <header className="px-4 py-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/95 backdrop-blur-md">
-          <div className="flex items-center gap-2.5">
+    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
+      {/* Top Header */}
+      <header
+        style={{ marginTop: '32px', marginLeft: '0px' }}
+        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-all active:scale-95 cursor-pointer border border-outline-variant/30 shrink-0"
+            title="Go back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-bold shrink-0">
               <Target className="w-4 h-4" />
             </div>
-            <div>
-              <h1 className="text-base font-black tracking-tight text-on-surface leading-tight">
+            <div className="min-w-0">
+              <h1
+                style={{ fontSize: '16px' }}
+                className="text-base font-black tracking-tight text-on-surface leading-tight truncate"
+              >
                 {existingGoal ? 'Edit Target Goal' : 'New Target Goal'}
               </h1>
-              <p className="text-[10px] text-on-surface-variant font-medium">
+              <p className="text-[10px] text-on-surface-variant font-medium truncate">
                 {existingGoal ? 'Modify target, units, progress & rewards' : 'Set milestones & earn +XP per step'}
               </p>
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-black shrink-0">
-              <Sparkles className="w-3 h-3 animate-pulse" />
-              <span>+{xpReward} XP / step</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={onBack}
-              className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all active:scale-95 cursor-pointer"
-              title="Close modal"
-            >
-              <X className="w-4 h-4" />
-            </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-black shrink-0">
+            <Sparkles className="w-3 h-3 animate-pulse" />
+            <span>+{xpReward} XP / step</span>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Form Content */}
-        <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto pb-10">
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Form Content */}
+      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto pb-24">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Goal Name Input with Scrollable Chips right inside the typing area */}
           <div className="space-y-2 bg-surface-container-low p-4 rounded-3xl border border-outline-variant/30 shadow-xs">
             <label className="text-xs font-bold text-on-surface block">
@@ -504,6 +530,199 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
             </div>
           )}
 
+          {/* Push Notification & Alert Reminders Card */}
+          <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-3.5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Bell className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-on-surface block leading-tight">
+                    Push Notification & Alert
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant block mt-0.5">
+                    Custom target progress reminder alert & sound
+                  </span>
+                </div>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={reminderEnabled}
+                  onChange={(e) => {
+                    setReminderEnabled(e.target.checked);
+                    sound.playPop();
+                    triggerHaptic('light');
+                    if (e.target.checked && notificationManager.permission !== 'granted') {
+                      notificationManager.requestPermission();
+                    }
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {reminderEnabled && (
+              <div className="space-y-3 pt-1 border-t border-outline-variant/20 animate-in fade-in">
+                {/* Reminder Time Picker */}
+                <div className="flex items-center justify-between gap-3 bg-surface p-2.5 rounded-xl border border-outline-variant/20">
+                  <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    <span>Reminder Time</span>
+                  </div>
+                  <input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/30 text-xs font-bold font-mono text-on-surface focus:outline-none focus:border-primary cursor-pointer"
+                  />
+                </div>
+
+                {/* Repeat Days Selector */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-primary" />
+                      <span>Repeat Days</span>
+                    </label>
+                    <div className="flex items-center gap-1 text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setReminderDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])}
+                        className="px-1.5 py-0.5 rounded bg-surface-container text-primary font-bold hover:underline cursor-pointer"
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReminderDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri'])}
+                        className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-bold hover:underline cursor-pointer"
+                      >
+                        Weekdays
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReminderDays(['Sat', 'Sun'])}
+                        className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-bold hover:underline cursor-pointer"
+                      >
+                        Weekends
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
+                      const isSelected = reminderDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleReminderDay(day)}
+                          className={`py-1.5 text-[10px] font-bold rounded-lg border transition-all text-center cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary text-on-primary border-primary shadow-2xs'
+                              : 'bg-surface border-outline-variant/30 text-on-surface-variant hover:bg-surface-container'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Alert Sound Selector */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1">
+                    <Volume2 className="w-3 h-3 text-primary" />
+                    <span>Notification Sound & Tone</span>
+                  </label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { id: 'chime', label: '🔔 Chime' },
+                      { id: 'bell', label: '⏰ Bell' },
+                      { id: 'melody', label: '🎶 Melody' },
+                      { id: 'silent', label: '🔕 Silent' },
+                    ].map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          const chosen = s.id as typeof reminderSound;
+                          setReminderSound(chosen);
+                          notificationManager.playAlertSound(chosen);
+                          triggerHaptic('light');
+                        }}
+                        className={`py-1.5 px-1 rounded-xl text-[10px] font-bold border transition-all cursor-pointer text-center ${
+                          reminderSound === s.id
+                            ? 'bg-primary text-on-primary border-primary'
+                            : 'bg-surface border-outline-variant/30 text-on-surface-variant hover:bg-surface-container'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Alert Message */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-on-surface-variant block">
+                    Custom Alert Message (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={reminderMessage}
+                    onChange={(e) => setReminderMessage(e.target.value)}
+                    placeholder={`e.g. Target alert: Log your progress for ${title || 'this goal'}! 🎯`}
+                    className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/30 text-xs font-medium text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40"
+                  />
+                </div>
+
+                {/* Action Buttons: Test Notification & Browser Push Request */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      notificationManager.testAlert(
+                        title || 'Goal Target Alert',
+                        reminderMessage || `Target check-in: "${title || 'Goal'}" (${currentValue}/${targetValue} ${unit}). Log your steps today! 🎯`,
+                        reminderSound,
+                        'goal'
+                      );
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 text-primary font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>Test Notification Alert</span>
+                  </button>
+
+                  {notificationManager.hasNativeSupport && notificationManager.permission !== 'granted' && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const granted = await notificationManager.requestPermission();
+                        if (granted) {
+                          notificationManager.sendNotification(
+                            'Push Notifications Enabled! 🎉',
+                            'You will now receive desktop and mobile push alerts.',
+                            'reminder'
+                          );
+                        }
+                      }}
+                      className="py-2 px-3 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-bold text-[11px] hover:bg-surface-container-high cursor-pointer transition-all active:scale-95"
+                    >
+                      <span>Enable Browser Push</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Action Submit Button */}
           <div className="pt-2">
             <button
@@ -517,6 +736,5 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
         </form>
       </div>
     </div>
-  </div>
-);
+  );
 };

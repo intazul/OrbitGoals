@@ -22,6 +22,10 @@ export interface Habit {
   bestStreak: number;
   completedDates: string[]; // ISO 'YYYY-MM-DD'
   reminderTime?: string;
+  reminderEnabled?: boolean;
+  reminderDays?: string[];
+  reminderSound?: 'chime' | 'bell' | 'melody' | 'silent';
+  reminderMessage?: string;
   createdAt: string;
   archived?: boolean;
   // --- Sets & Target Features ---
@@ -68,6 +72,10 @@ export interface Goal {
   linkedPlatform?: 'youtube' | 'instagram' | 'facebook';
   linkedHabitId?: string;
   reminderTime?: string;
+  reminderEnabled?: boolean;
+  reminderDays?: string[];
+  reminderSound?: 'chime' | 'bell' | 'melody' | 'silent';
+  reminderMessage?: string;
   createdAt: string;
 }
 

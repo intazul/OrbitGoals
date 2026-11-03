@@ -33,7 +33,10 @@ import {
   FileSpreadsheet,
   FileText,
   Dices,
+  Bell,
+  Clock,
 } from 'lucide-react';
+import { notificationManager } from '../utils/notifications';
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -487,6 +490,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       <button
                         key={opt.minutes}
                         type="button"
+                        style={opt.minutes === 0 ? { fontSize: '8px' } : undefined}
                         onClick={() => {
                           onUpdateSecurity({ autoLockMinutes: opt.minutes });
                           sound.playPop();
@@ -675,6 +679,100 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 className="w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer"
               />
             </div>
+          </div>
+        </div>
+
+        {/* 6. Push & Alert Notifications Settings */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+              <Bell className="w-4 h-4" />
+              <span>Push & Alert Notifications</span>
+            </div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              notificationManager.permission === 'granted'
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+            }`}>
+              {notificationManager.permission === 'granted' ? 'Push Granted' : 'In-App Alerts Active'}
+            </span>
+          </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            Customize alert reminders individually per habit or goal, including custom reminder times, repeat days, alert chimes, and browser push notifications.
+          </p>
+
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-on-surface flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-primary" />
+                <span>Web Push Status:</span>
+              </span>
+              <span className="font-mono font-bold capitalize text-primary">
+                {notificationManager.hasNativeSupport ? notificationManager.permission : 'In-App Only'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-on-surface flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Active Reminders Configured:</span>
+              </span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {habits.filter((h) => h.reminderEnabled).length} Habits · {goals.filter((g) => g.reminderEnabled).length} Goals
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={async () => {
+                if (notificationManager.hasNativeSupport) {
+                  const granted = await notificationManager.requestPermission();
+                  if (granted) {
+                    notificationManager.sendNotification(
+                      'Push Notifications Granted! 🔔',
+                      'OrbitGoals will now alert you at your scheduled habit and goal times.',
+                      'reminder'
+                    );
+                    setBackupSuccessMsg('Push notification permission granted!');
+                    setTimeout(() => setBackupSuccessMsg(null), 3500);
+                  } else {
+                    setBackupErrorMsg('Push notifications were not enabled in your browser settings.');
+                    setTimeout(() => setBackupErrorMsg(null), 3500);
+                  }
+                } else {
+                  notificationManager.sendNotification(
+                    'In-App Alert Active',
+                    'Your browser uses in-app audio-haptic alerts and toasts.',
+                    'reminder'
+                  );
+                }
+              }}
+              className="py-2.5 px-3 rounded-2xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>{notificationManager.permission === 'granted' ? 'Push Enabled' : 'Request Push'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                notificationManager.testAlert(
+                  'OrbitGoals Alert System',
+                  'Test notification popup, sound chime & haptic feedback are working perfectly! 🚀',
+                  'chime',
+                  'reminder'
+                );
+                sound.playSuccessChime();
+                triggerHaptic('success');
+              }}
+              className="py-2.5 px-3 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container text-on-surface font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-primary" />
+              <span>Send Test Alert</span>
+            </button>
           </div>
         </div>
 

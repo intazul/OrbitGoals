@@ -145,13 +145,7 @@ export default function App() {
       if (result.didReset) {
         setHabits(result.habits);
         sound.playSuccessChime();
-        notificationManager.sendNotification(
-          '🌅 Daily Habit Reset',
-          result.shieldUsed
-            ? 'New day started! Your habit streak was protected by a Streak Shield.'
-            : 'New day started! Your daily habit progress has reset for today.',
-          'milestone'
-        );
+        // Silent daily reset: no pop up notification for daily reset of habits or goals
       }
     };
 
@@ -188,6 +182,15 @@ export default function App() {
       clearInterval(heartbeat);
     };
   }, []);
+
+  // Periodic Push Notification & Scheduled Alert Reminder Checker
+  useEffect(() => {
+    notificationManager.checkScheduledReminders(habits, goals);
+    const interval = setInterval(() => {
+      notificationManager.checkScheduledReminders(habits, goals);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [habits, goals]);
 
   // Auto-Lock monitoring effect: handles "Immediately" or configured minutes
   useEffect(() => {
@@ -467,11 +470,13 @@ export default function App() {
   const handleSaveHabit = (
     habitData: Omit<Habit, 'id' | 'createdAt' | 'completedDates' | 'streakDays' | 'bestStreak'>
   ) => {
+    let targetHabit: Habit;
     if (editingHabit) {
       const updated = habits.map((h) =>
         h.id === editingHabit.id ? { ...h, ...habitData } : h
       );
       updateHabits(updated);
+      targetHabit = updated.find((h) => h.id === editingHabit.id) || { ...editingHabit, ...habitData };
       setEditingHabit(undefined);
     } else {
       const newHabit: Habit = {
@@ -481,15 +486,18 @@ export default function App() {
         streakDays: 0,
         bestStreak: 0,
         completedDates: [],
+        progressHistory: {},
       };
       updateHabits([newHabit, ...habits]);
+      targetHabit = newHabit;
     }
 
     sound.playSuccessChime();
     triggerHaptic('success');
     setHabitFilter('all');
-    setScreenView('dashboard');
-    setActiveTab('habits');
+    // Open new tab showing full habit details
+    setSelectedHabitForDetail(targetHabit);
+    setScreenView('habit-detail');
   };
 
   // Restore starter daily habits
@@ -504,6 +512,34 @@ export default function App() {
   const handleDeleteHabit = (habitId: string) => {
     const newHabits = habits.filter((h) => h.id !== habitId);
     updateHabits(newHabits);
+    sound.playPop();
+    triggerHaptic('medium');
+  };
+
+  // Reset Individual Habit (today only or full reset)
+  const handleResetHabit = (habitId: string, resetAllHistory: boolean = false) => {
+    const updated = habits.map((h) => {
+      if (h.id !== habitId) return h;
+      if (resetAllHistory) {
+        return {
+          ...h,
+          todayProgress: 0,
+          streakDays: 0,
+          bestStreak: 0,
+          completedDates: [],
+          progressHistory: {},
+        };
+      }
+      return {
+        ...h,
+        todayProgress: 0,
+        completedDates: (h.completedDates || []).filter((d) => d !== todayStr),
+      };
+    });
+    updateHabits(updated);
+    setSelectedHabitForDetail((prev) =>
+      prev && prev.id === habitId ? updated.find((h) => h.id === habitId) || null : prev
+    );
     sound.playPop();
     triggerHaptic('medium');
   };
@@ -578,6 +614,44 @@ export default function App() {
     const newGoals = goals.filter((g) => g.id !== goalId);
     updateGoals(newGoals);
     sound.playPop();
+  };
+
+  // Reset Individual Goal (current value to 0 or full history reset)
+  const handleResetGoal = (goalId: string, resetAllHistory: boolean = false) => {
+    const updated = goals.map((g) => {
+      if (g.id !== goalId) return g;
+      const history = resetAllHistory
+        ? [{ date: todayStr, value: 0 }]
+        : [...(g.history || []), { date: todayStr, value: 0 }];
+      const subtasks = (g.subtasks || []).map((s) => ({ ...s, completed: false }));
+      return {
+        ...g,
+        currentValue: 0,
+        completedDates: (g.completedDates || []).filter((d) => d !== todayStr),
+        history,
+        subtasks,
+      };
+    });
+    updateGoals(updated);
+    setSelectedGoalForDetail((prev) =>
+      prev && prev.id === goalId ? updated.find((g) => g.id === goalId) || null : prev
+    );
+    sound.playPop();
+    triggerHaptic('medium');
+  };
+
+  // Quick inline update for Habit (e.g. reminder toggle)
+  const handleUpdateHabit = (habitId: string, updates: Partial<Habit>) => {
+    const updated = habits.map((h) => (h.id === habitId ? { ...h, ...updates } : h));
+    updateHabits(updated);
+    setSelectedHabitForDetail((prev) => (prev && prev.id === habitId ? { ...prev, ...updates } : prev));
+  };
+
+  // Quick inline update for Goal (e.g. reminder toggle)
+  const handleUpdateGoal = (goalId: string, updates: Partial<Goal>) => {
+    const updated = goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g));
+    updateGoals(updated);
+    setSelectedGoalForDetail((prev) => (prev && prev.id === goalId ? { ...prev, ...updates } : prev));
   };
 
   // Reset All Data
@@ -670,11 +744,12 @@ export default function App() {
         };
       });
       updateGoals(updatedGoals);
+      const savedGoal = updatedGoals.find((g) => g.id === editingGoal.id) || { ...editingGoal, ...goalData };
       setEditingGoal(undefined);
       sound.playSuccessChime();
       triggerHaptic('success');
-      setScreenView('dashboard');
-      setActiveTab('goals');
+      setSelectedGoalForDetail(savedGoal);
+      setScreenView('goal-detail');
       return;
     }
 
@@ -725,8 +800,9 @@ export default function App() {
     updateGoals([newGoal, ...goals]);
     sound.playSuccessChime();
     triggerHaptic('success');
-    setScreenView('dashboard');
-    setActiveTab('goals');
+    // Open new tab showing full goal details
+    setSelectedGoalForDetail(newGoal);
+    setScreenView('goal-detail');
   };
 
   const handleOpenCalendar = (goalId?: string) => {
@@ -844,10 +920,12 @@ export default function App() {
                 handleDeleteHabit(id);
                 setScreenView('dashboard');
               }}
+              onResetHabit={handleResetHabit}
               onEditHabit={(h) => {
                 setEditingHabit(h);
                 setScreenView('add-habit');
               }}
+              onUpdateHabit={handleUpdateHabit}
               linkedGoal={goals.find((g) => g.id === selectedHabitForDetail.linkedGoalId)}
               onOpenGoalDetail={(g) => {
                 setSelectedGoalForDetail(g);
@@ -870,11 +948,13 @@ export default function App() {
                 handleDeleteGoal(id);
                 setScreenView('dashboard');
               }}
+              onResetGoal={handleResetGoal}
               onEditGoal={(g) => {
                 setEditingGoal(g);
                 setScreenView('add-goal');
                 sound.playPop();
               }}
+              onUpdateGoal={handleUpdateGoal}
               linkedHabit={habits.find((h) => h.id === selectedGoalForDetail.linkedHabitId)}
               onOpenHabitDetail={(h) => {
                 setSelectedHabitForDetail(h);
@@ -986,11 +1066,21 @@ export default function App() {
               onBack={() => setScreenView('dashboard')}
               onAddCapsule={handleAddCapsule}
               onDeleteCapsule={handleDeleteCapsule}
+              onOpenHabitDetail={(habit) => {
+                setSelectedHabitForDetail(habit);
+                setScreenView('habit-detail');
+                sound.playPop();
+              }}
+              onOpenGoalDetail={(goal) => {
+                setSelectedGoalForDetail(goal);
+                setScreenView('goal-detail');
+                sound.playPop();
+              }}
             />
           )}
 
-          {/* Main Single Screen: Dashboard & Bottom Sheet host */}
-          {(screenView === 'dashboard' || screenView === 'add-habit' || screenView === 'add-goal') && (
+          {/* Main Single Screen: Dashboard */}
+          {screenView === 'dashboard' && (
             <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface">
               {/* Sticky Dashboard Header Bar */}
               <header
