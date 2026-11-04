@@ -165,16 +165,7 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleExportCalendar}
-          className="flex items-center gap-1.5 py-2 px-3 rounded-2xl bg-primary text-on-primary hover:brightness-105 active:scale-95 transition-all cursor-pointer font-bold text-xs shadow-xs min-h-[44px]"
-          title="Export schedule to Apple/Google Calendar (.ics)"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Export</span>
-          <span>.ics</span>
-        </button>
+        <div className="w-16" /> {/* Spacer for balanced header symmetry */}
       </header>
 
       {/* Main Content */}

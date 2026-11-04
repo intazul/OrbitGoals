@@ -285,7 +285,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
           {/* Dynamic XP Reward Pill */}
           <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-black shrink-0">
             <Sparkles className="w-3 h-3 animate-pulse" />
-            <span>+{trackingType === 'sets' ? `${xpPerSet} XP/set` : '10 XP'}</span>
+            <span>+{trackingType === 'sets' ? `${xpPerSet} XP/set` : '8 XP'}</span>
           </div>
         </div>
       </header>
@@ -396,7 +396,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
                   <span>Simple Check-off</span>
                 </div>
                 <p className="text-[10px] opacity-80 mt-0.5">
-                  Single daily checkmark (+10 XP per day)
+                  Single daily checkmark (+8 XP per day)
                 </p>
               </button>
             </div>
@@ -554,7 +554,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
               <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-2 text-xs text-primary font-semibold">
                 <Sparkles className="w-4 h-4 shrink-0" />
                 <span>
-                  Sync active: Completing sets in this habit will also advance the connected goal and award goal step XP (+50 XP)!
+                  Sync active: Completing sets in this habit will also advance the connected goal and award goal step XP (+15 XP)!
                 </span>
               </div>
             )}

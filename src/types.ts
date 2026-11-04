@@ -204,6 +204,17 @@ export interface DailyReflection {
   energyLevel: number; // 1-5
 }
 
+export interface ReversePenaltyRecord {
+  id: string;
+  date: string; // ISO 'YYYY-MM-DD'
+  habitId: string;
+  habitTitle: string;
+  habitIcon: string;
+  xpDeducted: number;
+  reason: string;
+  timestamp: number;
+}
+
 export interface AppSettings {
   theme: 'dark' | 'light' | 'system';
   soundEnabled: boolean;
@@ -216,4 +227,5 @@ export interface AppSettings {
   fastTapMode: boolean;
   goalXpPerStep?: number; // Configurable XP per goal step
   habitXpPerSet?: number; // Configurable XP per habit set
+  reverseZoneActive?: boolean;
 }

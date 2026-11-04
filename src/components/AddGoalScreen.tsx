@@ -511,7 +511,7 @@ export const AddGoalScreen: React.FC<AddGoalScreenProps> = ({
                 </div>
                 <div>
                   <span className="text-xs font-bold text-on-surface block leading-tight">
-                    Connect to Daily Habit (+50 XP)
+                    Connect to Daily Habit (+15 XP)
                   </span>
                   <span className="text-[10px] text-on-surface-variant block mt-0.5">
                     Auto-create daily habit with sets (e.g. video uploads or reps) that syncs progress

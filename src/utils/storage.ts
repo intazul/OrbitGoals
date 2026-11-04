@@ -1,4 +1,4 @@
-import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, DailyReflection, SecurityConfig, TimeCapsule } from '../types';
+import { Goal, Habit, UserProfile, AvatarItem, CommunityChallenge, AppSettings, DailyReflection, SecurityConfig, TimeCapsule, ReversePenaltyRecord } from '../types';
 import { INITIAL_GOALS, INITIAL_HABITS, INITIAL_USER_PROFILE, AVATAR_CATALOG, INITIAL_CHALLENGES, INITIAL_SETTINGS, DEFAULT_SECURITY, INITIAL_CAPSULES } from './initialData';
 import { generateRandomGamerTag } from './gamerNames';
 
@@ -12,6 +12,8 @@ const KEYS = {
   SETTINGS: 'orbitgoals_data_settings_v1',
   REFLECTIONS: 'orbitgoals_data_reflections_v1',
   CAPSULES: 'orbitgoals_data_capsules_v1',
+  REVERSE_HISTORY: 'orbitgoals_reverse_penalties_v1',
+  REVERSE_ZONE: 'orbitgoals_reverse_zone_active_v1',
 };
 
 export const storage = {
@@ -313,10 +315,56 @@ export const storage = {
     }
   },
 
+  getReverseZoneActive(): boolean {
+    try {
+      const data = localStorage.getItem(KEYS.REVERSE_ZONE);
+      return data === 'true';
+    } catch {
+      return false;
+    }
+  },
+
+  saveReverseZoneActive(active: boolean) {
+    try {
+      localStorage.setItem(KEYS.REVERSE_ZONE, active ? 'true' : 'false');
+    } catch {
+      // ignore
+    }
+  },
+
+  getReverseHistory(): ReversePenaltyRecord[] {
+    try {
+      const data = localStorage.getItem(KEYS.REVERSE_HISTORY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  },
+
+  saveReverseHistory(records: ReversePenaltyRecord[]) {
+    try {
+      localStorage.setItem(KEYS.REVERSE_HISTORY, JSON.stringify(records));
+    } catch {
+      // ignore
+    }
+  },
+
+  addReversePenalties(records: ReversePenaltyRecord[]) {
+    if (!records || records.length === 0) return;
+    const current = this.getReverseHistory();
+    const updated = [...records, ...current].slice(0, 100); // keep recent 100 entries
+    this.saveReverseHistory(updated);
+  },
+
   /**
    * Daily 00:00 Habit Reset Check:
    * Compares today's date with the last recorded active date.
-   * If a new day has arrived (after midnight 00:00):
+   * If a new day has arrived (after midnight 00:00 / 11:59 PM deadline):
+   * - Uncompleted habits from the previous day are penalized via Reverse Habit deduction (-XP)
    * - Resets all habit todayProgress to 0
    * - Checks streak validity for the previous day
    * - Updates stored habits and records today as the new active date.
@@ -326,6 +374,8 @@ export const storage = {
     habits: Habit[];
     lastActiveDate: string | null;
     shieldUsed: boolean;
+    xpDeducted: number;
+    penalties: ReversePenaltyRecord[];
   } {
     const today = customTodayStr || new Date().toISOString().split('T')[0];
     const lastActive = localStorage.getItem('orbitgoals_last_active_date');
@@ -333,11 +383,11 @@ export const storage = {
 
     if (!lastActive) {
       localStorage.setItem('orbitgoals_last_active_date', today);
-      return { didReset: false, habits, lastActiveDate: null, shieldUsed: false };
+      return { didReset: false, habits, lastActiveDate: null, shieldUsed: false, xpDeducted: 0, penalties: [] };
     }
 
     if (lastActive === today) {
-      return { didReset: false, habits, lastActiveDate: lastActive, shieldUsed: false };
+      return { didReset: false, habits, lastActiveDate: lastActive, shieldUsed: false, xpDeducted: 0, penalties: [] };
     }
 
     // It is a new day (00:00 rollover has occurred)!
@@ -350,6 +400,8 @@ export const storage = {
     const profile = this.getProfile();
     let shieldsAvailable = profile.streakShields || 0;
     let anyShieldUsed = false;
+    let totalXpDeducted = 0;
+    const yesterdayPenalties: ReversePenaltyRecord[] = [];
 
     const updatedHabits = habits.map((habit) => {
       const completedDates = habit.completedDates || [];
@@ -367,6 +419,22 @@ export const storage = {
         }
       }
 
+      // Reverse Habit penalty: Uncompleted before 11:59 PM reduces XP by same amount
+      if (!completedYesterday) {
+        const xpPenalty = habit.xpPerSet || 8;
+        totalXpDeducted += xpPenalty;
+        yesterdayPenalties.push({
+          id: `rev-pen-${Date.now()}-${habit.id}-${Math.random().toString(36).slice(2, 6)}`,
+          date: yesterdayStr,
+          habitId: habit.id,
+          habitTitle: habit.title,
+          habitIcon: habit.icon,
+          xpDeducted: xpPenalty,
+          reason: 'Uncompleted before 11:59 PM deadline',
+          timestamp: Date.now(),
+        });
+      }
+
       return {
         ...habit,
         todayProgress: 0, // Reset today's progress to 0 for the fresh day!
@@ -374,9 +442,16 @@ export const storage = {
       };
     });
 
-    if (anyShieldUsed) {
+    if (yesterdayPenalties.length > 0) {
+      this.addReversePenalties(yesterdayPenalties);
+    }
+
+    if (anyShieldUsed || totalXpDeducted > 0) {
+      const currentXp = profile.xp || 0;
+      const nextXp = Math.max(0, currentXp - totalXpDeducted);
       this.saveProfile({
         ...profile,
+        xp: nextXp,
         streakShields: shieldsAvailable,
       });
     }
@@ -389,6 +464,58 @@ export const storage = {
       habits: updatedHabits,
       lastActiveDate: lastActive,
       shieldUsed: anyShieldUsed,
+      xpDeducted: totalXpDeducted,
+      penalties: yesterdayPenalties,
+    };
+  },
+
+  /**
+   * Manually settle today's uncompleted habits as reverse penalties (e.g. for testing or 11:59 PM manual audit)
+   */
+  settleReverseHabitsNow(todayStr: string): {
+    xpDeducted: number;
+    penalties: ReversePenaltyRecord[];
+  } {
+    const habits = this.getHabits();
+    const profile = this.getProfile();
+    const existingPenalties = this.getReverseHistory();
+    const alreadyPenalizedIds = new Set(
+      existingPenalties.filter((p) => p.date === todayStr).map((p) => p.habitId)
+    );
+
+    const newPenalties: ReversePenaltyRecord[] = [];
+    let totalDeduction = 0;
+
+    habits.forEach((habit) => {
+      const isDone = (habit.completedDates || []).includes(todayStr);
+      if (!isDone && !alreadyPenalizedIds.has(habit.id)) {
+        const penalty = habit.xpPerSet || 8;
+        totalDeduction += penalty;
+        newPenalties.push({
+          id: `rev-pen-${Date.now()}-${habit.id}-${Math.random().toString(36).slice(2, 6)}`,
+          date: todayStr,
+          habitId: habit.id,
+          habitTitle: habit.title,
+          habitIcon: habit.icon,
+          xpDeducted: penalty,
+          reason: 'Collected before 11:59 PM cutoff',
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    if (newPenalties.length > 0) {
+      this.addReversePenalties(newPenalties);
+      const currentXp = profile.xp || 0;
+      this.saveProfile({
+        ...profile,
+        xp: Math.max(0, currentXp - totalDeduction),
+      });
+    }
+
+    return {
+      xpDeducted: totalDeduction,
+      penalties: newPenalties,
     };
   },
 

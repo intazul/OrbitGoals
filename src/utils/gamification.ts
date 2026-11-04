@@ -1,37 +1,47 @@
 import { Trophy, TrophyTier, Habit, Goal, UserProfile } from '../types';
 
-export const XP_PER_HABIT = 10;
-export const XP_PER_GOAL_STEP = 50;
-export const MAX_LEVEL = 1000;
+export const XP_PER_HABIT = 8;
+export const XP_PER_GOAL_STEP = 15;
 
 /**
- * Non-linear XP curve for 1,000 Levels:
- * With each level, the XP required to reach the next level increases progressively.
+ * Boundless Escalating XP Curve:
+ * With each increase in level, the XP required to reach the next level increases progressively.
  * Level 1 -> 2: 100 XP
- * Level 2 -> 3: 126 XP
- * Level 3 -> 4: 154 XP
- * Level 10 -> 11: 420 XP
- * Level 50 -> 51: ~3,400 XP
- * Level 100 -> 101: ~11,200 XP
- * Level 500 -> 501: ~115,000 XP
- * Level 999 -> 1000: ~320,000 XP
+ * Level 2 -> 3: 161 XP (+61 more)
+ * Level 3 -> 4: 247 XP (+86 more)
+ * Level 4 -> 5: 351 XP (+104 more)
+ * Level 5 -> 6: 470 XP (+119 more)
+ * Level 10 -> 11: 1,280 XP
+ * Level 20 -> 21: 4,050 XP
+ * Level 50 -> 51: 19,300 XP
+ * Level 100 -> 101: 64,500 XP
+ * Level 500 -> 501: 1,020,000 XP
+ * Infinite progression without any 1000 level limitation!
  */
 export function getXpRequiredForLevel(level: number): number {
   if (level <= 0) return 100;
-  if (level >= MAX_LEVEL) return Infinity;
-  const l = level - 1;
-  return Math.round(100 + 18 * l + 3.2 * Math.pow(l, 1.48));
+  const l = Math.max(0, level - 1);
+  return Math.round(100 + 45 * l + 16 * Math.pow(l, 1.72));
 }
 
-// Precompute cumulative XP for levels 1 to 1000 for instantaneous O(1) lookups
-const CUMULATIVE_XP_TABLE: number[] = new Array(MAX_LEVEL + 1);
-CUMULATIVE_XP_TABLE[0] = 0;
-CUMULATIVE_XP_TABLE[1] = 0; // At Level 1, total XP is 0
-for (let lvl = 1; lvl < MAX_LEVEL; lvl++) {
-  CUMULATIVE_XP_TABLE[lvl + 1] = CUMULATIVE_XP_TABLE[lvl] + getXpRequiredForLevel(lvl);
+// Dynamic Cumulative XP Cache (grows on demand, no fixed 1000 ceiling)
+const CUMULATIVE_XP_CACHE: number[] = [0, 0]; // Index 1 is Lv 1 (0 XP needed)
+
+export function getCumulativeXpForLevel(targetLevel: number): number {
+  if (targetLevel <= 1) return 0;
+  while (CUMULATIVE_XP_CACHE.length <= targetLevel) {
+    const lvl = CUMULATIVE_XP_CACHE.length - 1;
+    const nextTotal = CUMULATIVE_XP_CACHE[lvl] + getXpRequiredForLevel(lvl);
+    CUMULATIVE_XP_CACHE.push(nextTotal);
+  }
+  return CUMULATIVE_XP_CACHE[targetLevel];
 }
 
 export const RANK_TITLES: { minLevel: number; title: string; badge: string; color: string }[] = [
+  { minLevel: 5000, title: 'Infinite Primordial Reality', badge: '🪐', color: 'from-fuchsia-400 via-pink-400 to-amber-300' },
+  { minLevel: 3000, title: 'Cosmic Singularity Master', badge: '🌌', color: 'from-indigo-400 via-purple-300 to-pink-500' },
+  { minLevel: 2000, title: 'Astral Demiurge', badge: '💫', color: 'from-amber-400 via-orange-300 to-rose-500' },
+  { minLevel: 1500, title: 'Eternal Nexus Sovereign', badge: '⚡', color: 'from-cyan-400 via-teal-300 to-indigo-500' },
   { minLevel: 1000, title: 'Omnipotent Sovereign', badge: '🏆', color: 'from-amber-400 via-yellow-300 to-amber-500' },
   { minLevel: 950, title: 'Cosmic Singularity', badge: '🌌', color: 'from-fuchsia-500 via-purple-400 to-indigo-500' },
   { minLevel: 900, title: 'Omniscient Overlord', badge: '👑', color: 'from-amber-300 via-orange-400 to-red-500' },
@@ -74,27 +84,21 @@ export function getRankInfo(level: number): { title: string; badge: string; colo
 }
 
 /**
- * Calculates current level (1 to 1000) using the cumulative XP table.
+ * Calculates current level dynamically using the boundless escalating XP curve.
  */
 export function calculateLevel(totalXp: number): number {
   if (totalXp <= 0) return 1;
 
-  // Binary search across 1..1000
-  let low = 1;
-  let high = MAX_LEVEL;
-  let ans = 1;
-
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    if (CUMULATIVE_XP_TABLE[mid] <= totalXp) {
-      ans = mid;
-      low = mid + 1;
-    } else {
-      high = mid - 1;
+  let level = 1;
+  while (true) {
+    const nextCumulative = getCumulativeXpForLevel(level + 1);
+    if (totalXp < nextCumulative) {
+      return level;
     }
+    level += 1;
+    // Safety guard
+    if (level > 100000) return level;
   }
-
-  return Math.min(MAX_LEVEL, Math.max(1, ans));
 }
 
 export function calculateLevelProgress(totalXp: number): {
@@ -108,20 +112,7 @@ export function calculateLevelProgress(totalXp: number): {
 } {
   const safeXp = Math.max(0, totalXp);
   const level = calculateLevel(safeXp);
-
-  if (level >= MAX_LEVEL) {
-    return {
-      level: MAX_LEVEL,
-      currentLevelXp: safeXp - CUMULATIVE_XP_TABLE[MAX_LEVEL],
-      nextLevelXp: 0,
-      percent: 100,
-      totalXp: safeXp,
-      xpToNextLevel: 0,
-      isMaxLevel: true,
-    };
-  }
-
-  const baseForCurrent = CUMULATIVE_XP_TABLE[level];
+  const baseForCurrent = getCumulativeXpForLevel(level);
   const requiredForNext = getXpRequiredForLevel(level);
   const currentLevelXp = Math.max(0, safeXp - baseForCurrent);
   const percent = Math.min(100, Math.max(0, Math.round((currentLevelXp / requiredForNext) * 100)));
@@ -134,9 +125,10 @@ export function calculateLevelProgress(totalXp: number): {
     percent,
     totalXp: safeXp,
     xpToNextLevel,
-    isMaxLevel: false,
+    isMaxLevel: false, // Boundless progression - no 1000 ceiling!
   };
 }
+
 
 /**
  * Calculates current streak (consecutive days) counting backwards from today or yesterday.
@@ -626,12 +618,12 @@ export function getTrophies(params: {
     },
     {
       id: 'level-1000',
-      title: 'Omnipotent Legend (Lv.1000)',
-      description: 'Reach the ultimate maximum Level 1000 pinnacle of human excellence',
+      title: 'Omnipotent Sovereign (Lv.1000)',
+      description: 'Achieve the monumental Level 1000 milestone in your boundless ascension',
       category: 'levels',
       tier: 'cosmic',
       badge: '🏆',
-      xpReward: 150000,
+      xpReward: 50000,
       currentProgress: Math.min(1000, userLevel),
       maxProgress: 1000,
     },

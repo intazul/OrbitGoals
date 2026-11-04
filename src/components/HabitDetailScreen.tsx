@@ -436,7 +436,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                 <span className="text-xs font-bold text-primary">Connected Goal</span>
               </div>
               <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                +50 XP Synced
+                +15 XP Synced
               </span>
             </div>
             <p className="text-xs text-on-surface font-semibold">

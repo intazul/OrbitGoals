@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Goal, Habit, AppSettings, UserProfile, SecurityConfig, HabitTimeOfDay, TimeCapsule } from './types';
+import { Goal, Habit, AppSettings, UserProfile, SecurityConfig, HabitTimeOfDay, TimeCapsule, ReversePenaltyRecord } from './types';
 import { storage } from './utils/storage';
 import { sound, triggerHaptic } from './utils/sound';
 import { fireConfetti } from './utils/confetti';
@@ -35,6 +35,7 @@ import { OnboardingScreen } from './components/OnboardingScreen';
 import { ToastContainer } from './components/ToastContainer';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { GoalIcon } from './components/GoalIcon';
+import { ReverseZoneAuditModal } from './components/ReverseZoneAuditModal';
 import { INITIAL_HABITS } from './utils/initialData';
 
 import {
@@ -58,6 +59,9 @@ import {
   Lock,
   Edit2,
   Camera,
+  AlertTriangle,
+  History,
+  Clock,
 } from 'lucide-react';
 
 export default function App() {
@@ -97,10 +101,16 @@ export default function App() {
   // Floating XP indicator state
   const [floatingXp, setFloatingXp] = useState<{ text: string; id: number } | null>(null);
 
+  // Reverse Habit Zone State
+  const [isReverseZone, setIsReverseZone] = useState<boolean>(() => storage.getReverseZoneActive());
+  const [reverseHistory, setReverseHistory] = useState<ReversePenaltyRecord[]>(() => storage.getReverseHistory());
+  const [showReverseAuditModal, setShowReverseAuditModal] = useState<boolean>(false);
+  const [countdownToMidnight, setCountdownToMidnight] = useState<string>('');
+
   const todayStr = new Date().toISOString().split('T')[0];
   const weekDays = getCurrentWeekDays();
 
-  // Apply Theme & Low Power Mode cleanly to root
+  // Apply Theme & Low Power Mode & Reverse Zone cleanly to root
   useEffect(() => {
     const root = document.documentElement;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -129,6 +139,36 @@ export default function App() {
     }
   }, [settings.theme]);
 
+  // Sync data-reverse-zone attribute for moderate red aesthetic
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isReverseZone) {
+      root.setAttribute('data-reverse-zone', 'true');
+    } else {
+      root.removeAttribute('data-reverse-zone');
+    }
+    storage.saveReverseZoneActive(isReverseZone);
+  }, [isReverseZone]);
+
+  // Live countdown to 11:59:59 PM today
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const diffMs = Math.max(0, endOfDay.getTime() - now.getTime());
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+      setCountdownToMidnight(
+        `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`
+      );
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const root = document.documentElement;
     if (settings.lowPowerMode) {
@@ -138,14 +178,36 @@ export default function App() {
     }
   }, [settings.lowPowerMode]);
 
-  // Daily habit reset at 00:00 midnight
+  // Toggle Reverse Habit Zone
+  const handleToggleReverseZone = () => {
+    setIsReverseZone((prev) => {
+      const next = !prev;
+      sound.playPop();
+      triggerHaptic('medium');
+      return next;
+    });
+  };
+
+  // Daily habit reset at 00:00 midnight with Reverse Habit 11:59 PM XP deduction
   useEffect(() => {
     const performMidnightReset = () => {
       const result = storage.checkAndResetDailyHabits();
       if (result.didReset) {
         setHabits(result.habits);
+        const updatedProfile = storage.getProfile();
+        setProfile(updatedProfile);
+        setReverseHistory(storage.getReverseHistory());
         sound.playSuccessChime();
-        // Silent daily reset: no pop up notification for daily reset of habits or goals
+
+        if (result.xpDeducted > 0) {
+          setFloatingXp({ text: `-${result.xpDeducted} XP (Missed Habits)`, id: Date.now() });
+          setTimeout(() => setFloatingXp(null), 2500);
+          notificationManager.sendNotification(
+            '⚠️ Reverse Habit Zone Settlement',
+            `11:59 PM passed: -${result.xpDeducted} XP was deducted for uncompleted habits.`,
+            'milestone'
+          );
+        }
       }
     };
 
@@ -423,7 +485,7 @@ export default function App() {
       linkedGoalIdToSync = habit.linkedGoalId;
 
       const target = habit.targetValue || 30;
-      const setXp = habit.xpPerSet || (habit.unit === 'videos' ? 50 : 10);
+      const setXp = habit.xpPerSet || (habit.unit === 'videos' ? 25 : XP_PER_HABIT);
       const currentProgress = typeof habit.todayProgress === 'number' ? habit.todayProgress : 0;
       const newProgress = Math.max(0, currentProgress + delta);
 
@@ -464,6 +526,34 @@ export default function App() {
     if (linkedGoalIdToSync) {
       handleUpdateGoalValue(linkedGoalIdToSync, delta);
     }
+  };
+
+  // Settle today's pending uncompleted habits immediately (Manual Cutoff Audit)
+  const handleSettleReversePenaltiesNow = () => {
+    const result = storage.settleReverseHabitsNow(todayStr);
+    if (result.xpDeducted > 0) {
+      sound.playPop();
+      triggerHaptic('medium');
+      const updatedProfile = storage.getProfile();
+      setProfile(updatedProfile);
+      setReverseHistory(storage.getReverseHistory());
+      setFloatingXp({ text: `-${result.xpDeducted} XP Penalty`, id: Date.now() });
+      setTimeout(() => setFloatingXp(null), 2500);
+      notificationManager.sendNotification(
+        '⚠️ Reverse Habit Zone Settlement',
+        `Manually settled cutoff: -${result.xpDeducted} XP deducted for ${result.penalties.length} uncompleted habit(s).`,
+        'milestone'
+      );
+    } else {
+      sound.playSuccessChime();
+      triggerHaptic('success');
+      alert('All habits are currently completed! No reverse penalties to deduct.');
+    }
+  };
+
+  const handleClearReverseHistory = () => {
+    storage.saveReverseHistory([]);
+    setReverseHistory([]);
   };
 
   // Save New or Edited Habit
@@ -846,6 +936,16 @@ export default function App() {
   const totalHabits = habits.length;
   const habitsPct = totalHabits > 0 ? Math.round((completedHabitsCount / totalHabits) * 100) : 0;
 
+  // Reverse Zone Metrics
+  const uncompletedHabits = habits.filter((h) => !(h.completedDates || []).includes(todayStr));
+  const potentialXpLoss = uncompletedHabits.reduce(
+    (sum, h) => sum + (h.xpPerSet || XP_PER_HABIT),
+    0
+  );
+  const securedXp = habits
+    .filter((h) => (h.completedDates || []).includes(todayStr))
+    .reduce((sum, h) => sum + (h.xpPerSet || XP_PER_HABIT), 0);
+
   // Filtered habits for dashboard list
   const filteredHabits = habits.filter((h) => {
     if (habitFilter === 'all') return true;
@@ -858,12 +958,20 @@ export default function App() {
   const rankInfo = getRankInfo(levelInfo.level);
 
   return (
-    <AndroidFrame>
+    <AndroidFrame isReverseZone={isReverseZone}>
       {/* Toast Notification Container */}
       <ToastContainer />
 
       {/* Connectivity Status Banner */}
       <OfflineIndicator />
+
+      {/* Reverse Habit Zone Audit Modal */}
+      <ReverseZoneAuditModal
+        isOpen={showReverseAuditModal}
+        onClose={() => setShowReverseAuditModal(false)}
+        penalties={reverseHistory}
+        onClearHistory={handleClearReverseHistory}
+      />
 
       {/* 1. FIRST TIME ONBOARDING INTRODUCTION (Name, Age & Features Setup) */}
       {isOnboarding && (
@@ -1037,6 +1145,7 @@ export default function App() {
               onLockNow={() => setIsLocked(true)}
               onRestoreBackup={handleRestoreBackup}
               onResetDailyHabits={handleManualDailyHabitReset}
+              onOpenCalendar={() => handleOpenCalendar()}
               habits={habits}
               goals={goals}
             />
@@ -1120,8 +1229,30 @@ export default function App() {
                     </div>
                   </button>
 
-                  {/* Action Icons in Header: Calendar, Scrapbook, Settings */}
+                  {/* Action Icons in Header: Reverse Zone Toggle, Calendar, Scrapbook, Settings */}
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Reverse Habit Zone Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={handleToggleReverseZone}
+                      className={`h-9 px-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border active:scale-95 shrink-0 ${
+                        isReverseZone
+                          ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white border-rose-400 shadow-[0_0_12px_rgba(225,29,72,0.45)]'
+                          : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                      }`}
+                      title={isReverseZone ? 'Exit Reverse Habit Zone' : 'Enter Reverse Habit Zone'}
+                    >
+                      <Flame className={`w-3.5 h-3.5 ${isReverseZone ? 'fill-current animate-pulse text-white' : 'text-rose-500'}`} />
+                      <span className="hidden xs:inline">{isReverseZone ? 'Reverse Active' : 'Reverse'}</span>
+                      {uncompletedHabits.length > 0 && (
+                        <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black leading-tight ${
+                          isReverseZone ? 'bg-black/35 text-white' : 'bg-rose-600 text-white'
+                        }`}>
+                          {uncompletedHabits.length}
+                        </span>
+                      )}
+                    </button>
+
                     {/* Calendar Launcher */}
                     <button
                       onClick={() => handleOpenCalendar()}
@@ -1199,14 +1330,20 @@ export default function App() {
                 <div className="space-y-2.5">
                   {/* Dynamic Overview Card based on activeTab */}
                   {activeTab === 'habits' ? (
-                    <div className="bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low rounded-2xl p-3 border border-outline-variant/30 shadow-xs">
+                    <div className={`rounded-2xl p-3 border shadow-xs transition-all ${
+                      isReverseZone
+                        ? 'bg-gradient-to-br from-rose-500/15 via-rose-950/20 to-surface-container border-rose-500/40'
+                        : 'bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low border-outline-variant/30'
+                    }`}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-primary">
-                          Today's Habits Progress
+                        <span className={`text-[9px] font-black uppercase tracking-wider ${
+                          isReverseZone ? 'text-rose-600 dark:text-rose-400' : 'text-primary'
+                        }`}>
+                          {isReverseZone ? 'Reverse Habit Zone Progress' : "Today's Habits Progress"}
                         </span>
                         <span className="text-[11px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
                           <Flame className="w-3.5 h-3.5 fill-current" />
-                          <span>+{completedHabitsCount * 10} XP today</span>
+                          <span>+{completedHabitsCount * XP_PER_HABIT} XP today</span>
                         </span>
                       </div>
 
@@ -1216,11 +1353,13 @@ export default function App() {
                             {totalHabits === 0
                               ? 'No Habits Yet'
                               : habitsPct === 100
-                              ? 'All Habits Crushed! 🌟'
-                              : `${totalHabits - completedHabitsCount} Habit${totalHabits - completedHabitsCount === 1 ? '' : 's'} Remaining`}
+                              ? 'All Habits Protected! 🛡️'
+                              : `${totalHabits - completedHabitsCount} Habit${totalHabits - completedHabitsCount === 1 ? '' : 's'} at Reverse Risk`}
                           </h2>
                           <p className="text-[10px] text-on-surface-variant font-medium truncate">
-                            {totalHabits === 0
+                            {isReverseZone
+                              ? `${totalHabits - completedHabitsCount} uncompleted habit${totalHabits - completedHabitsCount === 1 ? '' : 's'} will deduct -${potentialXpLoss} XP if not done before 11:59 PM.`
+                              : totalHabits === 0
                               ? 'Tap "+ Add Habit" below to build consistency.'
                               : `${completedHabitsCount} of ${totalHabits} completed · Tap circle to check off`}
                           </p>
@@ -1237,7 +1376,9 @@ export default function App() {
                               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             />
                             <path
-                              className="text-primary transition-all duration-700 ease-out"
+                              className={`transition-all duration-700 ease-out ${
+                                isReverseZone ? 'text-rose-600' : 'text-primary'
+                              }`}
                               strokeDasharray={`${habitsPct}, 100`}
                               strokeLinecap="round"
                               strokeWidth="4"
@@ -1253,6 +1394,36 @@ export default function App() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Reverse Zone Mini Banner Action Bar */}
+                      {isReverseZone && (
+                        <div className="mt-2.5 pt-2 border-t border-rose-500/20 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>Cutoff: {countdownToMidnight}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setShowReverseAuditModal(true)}
+                              className="px-2 py-1 rounded-lg bg-surface-container text-on-surface font-bold text-[10px] border border-outline-variant/30 hover:bg-surface-container-high transition-all cursor-pointer"
+                            >
+                              Ledger ({reverseHistory.length})
+                            </button>
+                            {uncompletedHabits.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={handleSettleReversePenaltiesNow}
+                                className="px-2 py-1 rounded-lg bg-rose-600 text-white font-bold text-[10px] shadow-xs hover:bg-rose-700 transition-all cursor-pointer"
+                                title="Audit and deduct uncompleted habits now (11:59 PM Test)"
+                              >
+                                Settle Cutoff
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low rounded-2xl p-3 border border-outline-variant/30 shadow-xs">
@@ -1326,7 +1497,7 @@ export default function App() {
                       </div>
                       <span className="text-[16px]">Add Habit</span>
                       <span className="text-[11px] font-bold bg-on-primary/20 px-2 py-0.5 rounded-full">
-                        +{settings.habitXpPerSet ?? 10} XP
+                        +{settings.habitXpPerSet ?? XP_PER_HABIT} XP
                       </span>
                     </button>
                   ) : (
@@ -1343,7 +1514,7 @@ export default function App() {
                       </div>
                       <span className="text-[16px]">Add Goal</span>
                       <span className="text-[11px] font-bold bg-on-primary/20 px-2 py-0.5 rounded-full">
-                        +{settings.goalXpPerStep ?? 50} XP / step
+                        +{settings.goalXpPerStep ?? XP_PER_GOAL_STEP} XP / step
                       </span>
                     </button>
                   )}
@@ -1398,8 +1569,8 @@ export default function App() {
                     </h3>
                     <span className="text-[11px] text-on-surface-variant font-medium">
                       {activeTab === 'habits'
-                        ? 'Tap circle to complete (+10 XP)'
-                        : 'Tap + / - to step (+50 XP)'}
+                        ? `Tap circle to complete (+${XP_PER_HABIT} XP)`
+                        : `Tap + / - to step (+${XP_PER_GOAL_STEP} XP)`}
                     </span>
                   </div>
                 </div>
@@ -1414,6 +1585,7 @@ export default function App() {
                         const target = habit.targetValue || 30;
                         const current = typeof habit.todayProgress === 'number' ? habit.todayProgress : (isDoneToday ? target : 0);
                         const pct = isSets ? Math.min(100, Math.round((current / target) * 100)) : (isDoneToday ? 100 : 0);
+                        const habitXp = habit.xpPerSet || XP_PER_HABIT;
 
                         return (
                           <div
@@ -1425,7 +1597,11 @@ export default function App() {
                               triggerHaptic('light');
                             }}
                             className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99] ${
-                              isDoneToday
+                              isReverseZone
+                                ? isDoneToday
+                                  ? 'bg-surface-container-low border-emerald-500/40 shadow-xs'
+                                  : 'bg-rose-500/10 dark:bg-rose-950/30 border-rose-500/50 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
+                                : isDoneToday
                                 ? 'bg-surface-container-low/80 border-primary/30'
                                 : 'bg-surface-container-low border-outline-variant/30'
                             }`}
@@ -1510,6 +1686,26 @@ export default function App() {
                                 }}
                               />
                             </div>
+
+                            {/* Reverse Habit Status Badge */}
+                            {isReverseZone && (
+                              <div className="pt-0.5 flex items-center justify-between text-[10px] font-bold border-t border-outline-variant/15">
+                                {isDoneToday ? (
+                                  <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                                    <Shield className="w-3 h-3 text-emerald-500" />
+                                    <span>Shielded · +{habitXp} XP Secured</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-rose-700 dark:text-rose-300 flex items-center gap-1 bg-rose-500/15 px-2 py-0.5 rounded-lg border border-rose-500/40 font-mono">
+                                    <AlertTriangle className="w-3 h-3 text-rose-500" />
+                                    <span>Reverse Risk: -{habitXp} XP at 11:59 PM</span>
+                                  </span>
+                                )}
+                                <span className="text-on-surface-variant text-[9px] font-medium">
+                                  {isDoneToday ? 'Zero penalty' : 'Tap circle to protect'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}

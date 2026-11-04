@@ -58,6 +58,7 @@ interface SettingsScreenProps {
     security: SecurityConfig;
   }) => void;
   onResetDailyHabits?: () => void;
+  onOpenCalendar?: () => void;
   habits?: Habit[];
   goals?: Goal[];
 }
@@ -76,6 +77,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onLockNow,
   onRestoreBackup,
   onResetDailyHabits,
+  onOpenCalendar,
   habits = [],
   goals = [],
 }) => {
@@ -783,9 +785,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Zap className="w-4 h-4 fill-current" />
               <span>XP Step Rates & Gamification</span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-              Level 1,000 Scaling
-            </span>
           </div>
 
           <p className="text-xs text-on-surface-variant leading-relaxed">
@@ -800,13 +799,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <span>Goal Step XP Reward</span>
               </span>
               <span className="text-xs font-black font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
-                +{settings.goalXpPerStep ?? 50} XP / step
+                +{settings.goalXpPerStep ?? 15} XP / step
               </span>
             </div>
 
             <div className="grid grid-cols-4 gap-1.5 pt-0.5">
-              {[25, 50, 100, 200].map((xpVal) => {
-                const isSelected = (settings.goalXpPerStep ?? 50) === xpVal;
+              {[10, 15, 25, 50].map((xpVal) => {
+                const isSelected = (settings.goalXpPerStep ?? 15) === xpVal;
                 return (
                   <button
                     key={xpVal}
@@ -833,16 +832,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <input
                 type="number"
                 min={1}
-                max={1000}
-                value={settings.goalXpPerStep ?? 50}
+                max={500}
+                value={settings.goalXpPerStep ?? 15}
                 onChange={(e) => {
                   const val = parseInt(e.target.value, 10);
                   if (!isNaN(val) && val >= 1) {
-                    onUpdateSettings({ goalXpPerStep: Math.min(1000, val) });
+                    onUpdateSettings({ goalXpPerStep: Math.min(500, val) });
                   }
                 }}
                 className="w-full py-1.5 px-3 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono text-xs font-bold focus:outline-none focus:border-primary"
-                placeholder="Enter custom XP (1-1000)"
+                placeholder="Enter custom XP (1-500)"
               />
             </div>
           </div>
@@ -855,13 +854,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <span>Habit Set XP Reward</span>
               </span>
               <span className="text-xs font-black font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg">
-                +{settings.habitXpPerSet ?? 10} XP / set
+                +{settings.habitXpPerSet ?? 8} XP / set
               </span>
             </div>
 
             <div className="grid grid-cols-4 gap-1.5 pt-0.5">
-              {[5, 10, 25, 50].map((xpVal) => {
-                const isSelected = (settings.habitXpPerSet ?? 10) === xpVal;
+              {[5, 8, 12, 20].map((xpVal) => {
+                const isSelected = (settings.habitXpPerSet ?? 8) === xpVal;
                 return (
                   <button
                     key={xpVal}
@@ -888,16 +887,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <input
                 type="number"
                 min={1}
-                max={500}
-                value={settings.habitXpPerSet ?? 10}
+                max={250}
+                value={settings.habitXpPerSet ?? 8}
                 onChange={(e) => {
                   const val = parseInt(e.target.value, 10);
                   if (!isNaN(val) && val >= 1) {
-                    onUpdateSettings({ habitXpPerSet: Math.min(500, val) });
+                    onUpdateSettings({ habitXpPerSet: Math.min(250, val) });
                   }
                 }}
                 className="w-full py-1.5 px-3 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono text-xs font-bold focus:outline-none focus:border-primary"
-                placeholder="Enter custom XP (1-500)"
+                placeholder="Enter custom XP (1-250)"
               />
             </div>
           </div>
@@ -916,27 +915,48 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
 
           <p className="text-xs text-on-surface-variant leading-relaxed">
-            Export your recurring habit reminder windows and goal target deadlines directly into a downloadable standard calendar (.ics) file. Compatible with Google Calendar, Apple Calendar, Outlook, and Android calendar apps.
+            Export your entire daily routine and goal targets into a universal calendar file (.ics). Easily import into Google Calendar, Apple Calendar, Outlook, and mobile calendar apps to keep your routines synced everywhere.
           </p>
 
-          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 flex items-center justify-between">
-            <div className="space-y-0.5">
-              <span className="text-xs font-bold text-on-surface block">
-                Full Routine & Deadlines Schedule
-              </span>
-              <span className="text-[11px] text-on-surface-variant font-mono">
-                {habits.length} habits · {goals.length} goals included
-              </span>
+          {/* Schedule Summary & Download Action */}
+          <div className="p-3.5 rounded-2xl bg-surface border border-outline-variant/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-on-surface block leading-tight">
+                  Schedule Snapshot (.ics)
+                </span>
+                <span className="text-[11px] text-on-surface-variant font-mono">
+                  {habits.length} recurring habits · {goals.length} target goals
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCalendarExport}
+                className="py-2 px-3.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer hover:brightness-105"
+                title="Download standard calendar file (.ics)"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download .ics</span>
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleCalendarExport}
-              className="py-2 px-3.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer hover:brightness-105"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export .ics</span>
-            </button>
+            {/* Quick Helper Pills for compatibility */}
+            <div className="pt-2 border-t border-outline-variant/20 flex items-center justify-between flex-wrap gap-2 text-[10px] text-on-surface-variant font-medium">
+              <span className="flex items-center gap-1">
+                <span>🗓️</span> Compatible with Google Calendar, Apple Calendar, Outlook & Android
+              </span>
+              {onOpenCalendar && (
+                <button
+                  type="button"
+                  onClick={onOpenCalendar}
+                  className="text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Open Calendar View</span>
+                  <span>→</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

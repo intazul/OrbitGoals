@@ -233,7 +233,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                     Earn XP on Every Step
                   </h3>
                   <p className="text-[10px] text-on-surface-variant mt-0.5 truncate">
-                    Custom XP per set (+10 XP) and goal steps (+50 XP). Level up as you progress!
+                    Hard-earned XP per habit (+8 XP) and goal steps (+15 XP). Climb boundless levels!
                   </p>
                 </div>
               </div>

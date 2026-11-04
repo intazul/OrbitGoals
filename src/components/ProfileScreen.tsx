@@ -7,7 +7,6 @@ import {
   getTrophies,
   TIER_CONFIG,
   calculateLevel,
-  MAX_LEVEL,
 } from '../utils/gamification';
 import { sound, triggerHaptic } from '../utils/sound';
 import { GoalIcon } from './GoalIcon';
@@ -213,7 +212,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               Player Profile
             </h1>
             <p className="text-[10px] text-on-surface-variant font-medium">
-              1,000 Levels, Trophies, XP Scaling & Rank Mastery
+              Boundless Levels, Trophies, Escalating XP & Rank Mastery
             </p>
           </div>
         </div>
@@ -313,14 +312,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1 text-[11px]">
                 <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-current" />
-                <span>Level {levelInfo.level} / {MAX_LEVEL}</span>
+                <span>Level {levelInfo.level}</span>
               </span>
               <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-primary">
                 <span>{userXp.toLocaleString()} XP</span>
                 <span className="text-on-surface-variant font-normal text-[10px]">
-                  {levelInfo.isMaxLevel
-                    ? '(Max Level Pinnacle!)'
-                    : `(${levelInfo.currentLevelXp.toLocaleString()}/${levelInfo.nextLevelXp.toLocaleString()} to Lv.${levelInfo.level + 1})`}
+                  ({levelInfo.currentLevelXp.toLocaleString()}/{levelInfo.nextLevelXp.toLocaleString()} to Lv.{levelInfo.level + 1})
                 </span>
               </div>
             </div>
@@ -651,7 +648,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <Clock className="w-8 h-8 text-on-surface-variant mx-auto opacity-50" />
                 <h4 className="text-sm font-bold text-on-surface">No Completed Habits Yet</h4>
                 <p className="text-xs text-on-surface-variant max-w-xs mx-auto">
-                  Complete your first daily habit to start building your streak history and earn +10 XP.
+                  Complete your first daily habit to start building your streak history and earn +8 XP.
                 </p>
               </div>
             ) : (
@@ -685,7 +682,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                         {formatRecentDate(comp.dateStr)}
                       </span>
                       <span className="text-[10px] font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded">
-                        +10 XP
+                        +8 XP
                       </span>
                     </div>
                   </div>
