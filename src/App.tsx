@@ -36,6 +36,9 @@ import { ToastContainer } from './components/ToastContainer';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { GoalIcon } from './components/GoalIcon';
 import { ReverseZoneAuditModal } from './components/ReverseZoneAuditModal';
+import { StepCounterModal } from './components/StepCounterModal';
+import { PedometerWidget } from './components/PedometerWidget';
+import { usePedometer } from './hooks/usePedometer';
 import { INITIAL_HABITS } from './utils/initialData';
 
 import {
@@ -62,6 +65,7 @@ import {
   AlertTriangle,
   History,
   Clock,
+  Footprints,
 } from 'lucide-react';
 
 export default function App() {
@@ -106,6 +110,10 @@ export default function App() {
   const [reverseHistory, setReverseHistory] = useState<ReversePenaltyRecord[]>(() => storage.getReverseHistory());
   const [showReverseAuditModal, setShowReverseAuditModal] = useState<boolean>(false);
   const [countdownToMidnight, setCountdownToMidnight] = useState<string>('');
+
+  // Real-Time Steps Pedometer State
+  const [showPedometerModal, setShowPedometerModal] = useState<boolean>(false);
+  const { state: pedometerState } = usePedometer();
 
   const todayStr = new Date().toISOString().split('T')[0];
   const weekDays = getCurrentWeekDays();
@@ -556,6 +564,96 @@ export default function App() {
     setReverseHistory([]);
   };
 
+  // Sync Real Steps from Pedometer to Habits & Goals
+  const handleSyncStepsToHabits = (stepCount: number) => {
+    let matchedAny = false;
+    let earnedXpTotal = 0;
+
+    const updatedHabits = habits.map((h) => {
+      const isStepsHabit =
+        h.unit?.toLowerCase() === 'steps' ||
+        h.title.toLowerCase().includes('step') ||
+        h.title.toLowerCase().includes('walk') ||
+        h.icon === 'steps' ||
+        h.icon === 'walk';
+
+      if (!isStepsHabit) return h;
+
+      matchedAny = true;
+      const target = h.targetValue || 10000;
+      const prevProgress = typeof h.todayProgress === 'number' ? h.todayProgress : 0;
+      const newProgress = Math.max(prevProgress, stepCount);
+      const wasDone = (h.completedDates || []).includes(todayStr);
+      const isNowDone = newProgress >= target;
+
+      const completedDates = [...(h.completedDates || [])];
+      let streakDays = h.streakDays || 0;
+      let bestStreak = h.bestStreak || 0;
+
+      if (isNowDone && !wasDone) {
+        completedDates.push(todayStr);
+        streakDays = calculateStreak(completedDates);
+        bestStreak = Math.max(bestStreak, streakDays);
+        earnedXpTotal += h.xpPerSet || XP_PER_HABIT;
+      }
+
+      const progressHistory = { ...(h.progressHistory || {}) };
+      progressHistory[todayStr] = newProgress;
+
+      return {
+        ...h,
+        todayProgress: newProgress,
+        completedDates,
+        streakDays,
+        bestStreak,
+        progressHistory,
+      };
+    });
+
+    if (matchedAny) {
+      updateHabits(updatedHabits);
+      if (earnedXpTotal > 0) {
+        handleAdjustXp(earnedXpTotal, '10,000 Steps Target Crushed');
+        fireConfetti(2500);
+        notificationManager.sendNotification(
+          '👟 Step Target Crushed!',
+          `You achieved your step target with ${stepCount.toLocaleString()} real steps!`,
+          'streak'
+        );
+      }
+    } else {
+      notificationManager.sendNotification(
+        '👟 Pedometer Step Counter',
+        `${stepCount.toLocaleString()} real steps counted today!`,
+        'habit'
+      );
+    }
+
+    // Also sync to any step-related goal
+    const updatedGoals = goals.map((g) => {
+      const isStepGoal =
+        g.unit?.toLowerCase() === 'steps' ||
+        g.title.toLowerCase().includes('step') ||
+        g.title.toLowerCase().includes('walk') ||
+        g.icon === 'steps' ||
+        g.icon === 'walk';
+
+      if (!isStepGoal) return g;
+      const newCurrent = Math.max(g.currentValue, stepCount);
+      const isGoalCompleted = newCurrent >= g.targetValue;
+      const completedDates = [...(g.completedDates || [])];
+      if (isGoalCompleted && !completedDates.includes(todayStr)) {
+        completedDates.push(todayStr);
+      }
+      return {
+        ...g,
+        currentValue: newCurrent,
+        completedDates,
+      };
+    });
+    updateGoals(updatedGoals);
+  };
+
   // Save New or Edited Habit
   const handleSaveHabit = (
     habitData: Omit<Habit, 'id' | 'createdAt' | 'completedDates' | 'streakDays' | 'bestStreak'>
@@ -973,6 +1071,15 @@ export default function App() {
         onClearHistory={handleClearReverseHistory}
       />
 
+      {/* Real-Time Steps Pedometer Studio Modal */}
+      <StepCounterModal
+        isOpen={showPedometerModal}
+        onClose={() => setShowPedometerModal(false)}
+        habits={habits}
+        goals={goals}
+        onSyncStepsToHabit={handleSyncStepsToHabits}
+      />
+
       {/* 1. FIRST TIME ONBOARDING INTRODUCTION (Name, Age & Features Setup) */}
       {isOnboarding && (
         <OnboardingScreen
@@ -1211,13 +1318,13 @@ export default function App() {
                       <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-black text-sm group-hover:ring-2 group-hover:ring-primary/40 transition-all shadow-xs">
                         {profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'G'}
                       </div>
-                      <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-black text-[8px] leading-tight shadow-xs border border-surface">
+                      <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-black text-[8px] leading-tight shadow-xs border border-surface glitch-effect">
                         Lv.{levelInfo.level}
                       </span>
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1">
-                        <span className="text-[18px] font-black tracking-tight text-on-surface block leading-none truncate max-w-[125px] group-hover:text-primary transition-colors">
+                        <span className="text-[18px] font-black tracking-tight text-on-surface block leading-none truncate max-w-[125px] group-hover:text-primary transition-colors glitch-text">
                           {profile.name || 'OrbitGoals'}
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-primary transition-colors opacity-70" />
@@ -1231,13 +1338,13 @@ export default function App() {
 
                   {/* Action Icons in Header: Reverse Zone Toggle, Calendar, Scrapbook, Settings */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Reverse Habit Zone Toggle Button */}
+                    {/* Reverse Habit Zone Toggle Button with subtle glitch effect */}
                     <button
                       type="button"
                       onClick={handleToggleReverseZone}
                       className={`h-9 px-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border active:scale-95 shrink-0 ${
                         isReverseZone
-                          ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white border-rose-400 shadow-[0_0_12px_rgba(225,29,72,0.45)]'
+                          ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white border-rose-400 shadow-[0_0_12px_rgba(225,29,72,0.45)] glitch-effect'
                           : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border-rose-500/30'
                       }`}
                       title={isReverseZone ? 'Exit Reverse Habit Zone' : 'Enter Reverse Habit Zone'}
@@ -1400,7 +1507,7 @@ export default function App() {
                         <div className="mt-2.5 pt-2 border-t border-rose-500/20 flex items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-rose-600 dark:text-rose-400">
                             <Clock className="w-3.5 h-3.5" />
-                            <span>Cutoff: {countdownToMidnight}</span>
+                            <span style={{ fontSize: '10px' }}>Cutoff: {countdownToMidnight}</span>
                           </div>
 
                           <div className="flex items-center gap-1.5">
@@ -1480,6 +1587,14 @@ export default function App() {
                         </div>
                       </div>
                     </div>
+                  )}
+
+                  {/* Real Step Counter Hardware Pedometer Widget */}
+                  {activeTab === 'habits' && (
+                    <PedometerWidget
+                      onOpenModal={() => setShowPedometerModal(true)}
+                      onSyncSteps={handleSyncStepsToHabits}
+                    />
                   )}
 
                   {/* BIG ADAPTING "ADD HABIT" OR "ADD GOAL" BUTTON */}
@@ -1691,14 +1806,20 @@ export default function App() {
                             {isReverseZone && (
                               <div className="pt-0.5 flex items-center justify-between text-[10px] font-bold border-t border-outline-variant/15">
                                 {isDoneToday ? (
-                                  <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                                  <span
+                                    style={{ width: '208.109375px' }}
+                                    className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30"
+                                  >
                                     <Shield className="w-3 h-3 text-emerald-500" />
-                                    <span>Shielded · +{habitXp} XP Secured</span>
+                                    <span style={{ fontSize: '9px' }}>Shielded · +{habitXp} XP Secured</span>
                                   </span>
                                 ) : (
-                                  <span className="text-rose-700 dark:text-rose-300 flex items-center gap-1 bg-rose-500/15 px-2 py-0.5 rounded-lg border border-rose-500/40 font-mono">
+                                  <span
+                                    style={{ width: '208.109375px' }}
+                                    className="text-rose-700 dark:text-rose-300 flex items-center gap-1 bg-rose-500/15 px-2 py-0.5 rounded-lg border border-rose-500/40 font-mono"
+                                  >
                                     <AlertTriangle className="w-3 h-3 text-rose-500" />
-                                    <span>Reverse Risk: -{habitXp} XP at 11:59 PM</span>
+                                    <span style={{ fontSize: '9px' }}>Reverse Risk: -{habitXp} XP at 11:59 PM</span>
                                   </span>
                                 )}
                                 <span className="text-on-surface-variant text-[9px] font-medium">

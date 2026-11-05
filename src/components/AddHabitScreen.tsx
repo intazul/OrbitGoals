@@ -30,6 +30,32 @@ interface AddHabitScreenProps {
 
 const PRESET_HABITS = [
   {
+    title: '5 Daily Namaz (Salah)',
+    description: 'Perform all 5 daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) (+15 XP per prayer)',
+    category: 'wellness' as GoalCategory,
+    timeOfDay: 'anytime' as HabitTimeOfDay,
+    icon: 'namaz',
+    color: '#10b981',
+    trackingType: 'sets' as const,
+    targetValue: 5,
+    unit: 'prayers',
+    stepValue: 1,
+    xpPerSet: 15,
+  },
+  {
+    title: '10,000 Real Steps (Pedometer)',
+    description: 'Walk 10,000 steps daily tracked with real motion sensor (+15 XP)',
+    category: 'fitness' as GoalCategory,
+    timeOfDay: 'anytime' as HabitTimeOfDay,
+    icon: 'steps',
+    color: '#3b82f6',
+    trackingType: 'sets' as const,
+    targetValue: 10000,
+    unit: 'steps',
+    stepValue: 1000,
+    xpPerSet: 15,
+  },
+  {
     title: 'Exercise Reps (Target: 30)',
     description: 'Hit 30 reps or more with sets of 5 or 10 (+10 XP per set)',
     category: 'fitness' as GoalCategory,
@@ -110,6 +136,8 @@ const PRESET_HABITS = [
 ];
 
 const HABIT_ICONS = [
+  'namaz',
+  'steps',
   'fitness',
   'youtube',
   'target',

@@ -14,11 +14,13 @@ interface AddGoalScreenProps {
 }
 
 const QUICK_NAME_OPTIONS = [
+  { name: '5 Daily Namaz (Salah)', unit: 'prayers', category: 'wellness', target: 5, icon: 'namaz', color: '#10b981' },
+  { name: '10,000 Real Steps', unit: 'steps', category: 'fitness', target: 10000, icon: 'steps', color: '#3b82f6' },
   { name: 'YouTube Video', unit: 'videos', category: 'creator', target: 20, icon: 'youtube', color: '#ef4444' },
   { name: 'Instagram Reel', unit: 'reels', category: 'creator', target: 30, icon: 'instagram', color: '#ec4899' },
   { name: 'Facebook Post', unit: 'posts', category: 'creator', target: 25, icon: 'facebook', color: '#3b82f6' },
   { name: 'Save Money', unit: '$', category: 'finance', target: 1000, icon: 'finance', color: '#059669' },
-  { name: '10,000 Daily Steps', unit: 'steps', category: 'fitness', target: 10000, icon: 'fitness', color: '#10b981' },
+  { name: '10,000 Daily Steps', unit: 'steps', category: 'fitness', target: 10000, icon: 'steps', color: '#10b981' },
   { name: 'Drink Water', unit: 'ml', category: 'wellness', target: 2500, icon: 'water', color: '#06b6d4' },
   { name: 'Read Book Pages', unit: 'pages', category: 'learning', target: 20, icon: 'book', color: '#f97316' },
   { name: 'Gym Workout', unit: 'sessions', category: 'fitness', target: 15, icon: 'fitness', color: '#10b981' },

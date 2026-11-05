@@ -560,7 +560,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <Calendar className="w-3.5 h-3.5 text-primary" />
                 <span>Automatic Schedule:</span>
               </span>
-              <span className="font-mono font-bold text-primary">Everyday at 00:00 AM</span>
+              <span style={{ fontSize: '11px' }} className="font-mono font-bold text-primary">Everyday at 00:00 AM</span>
             </div>
 
             <div className="flex items-center justify-between text-xs">
@@ -568,7 +568,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                 <span>Streak Shield Protection:</span>
               </span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+              <span style={{ fontSize: '11px' }} className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                 {profile.streakShields ?? 2} Shields Active
               </span>
             </div>

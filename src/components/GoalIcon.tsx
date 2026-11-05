@@ -13,7 +13,35 @@ import {
   Heart,
   Star,
   Video,
+  Footprints,
 } from 'lucide-react';
+
+export const NamazIcon: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = 'w-4 h-4', style }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    style={style}
+  >
+    {/* Base foundation line */}
+    <path d="M2 21h20" />
+    {/* Main Mosque Dome */}
+    <path d="M7 21v-7c0-2.8 2.2-5 5-5s5 2.2 5 5v7" />
+    {/* Mihrab / Sacred Archway */}
+    <path d="M10 21v-3.5a2 2 0 0 1 4 0V21" />
+    {/* Left Minaret */}
+    <path d="M3 21V9l1.5-2L6 9v12" />
+    {/* Right Minaret */}
+    <path d="M18 21V9l1.5-2L21 9v12" />
+    {/* Dome Finial with Crescent Moon */}
+    <path d="M12 9V5" />
+    <path d="M13.2 4a1.8 1.8 0 1 1-2.2-1.4 1.5 1.5 0 0 0 2.2 1.4z" fill="currentColor" />
+  </svg>
+);
 
 export interface IconOption {
   id: string;
@@ -23,6 +51,10 @@ export interface IconOption {
 }
 
 export const AVAILABLE_GOAL_ICONS: IconOption[] = [
+  { id: 'namaz', label: 'Namaz / Salah', icon: NamazIcon, color: '#10b981' },
+  { id: 'prayer', label: 'Daily Prayer', icon: NamazIcon, color: '#059669' },
+  { id: 'steps', label: 'Steps Pedometer', icon: Footprints, color: '#3b82f6' },
+  { id: 'walk', label: 'Walking & Steps', icon: Footprints, color: '#06b6d4' },
   { id: 'youtube', label: 'YouTube', icon: Youtube, color: '#ef4444' },
   { id: 'instagram', label: 'Instagram', icon: Instagram, color: '#ec4899' },
   { id: 'facebook', label: 'Facebook', icon: Facebook, color: '#3b82f6' },

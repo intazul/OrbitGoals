@@ -14,9 +14,9 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({ children, isReverseZ
           : 'bg-slate-200/70 dark:bg-[#050811]'
       }`}
     >
-      {/* Android Device Outer Wrapper */}
+      {/* Android Device Outer Wrapper with clean micro-jitter animation (no lines) */}
       <div
-        className={`w-full max-w-[430px] h-[100dvh] sm:h-[880px] sm:max-h-[94vh] bg-surface text-on-surface flex flex-col relative sm:rounded-[36px] sm:border-[8px] overflow-hidden transition-all duration-300 ${
+        className={`w-full max-w-[430px] h-[100dvh] sm:h-[880px] sm:max-h-[94vh] bg-surface text-on-surface flex flex-col relative sm:rounded-[36px] sm:border-[8px] overflow-hidden transition-all duration-300 screen-glitch ${
           isReverseZone
             ? 'sm:border-rose-300 dark:sm:border-rose-950/90 shadow-[0_0_35px_rgba(225,29,72,0.25)]'
             : 'sm:border-slate-300 dark:sm:border-slate-800/80 sm:shadow-2xl'

@@ -215,6 +215,19 @@ export interface ReversePenaltyRecord {
   timestamp: number;
 }
 
+export interface PedometerState {
+  stepsToday: number;
+  dailyGoal: number;
+  distanceKm: number;
+  caloriesBurned: number;
+  cadence: number; // steps per minute
+  isTracking: boolean;
+  isSensorSupported: boolean;
+  sensorPermission: 'granted' | 'denied' | 'prompt' | 'unsupported';
+  sensitivity: 'high' | 'normal' | 'low';
+  lastStepTimestamp?: number;
+}
+
 export interface AppSettings {
   theme: 'dark' | 'light' | 'system';
   soundEnabled: boolean;
@@ -228,4 +241,8 @@ export interface AppSettings {
   goalXpPerStep?: number; // Configurable XP per goal step
   habitXpPerSet?: number; // Configurable XP per habit set
   reverseZoneActive?: boolean;
+  pedometerDailyGoal?: number;
+  pedometerSensitivity?: 'high' | 'normal' | 'low';
+  pedometerAutoSync?: boolean;
 }
+

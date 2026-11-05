@@ -302,3 +302,87 @@ textarea {
 .animate-shake {
   animation: shake 0.35s ease-in-out;
 }
+
+/* Subtle Cyberpunk Glitch Effects */
+@keyframes micro-glitch {
+  0%, 88%, 93%, 100% {
+    transform: translate(0, 0);
+    filter: none;
+  }
+  89% {
+    transform: translate(-1.5px, 0.5px) skewX(-0.5deg);
+    filter: drop-shadow(-1px 0 0 rgba(6, 182, 212, 0.7)) drop-shadow(1px 0 0 rgba(244, 63, 94, 0.7));
+  }
+  90% {
+    transform: translate(1.5px, -0.8px) skewX(0.5deg);
+    filter: drop-shadow(1px 0 0 rgba(6, 182, 212, 0.7)) drop-shadow(-1px 0 0 rgba(244, 63, 94, 0.7));
+  }
+  91% {
+    transform: translate(-0.8px, 0.8px);
+    filter: drop-shadow(-0.5px 0 0 rgba(6, 182, 212, 0.5));
+  }
+  92% {
+    transform: translate(0, 0);
+    filter: none;
+  }
+}
+
+@keyframes glitch-rgb {
+  0%, 89%, 93%, 100% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+  90% {
+    text-shadow: -1.5px 0 0 rgba(6, 182, 212, 0.85), 1.5px 0 0 rgba(244, 63, 94, 0.85);
+    transform: translate(-0.5px, 0.5px);
+  }
+  91% {
+    text-shadow: 1.5px 0 0 rgba(6, 182, 212, 0.85), -1.5px 0 0 rgba(244, 63, 94, 0.85);
+    transform: translate(0.5px, -0.5px);
+  }
+  92% {
+    text-shadow: none;
+    transform: translate(0);
+  }
+}
+
+.glitch-effect {
+  animation: micro-glitch 5.5s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.glitch-text {
+  animation: glitch-rgb 4.8s infinite ease-in-out;
+}
+
+.glitch-hover:hover {
+  animation: micro-glitch 0.4s ease-in-out infinite;
+}
+
+/* Full-Screen Pure Micro Jitter Animation (No lines, no static slices) */
+@keyframes screen-glitch-burst {
+  0%, 85%, 91%, 100% {
+    transform: translate(0, 0);
+  }
+  86% {
+    transform: translate(-2px, 1px) skewX(-0.4deg);
+  }
+  87% {
+    transform: translate(2px, -1.2px) skewX(0.4deg);
+  }
+  88% {
+    transform: translate(-1.2px, -0.5px);
+  }
+  89% {
+    transform: translate(1px, 0.8px);
+  }
+  90% {
+    transform: translate(0, 0);
+  }
+}
+
+.screen-glitch {
+  animation: screen-glitch-burst 3.8s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+
+
