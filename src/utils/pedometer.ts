@@ -8,10 +8,12 @@ import { PedometerState } from '../types';
 type PedometerListener = (state: PedometerState) => void;
 
 const STORAGE_PREFIX = 'orbitgoals_pedometer_v1_';
+
+// Calibrated human gait thresholds (in m/s² dynamic acceleration)
 const SENSITIVITY_THRESHOLDS = {
-  high: 1.35,   // Sensitive / light stride or pocket
-  normal: 1.85, // Standard human walking stride
-  low: 2.45,    // Vigorous walking / running
+  high: 1.05,   // Sensitive: gentle walking, light strides, phone in pocket
+  normal: 1.35, // Normal: standard human walking stride and arm swing
+  low: 1.85,    // Low: brisk jogging, running, active workouts
 };
 
 class RealStepCounterService {
@@ -28,6 +30,7 @@ class RealStepCounterService {
   private lastStepTime: number = 0;
   private stepTimestamps: number[] = []; // Used for cadence (steps per minute)
   private cadence: number = 0;
+  private liveIntensity: number = 0;
 
   // Simulator for desktop / non-accelerometer environments
   private autoWalkInterval: number | null = null;
@@ -35,10 +38,12 @@ class RealStepCounterService {
   // Subscription listeners
   private listeners: Set<PedometerListener> = new Set();
   private motionHandler: ((event: DeviceMotionEvent) => void) | null = null;
+  private lastNotifyTime: number = 0;
 
   constructor() {
     this.loadTodaySteps();
     this.checkSensorSupport();
+    this.setupAutoWakeup();
   }
 
   private getTodayKey(): string {
@@ -88,12 +93,28 @@ class RealStepCounterService {
 
     if ('DeviceMotionEvent' in window) {
       this.isSensorSupported = true;
-      // Auto-start motion sensor listener
       this.startSensor();
     } else {
       this.isSensorSupported = false;
       this.sensorPermission = 'unsupported';
     }
+  }
+
+  /**
+   * Automatically start and wake motion sensors on first user touch/click
+   * Required by modern Android Chrome and iOS Safari security sandbox.
+   */
+  private setupAutoWakeup() {
+    if (typeof window === 'undefined') return;
+
+    const wakeUpSensors = () => {
+      this.startSensor();
+      window.removeEventListener('click', wakeUpSensors);
+      window.removeEventListener('touchstart', wakeUpSensors);
+    };
+
+    window.addEventListener('click', wakeUpSensors, { once: true, passive: true });
+    window.addEventListener('touchstart', wakeUpSensors, { once: true, passive: true });
   }
 
   /**
@@ -143,37 +164,67 @@ class RealStepCounterService {
     this.motionHandler = (event: DeviceMotionEvent) => {
       if (!this.isTracking) return;
 
-      const acc = event.accelerationIncludingGravity || event.acceleration;
-      if (!acc || acc.x === null || acc.y === null || acc.z === null) return;
+      let dynamicSignal = 0;
 
-      const x = acc.x;
-      const y = acc.y;
-      const z = acc.z;
+      // 1. Check for linear acceleration (gravity already subtracted by hardware OS)
+      if (
+        event.acceleration &&
+        event.acceleration.x !== null &&
+        event.acceleration.y !== null &&
+        event.acceleration.z !== null
+      ) {
+        const ax = event.acceleration.x;
+        const ay = event.acceleration.y;
+        const az = event.acceleration.z;
+        dynamicSignal = Math.sqrt(ax * ax + ay * ay + az * az);
+      } else if (
+        event.accelerationIncludingGravity &&
+        event.accelerationIncludingGravity.x !== null &&
+        event.accelerationIncludingGravity.y !== null &&
+        event.accelerationIncludingGravity.z !== null
+      ) {
+        // 2. Fallback to raw acceleration with adaptive low-pass gravity removal
+        const gx = event.accelerationIncludingGravity.x;
+        const gy = event.accelerationIncludingGravity.y;
+        const gz = event.accelerationIncludingGravity.z;
+        const rawMag = Math.sqrt(gx * gx + gy * gy + gz * gz);
 
-      // 3D acceleration vector magnitude
-      const magnitude = Math.sqrt(x * x + y * y + z * z);
+        // Low-pass exponential filter to isolate Earth gravity
+        this.gravityBaseline = 0.92 * this.gravityBaseline + 0.08 * rawMag;
+        dynamicSignal = Math.abs(rawMag - this.gravityBaseline);
+      } else {
+        return;
+      }
 
-      // Low-pass exponential moving average to filter out continuous gravity
-      this.gravityBaseline = 0.88 * this.gravityBaseline + 0.12 * magnitude;
-
-      // Dynamic acceleration spike caused by footstep impact
-      const delta = Math.abs(magnitude - this.gravityBaseline);
-      const threshold = SENSITIVITY_THRESHOLDS[this.sensitivity];
+      this.liveIntensity = Math.round(dynamicSignal * 10) / 10;
 
       const now = performance.now();
+      const threshold = SENSITIVITY_THRESHOLDS[this.sensitivity];
 
-      // Peak detection with refractory debounce (min 280ms between human steps)
-      if (delta > threshold && !this.isAbovePeak && now - this.lastStepTime > 280) {
+      // Peak detection with refractory debounce (min 240ms between real human footsteps)
+      if (dynamicSignal >= threshold && !this.isAbovePeak && now - this.lastStepTime > 240) {
         this.isAbovePeak = true;
         this.lastStepTime = now;
         this.registerStep(now);
-      } else if (delta < threshold * 0.55) {
+      } else if (dynamicSignal < threshold * 0.45) {
+        // Valley reached - disarm peak to ready sensor for next step
         this.isAbovePeak = false;
+      }
+
+      // Throttle live intensity UI update
+      if (now - this.lastNotifyTime > 300) {
+        this.lastNotifyTime = now;
+        this.notify();
       }
     };
 
-    window.addEventListener('devicemotion', this.motionHandler, { passive: true });
-    this.sensorPermission = 'granted';
+    try {
+      window.addEventListener('devicemotion', this.motionHandler, { passive: true });
+      this.sensorPermission = 'granted';
+      this.isSensorSupported = true;
+    } catch {
+      // Fallback
+    }
   }
 
   /**
@@ -201,7 +252,7 @@ class RealStepCounterService {
     if (this.stepTimestamps.length >= 2) {
       // Calculate steps per minute
       const durationSec = (timestamp - this.stepTimestamps[0]) / 1000;
-      if (durationSec > 0.5) {
+      if (durationSec > 0.4) {
         this.cadence = Math.round(((this.stepTimestamps.length - 1) / durationSec) * 60);
       }
     } else {
@@ -299,6 +350,7 @@ class RealStepCounterService {
       sensorPermission: this.sensorPermission,
       sensitivity: this.sensitivity,
       lastStepTimestamp: this.lastStepTime,
+      liveIntensity: this.liveIntensity,
     };
   }
 

@@ -226,6 +226,7 @@ export interface PedometerState {
   sensorPermission: 'granted' | 'denied' | 'prompt' | 'unsupported';
   sensitivity: 'high' | 'normal' | 'low';
   lastStepTimestamp?: number;
+  liveIntensity?: number; // Real-time acceleration magnitude (m/s²)
 }
 
 export interface AppSettings {

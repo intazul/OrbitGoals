@@ -169,10 +169,17 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
                 />
               </span>
               <div className="min-w-0">
-                <span className="font-bold text-on-surface block leading-tight truncate">
-                  {state.isTracking ? 'Motion Sensor Active' : 'Pedometer Paused'}
-                </span>
-                <span className="text-[10px] text-on-surface-variant block truncate">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-on-surface block leading-tight truncate">
+                    {state.isTracking ? 'Hardware Sensor Active' : 'Pedometer Paused'}
+                  </span>
+                  {state.isTracking && typeof state.liveIntensity === 'number' && state.liveIntensity > 0 && (
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-black/10 dark:bg-white/10 text-on-surface border border-outline-variant/40 shrink-0">
+                      {state.liveIntensity} m/s²
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-on-surface-variant block truncate mt-0.5">
                   {state.isSensorSupported
                     ? 'Counting physical footsteps via 3D Accelerometer'
                     : 'Simulation & Manual Mode Enabled'}

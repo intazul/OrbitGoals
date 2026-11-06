@@ -565,7 +565,7 @@ export default function App() {
   };
 
   // Sync Real Steps from Pedometer to Habits & Goals
-  const handleSyncStepsToHabits = (stepCount: number) => {
+  const handleSyncStepsToHabits = (stepCount: number, silent: boolean = false) => {
     let matchedAny = false;
     let earnedXpTotal = 0;
 
@@ -621,7 +621,7 @@ export default function App() {
           'streak'
         );
       }
-    } else {
+    } else if (!silent) {
       notificationManager.sendNotification(
         '👟 Pedometer Step Counter',
         `${stepCount.toLocaleString()} real steps counted today!`,
@@ -653,6 +653,13 @@ export default function App() {
     });
     updateGoals(updatedGoals);
   };
+
+  // Real-time automatic background step sync into linked habits and goals
+  useEffect(() => {
+    if (pedometerState.stepsToday > 0) {
+      handleSyncStepsToHabits(pedometerState.stepsToday, true);
+    }
+  }, [pedometerState.stepsToday]);
 
   // Save New or Edited Habit
   const handleSaveHabit = (

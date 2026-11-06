@@ -40,18 +40,25 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
   return (
     <div
       onClick={onOpenModal}
-      className="p-3.5 rounded-3xl bg-gradient-to-br from-blue-500/10 via-surface-container to-surface-container-low border border-blue-500/25 shadow-xs hover:border-blue-500/50 transition-all cursor-pointer active:scale-[0.99] group space-y-2.5"
+      className="p-3.5 rounded-3xl bg-surface-container border border-outline-variant/60 shadow-xs hover:border-on-surface/40 transition-all cursor-pointer active:scale-[0.99] group space-y-2.5"
     >
       {/* Top Header Row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform">
-            <Footprints className="w-4 h-4 animate-pulse" />
+          <div className="w-8 h-8 rounded-xl bg-black/10 dark:bg-blue-500/20 text-on-surface dark:text-blue-500 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform border border-outline-variant/30">
+            <Footprints className="w-4 h-4 animate-pulse text-on-surface dark:text-blue-500" />
           </div>
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 block leading-tight">
-              Real Step Counter
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-on-surface block leading-tight">
+                Real Step Counter
+              </span>
+              {state.isTracking && typeof state.liveIntensity === 'number' && state.liveIntensity > 0 && (
+                <span className="text-[8px] font-mono font-bold px-1 rounded bg-black/10 dark:bg-white/10 text-on-surface border border-outline-variant/40">
+                  {state.liveIntensity} m/s²
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="relative flex h-2 w-2">
                 <span
@@ -65,7 +72,7 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
                   }`}
                 />
               </span>
-              <span className="text-[10px] font-bold text-on-surface-variant">
+              <span className="text-[10px] font-bold text-on-surface-variant font-mono">
                 {state.isTracking ? (state.cadence > 0 ? `${state.cadence} SPM` : 'Sensor Active') : 'Paused'}
               </span>
             </div>
@@ -77,10 +84,10 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
             <button
               type="button"
               onClick={handleSync}
-              className="px-2 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 font-bold text-[10px] flex items-center gap-1 border border-blue-500/30 transition-all cursor-pointer"
+              className="px-2 py-1 rounded-lg bg-black/10 dark:bg-blue-500/15 hover:bg-black/20 text-on-surface dark:text-blue-400 font-bold text-[10px] flex items-center gap-1 border border-outline-variant/40 transition-all cursor-pointer"
               title="Sync current steps to linked habits"
             >
-              <Sparkles className="w-3 h-3" />
+              <Sparkles className="w-3 h-3 text-on-surface dark:text-blue-400" />
               <span>Sync</span>
             </button>
           )}
@@ -88,7 +95,7 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
           <button
             type="button"
             onClick={handlePauseResume}
-            className="w-7 h-7 rounded-lg bg-surface border border-outline-variant/30 flex items-center justify-center text-on-surface hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+            className="w-7 h-7 rounded-lg bg-surface border border-outline-variant/40 flex items-center justify-center text-on-surface hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
             title={state.isTracking ? 'Pause step counting' : 'Resume step counting'}
           >
             {state.isTracking ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
@@ -113,8 +120,8 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
           <div className="flex items-center gap-2.5 pt-0.5 text-[11px] text-on-surface-variant font-mono">
             <span>{state.distanceKm} km</span>
             <span>·</span>
-            <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
-              <Flame className="w-3 h-3 fill-current" />
+            <span className="text-on-surface font-bold flex items-center gap-0.5">
+              <Flame className="w-3 h-3 text-amber-500 fill-amber-500" />
               <span>{state.caloriesBurned} kcal</span>
             </span>
           </div>
@@ -131,7 +138,7 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
             <path
-              className="text-blue-500 transition-all duration-500 ease-out"
+              className="text-on-surface dark:text-blue-500 transition-all duration-500 ease-out"
               strokeDasharray={`${pct}, 100`}
               strokeLinecap="round"
               strokeWidth="4"
