@@ -121,8 +121,8 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
         {/* Header Bar */}
         <div className="px-5 pt-4 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-500 shadow-xs">
-              <Footprints className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-surface-container-high border border-outline-variant/40 flex items-center justify-center text-on-surface shadow-xs">
+              <Footprints className="w-5 h-5 text-on-surface" />
             </div>
             <div>
               <h2 className="text-base font-black tracking-tight leading-none text-on-surface">
@@ -171,18 +171,18 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-on-surface block leading-tight truncate">
-                    {state.isTracking ? 'Hardware Sensor Active' : 'Pedometer Paused'}
+                    {state.isWalkingMode ? 'Walking Mode: Active' : 'Walking Mode: OFF (Idle)'}
                   </span>
-                  {state.isTracking && typeof state.liveIntensity === 'number' && state.liveIntensity > 0 && (
+                  {state.isWalkingMode && typeof state.liveIntensity === 'number' && state.liveIntensity > 0 && (
                     <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-black/10 dark:bg-white/10 text-on-surface border border-outline-variant/40 shrink-0">
                       {state.liveIntensity} m/s²
                     </span>
                   )}
                 </div>
                 <span className="text-[10px] text-on-surface-variant block truncate mt-0.5">
-                  {state.isSensorSupported
-                    ? 'Counting physical footsteps via 3D Accelerometer'
-                    : 'Simulation & Manual Mode Enabled'}
+                  {state.isWalkingMode
+                    ? 'Counting physical footsteps · Filters table twitches'
+                    : 'Pedometer does not count automatically · Switch ON when walking'}
                 </span>
               </div>
             </div>
@@ -191,18 +191,18 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
               type="button"
               onClick={toggleTracking}
               className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs shrink-0 ${
-                state.isTracking
+                state.isWalkingMode
                   ? 'bg-surface-container-highest text-on-surface border border-outline-variant/30 hover:bg-surface-container-high'
                   : 'bg-primary text-on-primary'
               }`}
             >
-              {state.isTracking ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              <span>{state.isTracking ? 'Pause' : 'Resume'}</span>
+              {state.isWalkingMode ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              <span>{state.isWalkingMode ? 'Turn OFF' : 'Switch ON'}</span>
             </button>
           </div>
 
           {/* Large Circular Gauge & Step Counter Hero */}
-          <div className="p-5 rounded-3xl bg-gradient-to-br from-blue-500/10 via-primary/5 to-surface-container border border-blue-500/20 shadow-xs flex flex-col items-center justify-center text-center relative overflow-hidden">
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low border border-outline-variant/30 shadow-xs flex flex-col items-center justify-center text-center relative overflow-hidden">
             {/* Circular Gauge */}
             <div className="relative w-44 h-44 flex items-center justify-center my-1">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -285,7 +285,7 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">
                 Cadence
               </span>
-              <span className="text-base font-black font-mono text-blue-600 dark:text-blue-400 tabular-nums block leading-tight">
+              <span className="text-base font-black font-mono text-on-surface tabular-nums block leading-tight">
                 {state.cadence} <span className="text-xs font-normal">SPM</span>
               </span>
               <span className="text-[9px] text-on-surface-variant font-mono">
@@ -301,7 +301,7 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
                 <span className="text-xs font-black text-on-surface block leading-tight">
                   Sync Steps with Habits & Goals
                 </span>
-                <span className="text-[11px] text-on-surface-variant">
+                <span style={{ fontSize: '10px' }} className="text-[10px] text-on-surface-variant">
                   {stepHabits.length > 0 || stepGoals.length > 0
                     ? `Connected to ${stepHabits.length} habit(s) and ${stepGoals.length} goal(s)`
                     : 'Syncs live step progress directly into your daily routine'}

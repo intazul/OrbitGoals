@@ -11,7 +11,7 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({ children, isReverseZ
       className={`min-h-screen flex justify-center items-start sm:py-4 select-none transition-colors duration-300 ${
         isReverseZone
           ? 'bg-rose-100/70 dark:bg-[#0a0204]'
-          : 'bg-zinc-100 dark:bg-[#050811]'
+          : 'bg-zinc-100 dark:bg-black'
       }`}
     >
       {/* Android Device Outer Wrapper with clean micro-jitter animation (no lines) */}
@@ -19,7 +19,7 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({ children, isReverseZ
         className={`w-full max-w-[430px] h-[100dvh] sm:h-[880px] sm:max-h-[94vh] bg-surface text-on-surface flex flex-col relative sm:rounded-[36px] sm:border-[8px] overflow-hidden transition-all duration-300 screen-glitch ${
           isReverseZone
             ? 'sm:border-rose-300 dark:sm:border-rose-950/90 shadow-[0_0_35px_rgba(225,29,72,0.25)]'
-            : 'sm:border-zinc-950/85 dark:sm:border-slate-800/80 sm:shadow-2xl'
+            : 'sm:border-zinc-950/85 dark:sm:border-zinc-800 sm:shadow-2xl'
         }`}
       >
         {/* Device Content Canvas */}

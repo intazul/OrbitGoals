@@ -45,8 +45,8 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
       {/* Top Header Row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-black/10 dark:bg-blue-500/20 text-on-surface dark:text-blue-500 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform border border-outline-variant/30">
-            <Footprints className="w-4 h-4 animate-pulse text-on-surface dark:text-blue-500" />
+          <div className="w-8 h-8 rounded-xl bg-black/10 dark:bg-white/10 text-on-surface dark:text-white flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform border border-outline-variant/30">
+            <Footprints className="w-4 h-4 animate-pulse text-on-surface dark:text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -84,10 +84,10 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
             <button
               type="button"
               onClick={handleSync}
-              className="px-2 py-1 rounded-lg bg-black/10 dark:bg-blue-500/15 hover:bg-black/20 text-on-surface dark:text-blue-400 font-bold text-[10px] flex items-center gap-1 border border-outline-variant/40 transition-all cursor-pointer"
+              className="px-2 py-1 rounded-lg bg-black/10 dark:bg-white/15 hover:bg-black/20 text-on-surface dark:text-white font-bold text-[10px] flex items-center gap-1 border border-outline-variant/40 transition-all cursor-pointer"
               title="Sync current steps to linked habits"
             >
-              <Sparkles className="w-3 h-3 text-on-surface dark:text-blue-400" />
+              <Sparkles className="w-3 h-3 text-on-surface dark:text-white" />
               <span>Sync</span>
             </button>
           )}
@@ -138,7 +138,7 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
             <path
-              className="text-on-surface dark:text-blue-500 transition-all duration-500 ease-out"
+              className="text-on-surface dark:text-white transition-all duration-500 ease-out"
               strokeDasharray={`${pct}, 100`}
               strokeLinecap="round"
               strokeWidth="4"

@@ -222,11 +222,15 @@ export interface PedometerState {
   caloriesBurned: number;
   cadence: number; // steps per minute
   isTracking: boolean;
+  isWalkingMode: boolean; // Walking mode switch: must be ON to count steps
   isSensorSupported: boolean;
   sensorPermission: 'granted' | 'denied' | 'prompt' | 'unsupported';
   sensitivity: 'high' | 'normal' | 'low';
   lastStepTimestamp?: number;
   liveIntensity?: number; // Real-time acceleration magnitude (m/s²)
+  hourlySteps?: number[]; // Steps grouped into 24 hour slots (0..23)
+  strideLengthCm?: number; // User calibrated stride length (default ~74 cm)
+  bodyWeightKg?: number; // User body weight for metabolic expenditure (default ~70 kg)
 }
 
 export interface AppSettings {

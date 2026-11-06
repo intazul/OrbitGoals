@@ -93,42 +93,53 @@
   }
 
   .dark, :root.dark, [data-theme="dark"] {
-    /* Material 3 Dark Tokens - Obsidian Slate Studio Palette */
-    --md-surface: #090d16;              /* Deep obsidian slate canvas */
-    --md-surface-dim: #090d16;
-    --md-surface-bright: #1e293b;
-    --md-surface-container-lowest: #050811;
-    --md-surface-container-low: #101726;  /* Elevated card surface */
-    --md-surface-container: #172033;      /* Container background */
-    --md-surface-container-high: #1f2b42; /* Hover / elevated interactive state */
-    --md-surface-container-highest: #283754;
-    --md-on-surface: #f8fafc;           /* Slate 50 - pristine, ultra-crisp white text (16.5:1 contrast) */
-    --md-on-surface-variant: #94a3b8;   /* Slate 400 - clean, readable secondary text (7.2:1 contrast) */
-    --md-outline: #64748b;              /* Slate 500 */
-    --md-outline-variant: rgba(148, 163, 184, 0.18); /* Hairline divider */
+    /* Material 3 Dark Tokens - Ultra-Premium High-Contrast Black & White Monochrome Palette */
+    --md-surface: #000000;              /* Pure pitch black canvas for absolute maximum contrast */
+    --md-surface-dim: #09090b;          /* Zinc 950 deep canvas shade */
+    --md-surface-bright: #27272a;       /* Zinc 800 high surface */
+    --md-surface-container-lowest: #000000;
+    --md-surface-container-low: #09090b;  /* Zinc 950 elevated card surface */
+    --md-surface-container: #121215;      /* Zinc 900 refined container background */
+    --md-surface-container-high: #1c1c20; /* Zinc 850 interactive surface */
+    --md-surface-container-highest: #27272a; /* Zinc 800 */
+    --md-on-surface: #ffffff;           /* Pure crisp white typography (21:1 maximum contrast) */
+    --md-on-surface-variant: #e4e4e7;   /* Zinc 200 - clean, ultra-readable high-contrast secondary text */
+    --md-outline: #ffffff;              /* Crisp white outline */
+    --md-outline-variant: #27272a;      /* Solid Zinc 800 crisp hairline border */
 
-    --md-primary: #6366f1;              /* Indigo 500 - vibrant, luminous brand primary */
-    --md-on-primary: #ffffff;           /* Crisp white on primary buttons */
-    --md-primary-container: rgba(99, 102, 241, 0.2);
-    --md-on-primary-container: #c7d2fe;
+    --md-primary: #ffffff;              /* Pure white primary action buttons for striking stark contrast */
+    --md-on-primary: #000000;           /* Pure jet black typography on white buttons */
+    --md-primary-container: #27272a;    /* Zinc 800 container */
+    --md-on-primary-container: #ffffff; /* Pure white text */
 
-    --md-secondary: #10b981;            /* Emerald 500 for habits */
-    --md-on-secondary: #ffffff;
-    --md-secondary-container: rgba(16, 185, 129, 0.2);
-    --md-on-secondary-container: #a7f3d0;
+    --md-secondary: #ffffff;            /* Pure white contrast accent */
+    --md-on-secondary: #000000;
+    --md-secondary-container: #18181b;
+    --md-on-secondary-container: #ffffff;
 
-    --md-tertiary: #f59e0b;             /* Amber 500 for streaks and XP */
+    --md-tertiary: #f4f4f5;             /* Zinc 100 high contrast */
     --md-on-tertiary: #000000;
-    --md-tertiary-container: rgba(245, 158, 11, 0.2);
-    --md-on-tertiary-container: #fde68a;
+    --md-tertiary-container: #27272a;
+    --md-on-tertiary-container: #ffffff;
 
-    --md-error: #f87171;
-    --md-error-container: rgba(239, 68, 68, 0.2);
-    --md-on-error: #ffffff;
+    --md-error: #ffffff;
+    --md-error-container: #27272a;
+    --md-on-error: #000000;
 
-    --md-elevation-1: 0px 1px 3px 0px rgba(0, 0, 0, 0.4), 0px 1px 2px -1px rgba(0, 0, 0, 0.4);
-    --md-elevation-2: 0px 4px 6px -1px rgba(0, 0, 0, 0.45), 0px 2px 4px -2px rgba(0, 0, 0, 0.45);
-    --md-elevation-3: 0px 10px 15px -3px rgba(0, 0, 0, 0.5), 0px 4px 6px -4px rgba(0, 0, 0, 0.5);
+    --md-elevation-1: 0px 1px 3px 0px rgba(255, 255, 255, 0.05), 0px 1px 2px -1px rgba(0, 0, 0, 0.8);
+    --md-elevation-2: 0px 4px 6px -1px rgba(255, 255, 255, 0.08), 0px 2px 4px -2px rgba(0, 0, 0, 0.8);
+    --md-elevation-3: 0px 10px 15px -3px rgba(255, 255, 255, 0.12), 0px 4px 6px -4px rgba(0, 0, 0, 0.8);
+  }
+
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  :root.dark h1,
+  :root.dark h2,
+  :root.dark h3,
+  :root.dark h4 {
+    color: #ffffff;
   }
 
   /* Reverse Habit Zone - Moderate Red Screen Palette with Perfect Contrast */

@@ -38,6 +38,7 @@ import { GoalIcon } from './components/GoalIcon';
 import { ReverseZoneAuditModal } from './components/ReverseZoneAuditModal';
 import { StepCounterModal } from './components/StepCounterModal';
 import { PedometerWidget } from './components/PedometerWidget';
+import { StepAnalyticsScreen } from './components/StepAnalyticsScreen';
 import { usePedometer } from './hooks/usePedometer';
 import { INITIAL_HABITS } from './utils/initialData';
 
@@ -92,9 +93,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'habits' | 'goals'>('habits');
   const [habitFilter, setHabitFilter] = useState<'all' | HabitTimeOfDay>('all');
 
-  // Screen View: 'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook' | 'habit-detail' | 'goal-detail'
+  // Screen View: 'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook' | 'habit-detail' | 'goal-detail' | 'pedometer'
   const [screenView, setScreenView] = useState<
-    'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook' | 'habit-detail' | 'goal-detail'
+    'dashboard' | 'goals' | 'habits' | 'add-goal' | 'add-habit' | 'calendar' | 'settings' | 'profile' | 'scrapbook' | 'habit-detail' | 'goal-detail' | 'pedometer'
   >('dashboard');
   const [calendarGoalId, setCalendarGoalId] = useState<string | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
@@ -1302,6 +1303,16 @@ export default function App() {
             />
           )}
 
+          {/* Dedicated Tab/Screen Mode: Step Analytics & Real-Time Tracker */}
+          {screenView === 'pedometer' && (
+            <StepAnalyticsScreen
+              onBack={() => setScreenView('dashboard')}
+              habits={habits}
+              goals={goals}
+              onSyncStepsToHabits={handleSyncStepsToHabits}
+            />
+          )}
+
           {/* Main Single Screen: Dashboard */}
           {screenView === 'dashboard' && (
             <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface">
@@ -1364,6 +1375,22 @@ export default function App() {
                         }`}>
                           {uncompletedHabits.length}
                         </span>
+                      )}
+                    </button>
+
+                    {/* Step Counter & Analytics Tab Launcher */}
+                    <button
+                      onClick={() => {
+                        setScreenView('pedometer');
+                        sound.playPop();
+                        triggerHaptic('light');
+                      }}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30 relative"
+                      title={pedometerState.isWalkingMode ? 'Walking Mode: Active (Counting Steps)' : 'Step Analytics (Walking Mode: OFF)'}
+                    >
+                      <Footprints className={`w-4 h-4 ${pedometerState.isWalkingMode ? 'text-primary animate-pulse' : 'text-on-surface-variant'}`} />
+                      {pedometerState.isWalkingMode && (
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
                       )}
                     </button>
 
@@ -1594,14 +1621,6 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-                  )}
-
-                  {/* Real Step Counter Hardware Pedometer Widget */}
-                  {activeTab === 'habits' && (
-                    <PedometerWidget
-                      onOpenModal={() => setShowPedometerModal(true)}
-                      onSyncSteps={handleSyncStepsToHabits}
-                    />
                   )}
 
                   {/* BIG ADAPTING "ADD HABIT" OR "ADD GOAL" BUTTON */}

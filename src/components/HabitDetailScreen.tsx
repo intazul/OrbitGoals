@@ -230,7 +230,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-on-surface">Today's Status:</span>
               <span
-                style={{ width: '106px' }}
+                style={{ width: '103px' }}
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black ${
                   isDoneToday
                     ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
@@ -240,12 +240,12 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                 {isDoneToday ? (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    <span style={{ fontSize: '9px' }}>Completed Today</span>
+                    <span style={{ fontSize: '7px' }}>Completed</span>
                   </>
                 ) : (
                   <>
                     <Circle className="w-3.5 h-3.5 text-amber-500" />
-                    <span style={{ fontSize: '9px' }}>Pending Check-in</span>
+                    <span style={{ fontSize: '7px' }}>Pending</span>
                   </>
                 )}
               </span>
@@ -254,7 +254,8 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
             <button
               type="button"
               onClick={() => onToggleHabit(habit.id)}
-              className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs ${
+              style={{ width: '90.5625px', fontSize: '10px' }}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs ${
                 isDoneToday
                   ? 'bg-surface-container border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-high'
                   : 'bg-primary text-on-primary hover:brightness-105'

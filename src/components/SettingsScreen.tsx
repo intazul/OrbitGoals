@@ -597,16 +597,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         {/* 4. Appearance & Theme */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
-            <Palette className="w-4 h-4" />
-            <span>Appearance & Theme</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+              <Palette className="w-4 h-4" />
+              <span>Appearance & Theme</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface border border-outline-variant/30">
+              High-Contrast B&W
+            </span>
           </div>
+
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            Ultra-sharp contrasting black and white theme with crisp fonts, deep pitch blacks, and clean monochrome shades.
+          </p>
 
           <div className="grid grid-cols-3 gap-2 pt-1">
             {[
-              { id: 'dark' as const, label: 'Dark Mode', icon: Moon },
-              { id: 'light' as const, label: 'Light Mode', icon: Sun },
-              { id: 'system' as const, label: 'System', icon: Sliders },
+              { id: 'dark' as const, label: 'Dark (B&W)', desc: 'Pitch Black', icon: Moon },
+              { id: 'light' as const, label: 'Light (B&W)', desc: 'Pure White', icon: Sun },
+              { id: 'system' as const, label: 'System', desc: 'Auto Match', icon: Sliders },
             ].map((t) => {
               const Icon = t.icon;
               const isSelected = settings.theme === t.id;
@@ -614,14 +623,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <button
                   key={t.id}
                   onClick={() => handleThemeChange(t.id)}
-                  className={`py-3 px-2 rounded-2xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[58px] ${
+                  className={`py-3 px-2 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer min-h-[64px] ${
                     isSelected
                       ? 'border-primary bg-primary text-on-primary font-bold shadow-xs scale-102'
-                      : 'border-outline-variant/30 bg-surface text-on-surface-variant hover:text-on-surface'
+                      : 'border-outline-variant/30 bg-surface text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="text-xs font-semibold">{t.label}</span>
+                  <span className="text-xs font-bold leading-tight">{t.label}</span>
+                  <span className={`text-[9px] ${isSelected ? 'text-on-primary/70' : 'text-on-surface-variant/80'}`}>
+                    {t.desc}
+                  </span>
                 </button>
               );
             })}
