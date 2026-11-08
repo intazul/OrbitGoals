@@ -142,47 +142,9 @@
     color: #ffffff;
   }
 
-  /* Reverse Habit Zone - Moderate Red Screen Palette with Perfect Contrast */
-  [data-reverse-zone="true"], :root[data-reverse-zone="true"], body[data-reverse-zone="true"] {
-    --md-surface: #fff1f2;              /* Rose 50 moderate light red canvas */
-    --md-surface-dim: #ffe4e6;          /* Rose 100 */
-    --md-surface-bright: #ffffff;
-    --md-surface-container-lowest: #ffffff;
-    --md-surface-container-low: #ffffff;
-    --md-surface-container: #ffe4e6;    /* Rose 100 cards */
-    --md-surface-container-high: #fecdd3; /* Rose 200 */
-    --md-surface-container-highest: #fda4af; /* Rose 300 */
-    --md-on-surface: #4c0519;           /* Deep Rose 950 for ultra-sharp readable contrast */
-    --md-on-surface-variant: #881337;   /* Deep Rose 900 secondary text */
-    --md-outline: #e11d48;              /* Rose 600 */
-    --md-outline-variant: rgba(225, 29, 72, 0.22);
-    --md-primary: #e11d48;              /* Vibrant crimson primary */
-    --md-on-primary: #ffffff;
-    --md-primary-container: #ffe4e6;
-    --md-on-primary-container: #881337;
-    --md-tertiary: #be123c;
-    --md-on-tertiary: #ffffff;
-  }
-
-  .dark[data-reverse-zone="true"], :root.dark[data-reverse-zone="true"], [data-theme="dark"][data-reverse-zone="true"], [data-reverse-zone="true"].dark {
-    --md-surface: #140508;              /* Deep wine obsidian canvas */
-    --md-surface-dim: #0f0305;
-    --md-surface-bright: #260a10;
-    --md-surface-container-lowest: #0a0204;
-    --md-surface-container-low: #1d070c;  /* Elevated card surface with deep dark ruby tone */
-    --md-surface-container: #280b11;      /* Container background */
-    --md-surface-container-high: #370f18; /* Hover interactive state */
-    --md-surface-container-highest: #4b1522;
-    --md-on-surface: #fff1f2;           /* Rose 50 - pristine, ultra-crisp white text */
-    --md-on-surface-variant: #fecdd3;   /* Rose 200 - soft readable secondary text */
-    --md-outline: #f43f5e;              /* Rose 500 */
-    --md-outline-variant: rgba(244, 63, 94, 0.28);
-    --md-primary: #f43f5e;              /* Rose 500 brand */
-    --md-on-primary: #ffffff;
-    --md-primary-container: rgba(244, 63, 94, 0.22);
-    --md-on-primary-container: #ffe4e6;
-    --md-tertiary: #fb7185;
-    --md-on-tertiary: #000000;
+  /* Reverse Habit Zone - Subtle Touch & Indicator Accents (Normal Canvas Theme Preserved) */
+  .reverse-touch-active:active {
+    transform: scale(0.96);
   }
 
   body {
@@ -324,86 +286,7 @@ textarea {
   animation: shake 0.35s ease-in-out;
 }
 
-/* Subtle Cyberpunk Glitch Effects */
-@keyframes micro-glitch {
-  0%, 88%, 93%, 100% {
-    transform: translate(0, 0);
-    filter: none;
-  }
-  89% {
-    transform: translate(-1.5px, 0.5px) skewX(-0.5deg);
-    filter: drop-shadow(-1px 0 0 rgba(6, 182, 212, 0.7)) drop-shadow(1px 0 0 rgba(244, 63, 94, 0.7));
-  }
-  90% {
-    transform: translate(1.5px, -0.8px) skewX(0.5deg);
-    filter: drop-shadow(1px 0 0 rgba(6, 182, 212, 0.7)) drop-shadow(-1px 0 0 rgba(244, 63, 94, 0.7));
-  }
-  91% {
-    transform: translate(-0.8px, 0.8px);
-    filter: drop-shadow(-0.5px 0 0 rgba(6, 182, 212, 0.5));
-  }
-  92% {
-    transform: translate(0, 0);
-    filter: none;
-  }
-}
-
-@keyframes glitch-rgb {
-  0%, 89%, 93%, 100% {
-    text-shadow: none;
-    transform: translate(0);
-  }
-  90% {
-    text-shadow: -1.5px 0 0 rgba(6, 182, 212, 0.85), 1.5px 0 0 rgba(244, 63, 94, 0.85);
-    transform: translate(-0.5px, 0.5px);
-  }
-  91% {
-    text-shadow: 1.5px 0 0 rgba(6, 182, 212, 0.85), -1.5px 0 0 rgba(244, 63, 94, 0.85);
-    transform: translate(0.5px, -0.5px);
-  }
-  92% {
-    text-shadow: none;
-    transform: translate(0);
-  }
-}
-
-.glitch-effect {
-  animation: micro-glitch 5.5s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.glitch-text {
-  animation: glitch-rgb 4.8s infinite ease-in-out;
-}
-
-.glitch-hover:hover {
-  animation: micro-glitch 0.4s ease-in-out infinite;
-}
-
-/* Full-Screen Pure Micro Jitter Animation (No lines, no static slices) */
-@keyframes screen-glitch-burst {
-  0%, 85%, 91%, 100% {
-    transform: translate(0, 0);
-  }
-  86% {
-    transform: translate(-2px, 1px) skewX(-0.4deg);
-  }
-  87% {
-    transform: translate(2px, -1.2px) skewX(0.4deg);
-  }
-  88% {
-    transform: translate(-1.2px, -0.5px);
-  }
-  89% {
-    transform: translate(1px, 0.8px);
-  }
-  90% {
-    transform: translate(0, 0);
-  }
-}
-
-.screen-glitch {
-  animation: screen-glitch-burst 3.8s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
+/* Standard UI Transition Utilities */
 
 
 

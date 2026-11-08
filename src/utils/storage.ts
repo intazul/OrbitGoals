@@ -419,8 +419,9 @@ export const storage = {
         }
       }
 
-      // Reverse Habit penalty: Uncompleted before 11:59 PM reduces XP by same amount
-      if (!completedYesterday) {
+      // Reverse Habit penalty: Only if Reverse XP Deletion Mode is enabled!
+      const isReverseMode = this.getReverseZoneActive();
+      if (isReverseMode && !completedYesterday) {
         const xpPenalty = habit.xpPerSet || 8;
         totalXpDeducted += xpPenalty;
         yesterdayPenalties.push({
@@ -430,7 +431,7 @@ export const storage = {
           habitTitle: habit.title,
           habitIcon: habit.icon,
           xpDeducted: xpPenalty,
-          reason: 'Uncompleted before 11:59 PM deadline',
+          reason: 'Uncompleted before 11:59 PM deadline (Reverse XP Deletion)',
           timestamp: Date.now(),
         });
       }
@@ -476,6 +477,10 @@ export const storage = {
     xpDeducted: number;
     penalties: ReversePenaltyRecord[];
   } {
+    if (!this.getReverseZoneActive()) {
+      return { xpDeducted: 0, penalties: [] };
+    }
+
     const habits = this.getHabits();
     const profile = this.getProfile();
     const existingPenalties = this.getReverseHistory();

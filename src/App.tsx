@@ -148,14 +148,8 @@ export default function App() {
     }
   }, [settings.theme]);
 
-  // Sync data-reverse-zone attribute for moderate red aesthetic
+  // Sync Reverse Zone state to storage
   useEffect(() => {
-    const root = document.documentElement;
-    if (isReverseZone) {
-      root.setAttribute('data-reverse-zone', 'true');
-    } else {
-      root.removeAttribute('data-reverse-zone');
-    }
     storage.saveReverseZoneActive(isReverseZone);
   }, [isReverseZone]);
 
@@ -193,6 +187,21 @@ export default function App() {
       const next = !prev;
       sound.playPop();
       triggerHaptic('medium');
+      storage.saveReverseZoneActive(next);
+      updateSettings({ reverseZoneActive: next });
+      if (next) {
+        notificationManager.sendNotification(
+          '🔥 Reverse Habit Zone Active',
+          'Uncompleted habits will deduct XP at 11:59 PM. Complete them before midnight!',
+          'habit'
+        );
+      } else {
+        notificationManager.sendNotification(
+          '🛡️ Safe Mode Active',
+          'Reverse XP deductions are turned off. Missed habits will not deduct XP.',
+          'milestone'
+        );
+      }
       return next;
     });
   };
@@ -1263,6 +1272,12 @@ export default function App() {
               onOpenCalendar={() => handleOpenCalendar()}
               habits={habits}
               goals={goals}
+              isReverseZone={isReverseZone}
+              onToggleReverseZone={(active) => {
+                setIsReverseZone(active);
+                storage.saveReverseZoneActive(active);
+                updateSettings({ reverseZoneActive: active });
+              }}
             />
           )}
 
@@ -1321,63 +1336,16 @@ export default function App() {
                 style={{ marginTop: '32px', marginLeft: '0px' }}
                 className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-8 ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
               >
-                {/* Brand / Profile Launcher Button (Clicking Name or Avatar opens Profile) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setScreenView('profile');
-                      sound.playPop();
-                      triggerHaptic('light');
-                    }}
-                    className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-85 active:scale-95 transition-all cursor-pointer p-1 -m-1 rounded-2xl group"
-                    title="Tap to open Player Profile & Trophies"
-                  >
-                    <div className="relative shrink-0">
-                      <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-black text-sm group-hover:ring-2 group-hover:ring-primary/40 transition-all shadow-xs">
-                        {profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'G'}
-                      </div>
-                      <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-black text-[8px] leading-tight shadow-xs border border-surface glitch-effect">
-                        Lv.{levelInfo.level}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[18px] font-black tracking-tight text-on-surface block leading-none truncate max-w-[125px] group-hover:text-primary transition-colors glitch-text">
-                          {profile.name || 'OrbitGoals'}
-                        </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-primary transition-colors opacity-70" />
-                      </div>
-                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 block mt-1 truncate flex items-center gap-1">
-                        <span>{rankInfo.badge}</span>
-                        <span>{profile.title || rankInfo.title}</span>
-                      </span>
-                    </div>
-                  </button>
+                {/* App Brand Title */}
+                <div
+                  style={{ fontSize: '25px' }}
+                  className="text-[25px] font-black tracking-tight text-on-surface select-none"
+                >
+                  OrbitGoals
+                </div>
 
-                  {/* Action Icons in Header: Reverse Zone Toggle, Calendar, Scrapbook, Settings */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Reverse Habit Zone Toggle Button with subtle glitch effect */}
-                    <button
-                      type="button"
-                      onClick={handleToggleReverseZone}
-                      className={`h-9 px-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border active:scale-95 shrink-0 ${
-                        isReverseZone
-                          ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white border-rose-400 shadow-[0_0_12px_rgba(225,29,72,0.45)] glitch-effect'
-                          : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                      }`}
-                      title={isReverseZone ? 'Exit Reverse Habit Zone' : 'Enter Reverse Habit Zone'}
-                    >
-                      <Flame className={`w-3.5 h-3.5 ${isReverseZone ? 'fill-current animate-pulse text-white' : 'text-rose-500'}`} />
-                      <span className="hidden xs:inline">{isReverseZone ? 'Reverse Active' : 'Reverse'}</span>
-                      {uncompletedHabits.length > 0 && (
-                        <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black leading-tight ${
-                          isReverseZone ? 'bg-black/35 text-white' : 'bg-rose-600 text-white'
-                        }`}>
-                          {uncompletedHabits.length}
-                        </span>
-                      )}
-                    </button>
-
+                {/* Action Icons in Header: Reverse Zone Toggle, Step Counter, Calendar, Scrapbook, Settings */}
+                <div className="flex items-center gap-1.5 shrink-0">
                     {/* Step Counter & Analytics Tab Launcher */}
                     <button
                       onClick={() => {
@@ -1471,16 +1439,11 @@ export default function App() {
                 <div className="space-y-2.5">
                   {/* Dynamic Overview Card based on activeTab */}
                   {activeTab === 'habits' ? (
-                    <div className={`rounded-2xl p-3 border shadow-xs transition-all ${
-                      isReverseZone
-                        ? 'bg-gradient-to-br from-rose-500/15 via-rose-950/20 to-surface-container border-rose-500/40'
-                        : 'bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low border-outline-variant/30'
-                    }`}>
+                    <div className="rounded-2xl p-3 border shadow-xs transition-all bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low border-outline-variant/30">
                       <div className="flex items-center justify-between mb-1">
-                        <span className={`text-[9px] font-black uppercase tracking-wider ${
-                          isReverseZone ? 'text-rose-600 dark:text-rose-400' : 'text-primary'
-                        }`}>
-                          {isReverseZone ? 'Reverse Habit Zone Progress' : "Today's Habits Progress"}
+                        <span className="text-[9px] font-black uppercase tracking-wider text-primary flex items-center gap-1">
+                          {isReverseZone && <Flame className="w-3 h-3 text-rose-500 fill-current" />}
+                          <span>{isReverseZone ? "Today's Habits · Reverse Active" : "Today's Habits Progress"}</span>
                         </span>
                         <span className="text-[11px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
                           <Flame className="w-3.5 h-3.5 fill-current" />
@@ -1517,9 +1480,7 @@ export default function App() {
                               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             />
                             <path
-                              className={`transition-all duration-700 ease-out ${
-                                isReverseZone ? 'text-rose-600' : 'text-primary'
-                              }`}
+                              className="transition-all duration-700 ease-out text-primary"
                               strokeDasharray={`${habitsPct}, 100`}
                               strokeLinecap="round"
                               strokeWidth="4"
@@ -1538,9 +1499,9 @@ export default function App() {
 
                       {/* Reverse Zone Mini Banner Action Bar */}
                       {isReverseZone && (
-                        <div className="mt-2.5 pt-2 border-t border-rose-500/20 flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                            <Clock className="w-3.5 h-3.5" />
+                        <div className="mt-2.5 pt-2 border-t border-outline-variant/20 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-on-surface">
+                            <Clock className="w-3.5 h-3.5 text-rose-500" />
                             <span style={{ fontSize: '10px' }}>Cutoff: {countdownToMidnight}</span>
                           </div>
 
@@ -1738,11 +1699,7 @@ export default function App() {
                               triggerHaptic('light');
                             }}
                             className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99] ${
-                              isReverseZone
-                                ? isDoneToday
-                                  ? 'bg-surface-container-low border-emerald-500/40 shadow-xs'
-                                  : 'bg-rose-500/10 dark:bg-rose-950/30 border-rose-500/50 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
-                                : isDoneToday
+                              isDoneToday
                                 ? 'bg-surface-container-low/80 border-primary/30'
                                 : 'bg-surface-container-low border-outline-variant/30'
                             }`}
@@ -1832,20 +1789,14 @@ export default function App() {
                             {isReverseZone && (
                               <div className="pt-0.5 flex items-center justify-between text-[10px] font-bold border-t border-outline-variant/15">
                                 {isDoneToday ? (
-                                  <span
-                                    style={{ width: '208.109375px' }}
-                                    className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30"
-                                  >
+                                  <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30 text-[9px] font-bold">
                                     <Shield className="w-3 h-3 text-emerald-500" />
-                                    <span style={{ fontSize: '9px' }}>Shielded · +{habitXp} XP Secured</span>
+                                    <span>Shielded · +{habitXp} XP Secured</span>
                                   </span>
                                 ) : (
-                                  <span
-                                    style={{ width: '208.109375px' }}
-                                    className="text-rose-700 dark:text-rose-300 flex items-center gap-1 bg-rose-500/15 px-2 py-0.5 rounded-lg border border-rose-500/40 font-mono"
-                                  >
+                                  <span className="text-rose-700 dark:text-rose-300 flex items-center gap-1 bg-rose-500/10 px-2 py-0.5 rounded-lg border border-rose-500/30 font-mono text-[9px] font-bold">
                                     <AlertTriangle className="w-3 h-3 text-rose-500" />
-                                    <span style={{ fontSize: '9px' }}>Reverse Risk: -{habitXp} XP at 11:59 PM</span>
+                                    <span>Reverse Risk: -{habitXp} XP at 11:59 PM</span>
                                   </span>
                                 )}
                                 <span className="text-on-surface-variant text-[9px] font-medium">

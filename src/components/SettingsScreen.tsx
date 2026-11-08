@@ -35,6 +35,7 @@ import {
   Dices,
   Bell,
   Clock,
+  Flame,
 } from 'lucide-react';
 import { notificationManager } from '../utils/notifications';
 
@@ -61,6 +62,8 @@ interface SettingsScreenProps {
   onOpenCalendar?: () => void;
   habits?: Habit[];
   goals?: Goal[];
+  isReverseZone?: boolean;
+  onToggleReverseZone?: (active: boolean) => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -80,6 +83,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onOpenCalendar,
   habits = [],
   goals = [],
+  isReverseZone,
+  onToggleReverseZone,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupSuccessMsg, setBackupSuccessMsg] = useState<string | null>(null);
@@ -913,6 +918,112 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </div>
         </div>
+
+        {/* 6c. Reverse XP Deletion Mode Setting */}
+        {(() => {
+          const isReverseActive = typeof isReverseZone === 'boolean' ? isReverseZone : storage.getReverseZoneActive();
+          const handleToggleReverse = () => {
+            const nextVal = !isReverseActive;
+            storage.saveReverseZoneActive(nextVal);
+            onUpdateSettings({ reverseZoneActive: nextVal });
+            if (onToggleReverseZone) {
+              onToggleReverseZone(nextVal);
+            }
+            sound.playPop();
+            triggerHaptic('medium');
+          };
+
+          return (
+            <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                  <Flame className="w-4 h-4 fill-current" />
+                  <span>Reverse XP Deletion Mode</span>
+                </div>
+                <span
+                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                    isReverseActive
+                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                  }`}
+                >
+                  {isReverseActive ? 'Active (-XP Penalties ON)' : 'OFF (Zero XP Penalties)'}
+                </span>
+              </div>
+
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                When enabled, uncompleted daily habits deduct XP at the 11:59 PM deadline. Turn this <strong>OFF</strong> to protect your level and prevent any XP from being deleted when habits are missed.
+              </p>
+
+              <div className="p-3.5 rounded-2xl bg-surface border border-outline-variant/20 flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-on-surface block leading-tight">
+                    Reverse XP Deletion
+                  </span>
+                  <span className="text-[11px] text-on-surface-variant">
+                    {isReverseActive
+                      ? 'Penalty Mode ON: Missed habits reduce XP at 11:59 PM'
+                      : 'Safe Mode: XP deletion is disabled. Never lose XP from missed habits'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleToggleReverse}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isReverseActive ? 'bg-rose-600' : 'bg-surface-container-highest'
+                  }`}
+                  role="switch"
+                  aria-checked={isReverseActive}
+                  title={isReverseActive ? 'Turn OFF Reverse XP Deletion' : 'Turn ON Reverse XP Deletion'}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      isReverseActive ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isReverseActive) {
+                      handleToggleReverse();
+                    }
+                  }}
+                  disabled={!isReverseActive}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
+                    !isReverseActive
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 opacity-75 cursor-default'
+                      : 'bg-surface-container border-outline-variant/30 text-on-surface hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-600 cursor-pointer active:scale-98'
+                  }`}
+                >
+                  🛡️ Turn Off XP Deletion (Safe Mode)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isReverseActive) {
+                      handleToggleReverse();
+                    }
+                  }}
+                  disabled={isReverseActive}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
+                    isReverseActive
+                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 opacity-75 cursor-default'
+                      : 'bg-surface-container border-outline-variant/30 text-on-surface hover:bg-rose-500/10 hover:border-rose-500/40 hover:text-rose-600 cursor-pointer active:scale-98'
+                  }`}
+                >
+                  🔥 Turn On Reverse XP Mode
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 7. Google Calendar & Apple Calendar Sync (.ics Export) */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">

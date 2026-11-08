@@ -224,47 +224,6 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
               </p>
             </div>
           </div>
-
-          {/* Today's Quick Status Bar */}
-          <div className="pt-2 border-t border-outline-variant/20 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-on-surface">Today's Status:</span>
-              <span
-                style={{ width: '94px' }}
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black ${
-                  isDoneToday
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                    : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                }`}
-              >
-                {isDoneToday ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    <span style={{ fontSize: '7px' }}>Completed</span>
-                  </>
-                ) : (
-                  <>
-                    <Circle className="w-3.5 h-3.5 text-amber-500" />
-                    <span style={{ fontSize: '7px' }}>Pending</span>
-                  </>
-                )}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onToggleHabit(habit.id)}
-              style={{ width: '86.5625px', fontSize: '10px' }}
-              className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs ${
-                isDoneToday
-                  ? 'bg-surface-container border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-high'
-                  : 'bg-primary text-on-primary hover:brightness-105'
-              }`}
-            >
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-              <span style={{ fontSize: '8px' }}>{isDoneToday ? 'Undo Check' : 'Check In'}</span>
-            </button>
-          </div>
         </div>
 
         {/* 4 Stats Grid: From the Beginning */}
