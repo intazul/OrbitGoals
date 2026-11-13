@@ -15,6 +15,7 @@ import {
   Dices,
 } from 'lucide-react';
 import { generateRandomGamerTag, cleanGamerTag } from '../utils/gamerNames';
+import { APP_VERSION } from '../utils/version';
 
 interface OnboardingScreenProps {
   onComplete: (profile: UserProfile, security: SecurityConfig) => void;
@@ -124,10 +125,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full max-h-screen bg-surface text-on-surface relative overflow-hidden select-none">
-      {/* Background ambient lighting */}
-      <div className="absolute top-0 right-0 w-60 h-60 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-60 h-60 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="flex-1 flex flex-col h-full max-h-screen bg-surface text-on-surface relative overflow-hidden select-none animate-noir-enter">
+      {/* Subtle monochrome depth */}
+      <div className="absolute top-0 right-0 w-60 h-60 bg-on-surface/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-60 h-60 bg-on-surface/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header */}
       <header
@@ -155,12 +156,17 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             </button>
           )}
           <div>
-            <span
-              style={{ fontSize: '17px', fontFamily: 'Georgia', fontWeight: 'normal' }}
-              className="text-[17px] font-normal uppercase tracking-wider text-primary block leading-none font-serif"
-            >
-              OrbitGoals
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span
+                style={{ fontSize: '17px', fontFamily: 'Georgia', fontWeight: 'normal' }}
+                className="text-[17px] font-normal uppercase tracking-wider text-primary block leading-none font-serif"
+              >
+                OrbitGoals
+              </span>
+              <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant border border-outline-variant/40">
+                v{APP_VERSION}
+              </span>
+            </div>
             <span
               style={{ fontSize: '27px' }}
               className="text-[27px] font-bold text-on-surface leading-tight"
@@ -204,8 +210,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
             {/* 3 Ultra-Brief Feature Cards (Compact 1-liners) */}
             <div className="space-y-2 my-auto py-2">
-              <div className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center gap-2.5 shadow-2xs">
-                <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/35 flex items-center gap-2.5 shadow-2xs noir-card">
+                <div className="w-7 h-7 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0">
                   <Target className="w-4 h-4 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
@@ -221,8 +227,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 </div>
               </div>
 
-              <div className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center gap-2.5 shadow-2xs">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+              <div className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/35 flex items-center gap-2.5 shadow-2xs noir-card">
+                <div className="w-7 h-7 rounded-lg bg-surface-container-high text-on-surface border border-outline-variant/40 flex items-center justify-center shrink-0">
                   <Zap className="w-4 h-4 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
@@ -238,8 +244,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 </div>
               </div>
 
-              <div className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center gap-2.5 shadow-2xs">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+              <div className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/35 flex items-center gap-2.5 shadow-2xs noir-card">
+                <div className="w-7 h-7 rounded-lg bg-surface-container-high text-on-surface border border-outline-variant/40 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
@@ -296,7 +302,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
               </div>
 
               {validationError && (
-                <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 text-[11px] font-bold">
+                <div className="p-2 rounded-lg bg-surface-container-high border-2 border-on-surface text-on-surface text-[11px] font-bold">
                   {validationError}
                 </div>
               )}

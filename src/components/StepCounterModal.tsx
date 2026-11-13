@@ -64,14 +64,14 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
   let activityLabel = 'Resting / Stationary';
   let activityColor = 'text-on-surface-variant';
   if (state.cadence > 130) {
-    activityLabel = '⚡ Fast Pace / Running';
-    activityColor = 'text-rose-500';
+    activityLabel = 'Fast Pace / Running';
+    activityColor = 'text-on-surface';
   } else if (state.cadence > 95) {
-    activityLabel = '👟 Brisk Active Walking';
-    activityColor = 'text-primary';
+    activityLabel = 'Brisk Active Walking';
+    activityColor = 'text-on-surface';
   } else if (state.cadence > 30) {
-    activityLabel = '🚶 Steady Walking';
-    activityColor = 'text-emerald-500';
+    activityLabel = 'Steady Walking';
+    activityColor = 'text-on-surface';
   }
 
   // Find step-related habits and goals
@@ -147,7 +147,7 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* Notification banner */}
           {syncedNotice && (
-            <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <div className="p-3 rounded-2xl bg-primary text-on-primary border border-primary text-xs font-bold flex items-center gap-2 animate-in fade-in">
               <Check className="w-4 h-4 shrink-0 stroke-[3]" />
               <span>{syncedNotice}</span>
             </div>
@@ -159,12 +159,12 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
               <span className="relative flex h-2.5 w-2.5 shrink-0">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    state.isTracking ? 'bg-emerald-400' : 'bg-amber-400'
+                    state.isTracking ? 'bg-primary' : 'bg-on-surface-variant/40'
                   }`}
                 />
                 <span
                   className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                    state.isTracking ? 'bg-emerald-500' : 'bg-amber-500'
+                    state.isTracking ? 'bg-primary' : 'bg-on-surface-variant/40'
                   }`}
                 />
               </span>
@@ -273,7 +273,7 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">
                 Calories
               </span>
-              <span className="text-base font-black font-mono text-amber-600 dark:text-amber-400 tabular-nums block leading-tight">
+              <span className="text-base font-black font-mono text-on-surface tabular-nums block leading-tight">
                 {state.caloriesBurned} <span className="text-xs font-normal">kcal</span>
               </span>
               <span className="text-[9px] text-on-surface-variant font-mono">
@@ -394,8 +394,8 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
                 onClick={handleAutoWalkToggle}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer border ${
                   isSimulating
-                    ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                    : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
+                    ? 'bg-primary text-on-primary border-primary'
+                    : 'bg-surface text-on-surface border-outline-variant/40 hover:bg-surface-container'
                 }`}
               >
                 <Activity className="w-3.5 h-3.5" />
@@ -449,7 +449,7 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
                   sound.playPop();
                 }
               }}
-              className="text-red-500 hover:text-red-600 font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+              className="text-on-surface-variant hover:text-on-surface underline font-bold text-[11px] flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset Steps</span>

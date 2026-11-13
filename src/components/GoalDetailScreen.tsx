@@ -95,17 +95,17 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
   const historyList = [...(goal.history || [])].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden animate-noir-enter">
       {/* Top Header */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
-        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
+        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/30 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
       >
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-all active:scale-95 cursor-pointer border border-outline-variant/30"
+            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-all active:scale-95 cursor-pointer border border-outline-variant/40"
             title="Back to Dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -132,10 +132,10 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                   onResetGoal(goal.id, false);
                 }
               }}
-              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:text-amber-500 hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/40"
               title="Reset goal progress to 0"
             >
-              <RotateCcw className="w-4 h-4 text-amber-500" />
+              <RotateCcw className="w-4 h-4 text-on-surface" />
             </button>
           )}
 
@@ -143,10 +143,10 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
             <button
               type="button"
               onClick={() => onOpenCalendar(goal.id)}
-              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/40"
               title="Open Progress Heatmap Calendar"
             >
-              <Calendar className="w-4 h-4 text-primary" />
+              <Calendar className="w-4 h-4 text-on-surface" />
             </button>
           )}
 
@@ -154,10 +154,10 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
             <button
               type="button"
               onClick={() => onEditGoal(goal)}
-              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/40"
               title="Edit goal"
             >
-              <Edit2 className="w-4 h-4 text-primary" />
+              <Edit2 className="w-4 h-4 text-on-surface" />
             </button>
           )}
 
@@ -169,7 +169,7 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                 onBack();
               }
             }}
-            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:text-red-500 hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary active:scale-95 transition-all cursor-pointer border border-outline-variant/40"
             title="Delete goal"
           >
             <Trash2 className="w-4 h-4" />
@@ -180,33 +180,25 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
         {/* Hero Card */}
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface border border-outline-variant/30 shadow-xs space-y-3.5">
+        <div className="p-4 rounded-3xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface border border-outline-variant/40 shadow-xs space-y-3.5">
           <div className="flex items-start gap-3.5">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md border-2 border-surface"
-              style={{ backgroundColor: `${goal.color}25`, color: goal.color }}
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md border ${
+                isFinished
+                  ? 'bg-primary text-on-primary border-primary'
+                  : 'bg-surface-container-high text-on-surface border-outline-variant/40'
+              }`}
             >
-              <GoalIcon iconId={goal.icon} className="w-7 h-7" color={goal.color} />
+              <GoalIcon iconId={goal.icon} className="w-7 h-7" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs uppercase font-black tracking-wider text-primary">
-                  {goal.category}
-                </span>
-                <span
-                  style={{ fontSize: '11px' }}
-                  className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                    goal.priority === 'high'
-                      ? 'bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30'
-                      : 'bg-surface-container border border-outline-variant/30 text-on-surface-variant'
-                  }`}
-                >
-                  {goal.priority} priority
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface-variant font-bold capitalize">
-                  {goal.difficulty}
-                </span>
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-on-surface-variant flex-wrap">
+                <span className="text-on-surface">{goal.category}</span>
+                <span>·</span>
+                <span>{goal.priority} priority</span>
+                <span>·</span>
+                <span className="capitalize">{goal.difficulty}</span>
               </div>
 
               <h2 className="text-xl font-black text-on-surface tracking-tight mt-1 leading-tight">
@@ -281,9 +273,9 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
               </div>
 
               {isFinished ? (
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black flex items-center gap-1">
+                <span className="px-2.5 py-1 rounded-full bg-primary text-on-primary text-xs font-black flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Goal Achieved! 🎉</span>
+                  <span>Achieved</span>
                 </span>
               ) : (
                 <span className="text-xs font-mono font-bold text-on-surface-variant bg-surface-container px-2 py-1 rounded-lg">
@@ -292,21 +284,20 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
               )}
             </div>
 
-            {/* Visual Progress Bar */}
+            {/* Monochrome Progress Bar */}
             <div className="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${pct}%`,
-                  backgroundColor: isFinished ? '#10b981' : goal.color,
-                }}
+                className={`h-full rounded-full transition-all duration-500 bg-primary ${
+                  isFinished ? 'noir-shimmer' : ''
+                }`}
+                style={{ width: `${pct}%` }}
               />
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-on-surface-variant font-medium pt-0.5">
-              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
+              <span className="flex items-center gap-1 text-on-surface font-bold">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span style={{ fontSize: '9px', color: '#000000' }}>Earn +{goal.xpReward || 50} XP with every step!</span>
+                <span className="font-mono text-[10px]">Earn +{goal.xpReward || 50} XP per step</span>
               </span>
               <span className="font-mono text-xs font-bold text-on-surface">
                 {goal.completedDates?.length || 0} days recorded
@@ -363,7 +354,7 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                 <Link className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold text-primary">Connected Daily Habit</span>
               </div>
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+              <span className="text-[10px] font-mono font-bold text-on-surface-variant">
                 +15 XP Synced
               </span>
             </div>
@@ -522,10 +513,10 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                     <div className="text-right shrink-0">
                       {delta !== 0 && (
                         <span
-                          className={`text-[11px] font-bold font-mono px-1.5 py-0.5 rounded ${
+                          className={`text-[11px] font-bold font-mono px-1.5 py-0.5 rounded border ${
                             delta > 0
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-red-500/10 text-red-500'
+                              ? 'bg-primary text-on-primary border-primary'
+                              : 'bg-surface-container text-on-surface border-outline-variant/40'
                           }`}
                         >
                           {delta > 0 ? `+${delta}` : delta}
@@ -540,10 +531,10 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
         </div>
 
         {/* Manage Goal: Reset & Delete Card */}
-        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/40 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-surface-container text-on-surface flex items-center justify-center font-bold shrink-0">
-              <RotateCcw className="w-4 h-4 text-amber-500" />
+            <div className="w-8 h-8 rounded-xl bg-surface-container text-on-surface flex items-center justify-center font-bold shrink-0 border border-outline-variant/30">
+              <RotateCcw className="w-4 h-4 text-on-surface" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-on-surface">Manage Goal</h3>
@@ -562,7 +553,7 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                     onResetGoal(goal.id, false);
                   }
                 }}
-                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/40 text-on-surface font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset Progress to 0</span>
@@ -577,7 +568,7 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                     onResetGoal(goal.id, true);
                   }
                 }}
-                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/40 text-on-surface font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Full Reset (Start from Zero)</span>
@@ -593,7 +584,7 @@ export const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({
                 onBack();
               }
             }}
-            className="w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer mt-1"
+            className="w-full py-2.5 px-3 rounded-xl bg-surface border border-on-surface/40 hover:bg-primary hover:text-on-primary text-on-surface font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer mt-1"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Delete Goal Permanently</span>

@@ -38,7 +38,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
+    <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface animate-noir-enter">
       {/* Top Header with Back Button (Add Goal removed from top right) */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
@@ -101,16 +101,13 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
                     sound.playPop();
                   }
                 }}
-                className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99]"
+                className="bg-surface-container-low border border-outline-variant/35 rounded-2xl p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-on-surface/50 active:scale-[0.99] noir-card"
               >
                 {/* Single Row: Icon, Title & % Pill, Quick Steppers, Chevron */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div
-                      className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border border-outline-variant/20"
-                      style={{ backgroundColor: `${goal.color}15`, color: goal.color }}
-                    >
-                      <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
+                    <div className="w-8 h-8 rounded-xl bg-surface-container-high text-on-surface flex items-center justify-center shrink-0 border border-outline-variant/40">
+                      <GoalIcon iconId={goal.icon} className="w-4 h-4" />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -149,7 +146,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
                         onUpdateGoalValue(goal.id, -1);
                       }}
                       disabled={current <= 0}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface text-red-500 hover:bg-surface-container font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface text-on-surface hover:bg-surface-container font-bold active:scale-95 transition-all border border-outline-variant/30 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       title="Subtract 1 unit (-1)"
                     >
                       <Minus className="w-3 h-3 stroke-[2.5]" />
@@ -175,8 +172,8 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
                 {/* Progress Bar */}
                 <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{ width: `${pct}%`, backgroundColor: goal.color }}
+                    className="h-full rounded-full transition-all duration-300 bg-primary"
+                    style={{ width: `${pct}%` }}
                   />
                 </div>
               </div>

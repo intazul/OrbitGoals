@@ -140,7 +140,7 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
+    <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface animate-noir-enter">
       {/* Top Header - Space Upwards */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
@@ -171,59 +171,59 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
       {/* Main Content */}
       <div className="flex-1 px-4 pt-3 pb-12 space-y-4 overflow-y-auto">
         {exportNotice && (
-          <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <div className="p-3 rounded-2xl bg-primary text-on-primary border border-primary text-xs font-bold flex items-center gap-2 animate-in fade-in">
             <Check className="w-4 h-4 shrink-0 stroke-[3]" />
             <span>{exportNotice}</span>
           </div>
         )}
-        {/* Month Summary Bar (Habits vs Goals Contrast) */}
+        {/* Month Summary Bar (Solid vs Outlined Contrast) */}
         <div className="grid grid-cols-3 gap-2">
-          {/* Habits KPI Card (Emerald Accent) */}
-          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col justify-between">
+          {/* Habits KPI Card (Inverted Solid Accent) */}
+          <div className="p-3 rounded-2xl bg-primary text-on-primary border border-primary flex flex-col justify-between shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
                 Habits
               </span>
-              <Repeat className="w-3.5 h-3.5 text-emerald-500" />
+              <Repeat className="w-3.5 h-3.5" />
             </div>
             <div className="mt-1">
-              <span className="text-xl font-black text-emerald-600 dark:text-emerald-300 tabular-nums">
+              <span className="text-xl font-black font-mono tabular-nums">
                 {totalHabitCheckinsInMonth}
               </span>
-              <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 block font-medium">
+              <span className="text-[10px] opacity-80 block font-medium">
                 Check-ins
               </span>
             </div>
           </div>
 
-          {/* Goals KPI Card (Indigo Accent) */}
-          <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex flex-col justify-between">
+          {/* Goals KPI Card (Sharp Bordered Contrast) */}
+          <div className="p-3 rounded-2xl bg-surface border-2 border-on-surface/80 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface">
                 Goals
               </span>
-              <Target className="w-3.5 h-3.5 text-indigo-500" />
+              <Target className="w-3.5 h-3.5 text-on-surface" />
             </div>
             <div className="mt-1">
-              <span className="text-xl font-black text-indigo-600 dark:text-indigo-300 tabular-nums">
+              <span className="text-xl font-black font-mono text-on-surface tabular-nums">
                 {totalGoalAdvancesInMonth}
               </span>
-              <span className="text-[10px] text-indigo-700/80 dark:text-indigo-300/80 block font-medium">
+              <span className="text-[10px] text-on-surface-variant block font-medium">
                 Log entries
               </span>
             </div>
           </div>
 
           {/* Active Days KPI Card */}
-          <div className="p-3 rounded-2xl bg-surface-container border border-outline-variant/30 flex flex-col justify-between">
+          <div className="p-3 rounded-2xl bg-surface-container border border-outline-variant/40 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
                 Consistency
               </span>
-              <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <Flame className="w-3.5 h-3.5 text-on-surface" />
             </div>
             <div className="mt-1">
-              <span className="text-xl font-black text-on-surface tabular-nums">
+              <span className="text-xl font-black font-mono text-on-surface tabular-nums">
                 {activeDaysCount}
               </span>
               <span className="text-[10px] text-on-surface-variant block font-medium">
@@ -234,7 +234,7 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
         </div>
 
         {/* View Filter Segmented Controls */}
-        <div className="flex items-center justify-between p-1 rounded-2xl bg-surface-container border border-outline-variant/30 text-xs font-bold">
+        <div className="flex items-center justify-between p-1 rounded-2xl bg-surface-container border border-outline-variant/30 text-xs font-bold gap-1">
           <button
             onClick={() => {
               setViewFilter('all');
@@ -243,11 +243,11 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
             }}
             className={`flex-1 py-1.5 px-2 rounded-xl transition-all cursor-pointer text-center ${
               viewFilter === 'all'
-                ? 'bg-surface text-on-surface shadow-xs font-black'
+                ? 'bg-primary text-on-primary shadow-xs font-black'
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            All (Habits + Goals)
+            All
           </button>
           <button
             onClick={() => {
@@ -257,12 +257,12 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
             }}
             className={`flex-1 py-1.5 px-2 rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-1 ${
               viewFilter === 'habits'
-                ? 'bg-emerald-500 text-white shadow-xs font-black'
-                : 'text-emerald-600 dark:text-emerald-400 hover:text-on-surface'
+                ? 'bg-primary text-on-primary shadow-xs font-black'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <Check className="w-3 h-3 stroke-[3]" />
-            <span>Habits Only</span>
+            <span>Habits</span>
           </button>
           <button
             onClick={() => {
@@ -272,12 +272,12 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
             }}
             className={`flex-1 py-1.5 px-2 rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-1 ${
               viewFilter === 'goals'
-                ? 'bg-indigo-600 text-white shadow-xs font-black'
-                : 'text-indigo-600 dark:text-indigo-400 hover:text-on-surface'
+                ? 'bg-primary text-on-primary shadow-xs font-black'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <Target className="w-3 h-3" />
-            <span>Goals Only</span>
+            <span>Goals</span>
           </button>
         </div>
 
@@ -322,14 +322,14 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
           </div>
 
           {/* High Contrast Legend */}
-          <div className="flex items-center justify-center gap-4 py-1 text-[11px] font-bold border-y border-outline-variant/20">
-            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs inline-block" />
-              <span>Habits (Emerald)</span>
+          <div className="flex items-center justify-center gap-5 py-1.5 text-[11px] font-bold border-y border-outline-variant/20">
+            <div className="flex items-center gap-1.5 text-on-surface">
+              <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs inline-block" />
+              <span>Habits (Solid)</span>
             </div>
-            <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-xs inline-block" />
-              <span>Goals (Indigo)</span>
+            <div className="flex items-center gap-1.5 text-on-surface">
+              <span className="w-2.5 h-2.5 rounded-full border-2 border-on-surface bg-surface shadow-xs inline-block" />
+              <span>Goals (Outlined)</span>
             </div>
           </div>
 
@@ -405,25 +405,25 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
                     )}
                   </div>
 
-                  {/* High Contrast Contrast Indicators (Habits vs Goals) */}
+                  {/* High Contrast Indicators (Solid Habits vs Outlined Goals) */}
                   <div className="w-full flex items-center justify-center gap-1 mt-auto pb-0.5">
-                    {/* Emerald Habit Pip */}
+                    {/* Inverted Solid Habit Pip */}
                     {activeHabit && (
                       <div
-                        className="flex items-center justify-center h-3.5 min-w-[14px] px-0.5 rounded-full bg-emerald-500 text-white font-black text-[9px] shadow-xs"
+                        className="flex items-center justify-center h-3.5 min-w-[14px] px-0.5 rounded-full bg-primary text-on-primary font-black font-mono text-[9px] shadow-xs"
                         title={`${habitsCompleted.length} Habit(s) Completed`}
                       >
                         ✓{habitsCompleted.length > 1 ? habitsCompleted.length : ''}
                       </div>
                     )}
 
-                    {/* Indigo Goal Pip */}
+                    {/* Outlined Goal Pip */}
                     {activeGoal && (
                       <div
-                        className="flex items-center justify-center h-3.5 min-w-[14px] px-0.5 rounded-full bg-indigo-600 text-white font-black text-[9px] shadow-xs"
+                        className="flex items-center justify-center h-3.5 min-w-[14px] px-0.5 rounded-full bg-surface text-on-surface border-[1.5px] border-on-surface font-black font-mono text-[9px] shadow-xs"
                         title={`${goalsAdvanced.length} Goal(s) Advanced`}
                       >
-                        🎯{goalsAdvanced.length > 1 ? goalsAdvanced.length : ''}
+                        ◎{goalsAdvanced.length > 1 ? goalsAdvanced.length : ''}
                       </div>
                     )}
 
@@ -460,14 +460,14 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
             )}
           </div>
 
-          {/* 1. Habits Section (High Contrast Emerald) */}
+          {/* 1. Habits Section (Solid Monochrome) */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center justify-between text-xs font-bold text-on-surface">
               <span className="flex items-center gap-1.5 uppercase text-[10px] tracking-wider">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Habits Completed</span>
               </span>
-              <span className="text-[11px] font-mono font-bold">
+              <span className="text-[11px] font-mono font-bold tabular-nums">
                 {selectedDayHabits.length} finished
               </span>
             </div>
@@ -477,22 +477,22 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
                 {selectedDayHabits.map((h) => (
                   <div
                     key={h.id}
-                    className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-2"
+                    className="p-2.5 rounded-2xl bg-surface-container-high/70 border border-outline-variant/40 flex items-center justify-between gap-2"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-6 h-6 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                      <div className="w-6 h-6 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                       <div className="min-w-0">
                         <span className="text-xs font-bold text-on-surface block truncate">
                           {h.title}
                         </span>
-                        <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium capitalize">
+                        <span className="text-[10px] text-on-surface-variant font-medium capitalize">
                           {h.category} · {h.timeOfDay}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <span className="text-[10px] font-bold font-mono text-on-surface shrink-0">
                       Streak: {h.streakDays || 1}d
                     </span>
                   </div>
@@ -505,14 +505,14 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
             )}
           </div>
 
-          {/* 2. Goals Section (High Contrast Indigo) */}
+          {/* 2. Goals Section (Outlined Monochrome) */}
           <div className="space-y-2 pt-1 border-t border-outline-variant/20">
-            <div className="flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
+            <div className="flex items-center justify-between text-xs font-bold text-on-surface">
               <span className="flex items-center gap-1.5 uppercase text-[10px] tracking-wider">
                 <Target className="w-3.5 h-3.5" />
                 <span>Goals Advanced / Reached</span>
               </span>
-              <span className="text-[11px] font-mono font-bold">
+              <span className="text-[11px] font-mono font-bold tabular-nums">
                 {selectedDayGoals.length} active
               </span>
             </div>
@@ -524,18 +524,18 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
                   return (
                     <div
                       key={goal.id}
-                      className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2"
+                      className="p-3 rounded-2xl bg-surface border-2 border-on-surface/70 space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-lg bg-surface-container-high text-on-surface border border-outline-variant/40 flex items-center justify-center shrink-0">
                             <GoalIcon iconId={goal.icon} className="w-3.5 h-3.5" />
                           </div>
                           <span className="text-xs font-bold text-on-surface truncate">
                             {goal.title}
                           </span>
                         </div>
-                        <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-300 shrink-0">
+                        <span className="text-xs font-mono font-bold text-on-surface tabular-nums shrink-0">
                           {value} / {goal.targetValue} {goal.unit}
                         </span>
                       </div>
@@ -543,7 +543,7 @@ export const GoalCalendarScreen: React.FC<GoalCalendarScreenProps> = ({
                       {/* Progress Bar */}
                       <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400"
+                          className="h-full rounded-full bg-primary"
                           style={{ width: `${pct}%` }}
                         />
                       </div>

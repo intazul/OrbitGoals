@@ -151,15 +151,15 @@ const HABIT_ICONS = [
 ];
 
 const HABIT_COLORS = [
-  '#10b981', // Emerald
-  '#ef4444', // Red
-  '#06b6d4', // Cyan
-  '#8b5cf6', // Violet
-  '#f59e0b', // Amber
-  '#ec4899', // Pink
-  '#3b82f6', // Blue
-  '#14b8a6', // Teal
-  '#f97316', // Orange
+  '#000000', // Obsidian Black
+  '#18181b', // Carbon Dark
+  '#27272a', // Charcoal
+  '#3f3f46', // Graphite
+  '#52525b', // Slate Gray
+  '#71717a', // Ash
+  '#a1a1aa', // Silver
+  '#d4d4d8', // Pale Pearl
+  '#ffffff', // Pure Ivory
 ];
 
 export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
@@ -174,7 +174,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
   const [timeOfDay, setTimeOfDay] = useState<HabitTimeOfDay>(existingHabit?.timeOfDay || 'anytime');
   const [frequency, setFrequency] = useState<HabitFrequency>(existingHabit?.frequency || 'daily');
   const [icon, setIcon] = useState(existingHabit?.icon || 'fitness');
-  const [color, setColor] = useState(existingHabit?.color || '#10b981');
+  const [color, setColor] = useState(existingHabit?.color || '#000000');
   const [reminderEnabled, setReminderEnabled] = useState<boolean>(
     existingHabit?.reminderEnabled ?? Boolean(existingHabit?.reminderTime)
   );
@@ -276,7 +276,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden animate-noir-enter">
       {/* Top Header */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
@@ -292,7 +292,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-bold shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-primary text-on-primary border border-primary flex items-center justify-center font-bold shrink-0">
               <Layers className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -311,8 +311,8 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
 
         <div className="flex items-center gap-2 shrink-0">
           {/* Dynamic XP Reward Pill */}
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-black shrink-0">
-            <Sparkles className="w-3 h-3 animate-pulse" />
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-on-primary border border-primary text-[10px] font-black font-mono tabular-nums shrink-0 shadow-xs">
+            <Sparkles className="w-3 h-3" />
             <span>+{trackingType === 'sets' ? `${xpPerSet} XP/set` : '8 XP'}</span>
           </div>
         </div>
@@ -334,19 +334,16 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
                   key={p.title}
                   type="button"
                   onClick={() => handleApplyPreset(p)}
-                  className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 text-left transition-all active:scale-98 cursor-pointer flex items-start gap-2"
+                  className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-on-surface/50 text-left transition-all active:scale-98 cursor-pointer flex items-start gap-2 noir-card"
                 >
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${p.color}20`, color: p.color }}
-                  >
-                    <GoalIcon iconId={p.icon} className="w-3.5 h-3.5" color={p.color} />
+                  <div className="w-7 h-7 rounded-lg bg-surface-container-high text-on-surface border border-outline-variant/40 flex items-center justify-center shrink-0">
+                    <GoalIcon iconId={p.icon} className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
                     <span className="text-xs font-bold text-on-surface block truncate">
                       {p.title}
                     </span>
-                    <span className="text-[9px] text-amber-600 dark:text-amber-400 font-bold block">
+                    <span className="text-[9px] text-on-surface-variant font-mono font-bold block">
                       +{p.xpPerSet} XP / set
                     </span>
                   </div>
@@ -358,7 +355,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-bold">
+            <div className="p-3 rounded-xl bg-surface-container-high border-2 border-on-surface text-on-surface text-xs font-bold">
               {error}
             </div>
           )}
@@ -515,7 +512,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
                           }}
                           className={`px-2 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
                             xpPerSet === xp
-                              ? 'bg-amber-500 text-white border-amber-500'
+                              ? 'bg-primary text-on-primary border-primary'
                               : 'bg-surface border-outline-variant/20 text-on-surface-variant'
                           }`}
                         >
@@ -528,7 +525,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
                         max={500}
                         value={xpPerSet}
                         onChange={(e) => setXpPerSet(parseInt(e.target.value, 10) || 1)}
-                        className="w-16 px-2 py-1.5 rounded-lg bg-surface border border-outline-variant/30 text-amber-600 dark:text-amber-400 font-mono font-bold text-xs text-center focus:outline-none focus:border-primary"
+                        className="w-16 px-2 py-1.5 rounded-lg bg-surface border border-outline-variant/30 text-on-surface font-mono font-bold text-xs text-center focus:outline-none focus:border-primary"
                         title="Custom XP per set"
                       />
                     </div>
@@ -536,9 +533,9 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-surface border border-outline-variant/20 text-[11px] text-on-surface-variant leading-relaxed">
-                  💡 <span className="font-bold text-on-surface">Flexibility:</span> You can reach the target of{' '}
-                  <span className="font-bold text-primary">{targetValue} {unit}</span> in sets of{' '}
-                  <span className="font-bold text-primary">+{stepValue}</span>, or keep going <span className="font-bold text-primary">above {targetValue}</span>! You earn <span className="font-bold text-amber-600 dark:text-amber-400">+{xpPerSet} XP</span> for each set.
+                  <span className="font-bold text-on-surface">Flexibility:</span> You can reach the target of{' '}
+                  <span className="font-bold text-on-surface">{targetValue} {unit}</span> in sets of{' '}
+                  <span className="font-bold text-on-surface">+{stepValue}</span>, or keep going <span className="font-bold text-on-surface">above {targetValue}</span>! You earn <span className="font-bold text-on-surface font-mono">+{xpPerSet} XP</span> for each set.
                 </div>
               </div>
             )}
@@ -628,24 +625,29 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-on-surface-variant block">Accent Color</label>
+              <label className="text-xs font-bold text-on-surface-variant block">Contrast Shade</label>
               <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-surface-container border border-outline-variant/30">
-                {HABIT_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => {
-                      setColor(c);
-                      sound.playPop();
-                    }}
-                    className={`w-7 h-7 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
-                      color === c ? 'ring-2 ring-offset-2 ring-primary scale-105' : 'hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: c }}
-                  >
-                    {color === c && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                  </button>
-                ))}
+                {HABIT_COLORS.map((c) => {
+                  const isLightShade = c === '#ffffff' || c === '#d4d4d8' || c === '#a1a1aa';
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        setColor(c);
+                        sound.playPop();
+                      }}
+                      className={`w-7 h-7 rounded-lg transition-all cursor-pointer flex items-center justify-center border border-outline-variant/40 ${
+                        color === c ? 'ring-2 ring-offset-2 ring-primary scale-105' : 'hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: c }}
+                    >
+                      {color === c && (
+                        <Check className={`w-3.5 h-3.5 stroke-[3] ${isLightShade ? 'text-black' : 'text-white'}`} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -712,7 +714,7 @@ export const AddHabitScreen: React.FC<AddHabitScreenProps> = ({
                   }}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
 

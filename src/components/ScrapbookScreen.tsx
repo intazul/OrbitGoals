@@ -86,37 +86,37 @@ const CATEGORY_META: Record<
   milestone: {
     label: 'Milestone',
     icon: Trophy,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
+    color: 'text-on-primary',
+    bg: 'bg-primary',
+    border: 'border-primary',
   },
   goal: {
     label: 'Goal Achieved',
     icon: Target,
-    color: 'text-purple-500',
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
+    color: 'text-on-primary',
+    bg: 'bg-primary',
+    border: 'border-primary',
   },
   streak: {
     label: 'Habit Streak',
     icon: Flame,
-    color: 'text-rose-500',
-    bg: 'bg-rose-500/10',
-    border: 'border-rose-500/30',
+    color: 'text-on-surface',
+    bg: 'bg-surface-container-high',
+    border: 'border-outline-variant/50',
   },
   level: {
     label: 'Level Up',
     icon: Zap,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
+    color: 'text-on-primary',
+    bg: 'bg-primary',
+    border: 'border-primary',
   },
   win: {
     label: 'Personal Win',
     icon: Star,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/30',
+    color: 'text-on-surface',
+    bg: 'bg-surface-container-high',
+    border: 'border-outline-variant/50',
   },
 };
 
@@ -210,11 +210,11 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
           category: habit.category,
           color: habit.color,
           badgeLabel: 'NEW HABIT',
-          badgeColor: 'text-emerald-700 dark:text-emerald-300',
-          badgeBg: 'bg-emerald-500/15',
-          badgeBorder: 'border-emerald-500/30',
+          badgeColor: 'text-on-surface',
+          badgeBg: 'bg-surface-container-high',
+          badgeBorder: 'border-outline-variant/50',
           iconId: habit.icon,
-          sticker: '🌱',
+          sticker: '✦',
           xpEarned: 25,
           sourceHabit: habit,
         });
@@ -241,11 +241,11 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
           category: habit.category,
           color: habit.color,
           badgeLabel: isSets ? valText : 'COMPLETED',
-          badgeColor: 'text-emerald-600 dark:text-emerald-400',
-          badgeBg: 'bg-emerald-500/10',
-          badgeBorder: 'border-emerald-500/25',
+          badgeColor: 'text-on-primary',
+          badgeBg: 'bg-primary',
+          badgeBorder: 'border-primary',
           iconId: habit.icon,
-          sticker: '✅',
+          sticker: '✓',
           xpEarned: habit.xpPerSet || 10,
           sourceHabit: habit,
         });
@@ -266,11 +266,11 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
               category: habit.category,
               color: habit.color,
               badgeLabel: `${pVal} ${habit.unit || 'reps'}`,
-              badgeColor: 'text-blue-600 dark:text-blue-400',
-              badgeBg: 'bg-blue-500/10',
-              badgeBorder: 'border-blue-500/25',
+              badgeColor: 'text-on-surface',
+              badgeBg: 'bg-surface-container-high',
+              badgeBorder: 'border-outline-variant/50',
               iconId: habit.icon,
-              sticker: '💪',
+              sticker: '◆',
               xpEarned: habit.xpPerSet || 10,
               sourceHabit: habit,
             });
@@ -286,16 +286,15 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
           eventType: 'habit_streak',
           date: todayStr,
           timestamp: Date.now() - 2000,
-          title: `🔥 3-Day Momentum Streak: ${habit.title}`,
+          title: `3-Day Momentum Streak: ${habit.title}`,
           subtitle: `Hit consistent daily check-ins for 3 days in a row!`,
           category: 'streak',
-          color: '#f97316',
           badgeLabel: '3D STREAK',
-          badgeColor: 'text-orange-600 dark:text-orange-400',
-          badgeBg: 'bg-orange-500/10',
-          badgeBorder: 'border-orange-500/30',
+          badgeColor: 'text-on-primary',
+          badgeBg: 'bg-primary',
+          badgeBorder: 'border-primary',
           iconId: habit.icon,
-          sticker: '🔥',
+          sticker: '▲',
           xpEarned: 50,
           sourceHabit: habit,
         });
@@ -308,16 +307,15 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
           eventType: 'habit_streak',
           date: todayStr,
           timestamp: Date.now() - 1000,
-          title: `⚡ 7-Day Week Warrior Streak: ${habit.title}`,
+          title: `7-Day Week Warrior Streak: ${habit.title}`,
           subtitle: `A solid week of unbroken dedication!`,
           category: 'streak',
-          color: '#e11d48',
           badgeLabel: '7D STREAK',
-          badgeColor: 'text-rose-600 dark:text-rose-400',
-          badgeBg: 'bg-rose-500/10',
-          badgeBorder: 'border-rose-500/30',
+          badgeColor: 'text-on-primary',
+          badgeBg: 'bg-primary',
+          badgeBorder: 'border-primary',
           iconId: habit.icon,
-          sticker: '⚡',
+          sticker: '★',
           xpEarned: 100,
           sourceHabit: habit,
         });
@@ -339,11 +337,11 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
           category: goal.category,
           color: goal.color,
           badgeLabel: 'NEW GOAL',
-          badgeColor: 'text-purple-700 dark:text-purple-300',
-          badgeBg: 'bg-purple-500/15',
-          badgeBorder: 'border-purple-500/30',
+          badgeColor: 'text-on-surface',
+          badgeBg: 'bg-surface-container-high',
+          badgeBorder: 'border-outline-variant/50',
           iconId: goal.icon,
-          sticker: '🎯',
+          sticker: '◎',
           xpEarned: 50,
           sourceGoal: goal,
         });
@@ -363,11 +361,11 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
           category: goal.category,
           color: goal.color,
           badgeLabel: `${pct}%`,
-          badgeColor: 'text-primary',
-          badgeBg: 'bg-primary/10',
-          badgeBorder: 'border-primary/20',
+          badgeColor: 'text-on-surface',
+          badgeBg: 'bg-surface-container-high',
+          badgeBorder: 'border-outline-variant/50',
           iconId: goal.icon,
-          sticker: '📈',
+          sticker: '↗',
           progressPct: pct,
           xpEarned: goal.xpReward || 50,
           sourceGoal: goal,
@@ -384,16 +382,15 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
           eventType: 'goal_completed',
           date: finishDate,
           timestamp: parseDateSafe(finishDate) + 900,
-          title: `🏆 Goal Completed: ${goal.title}!`,
+          title: `Goal Completed: ${goal.title}!`,
           subtitle: `Target of ${goal.targetValue.toLocaleString()} ${goal.unit || 'units'} conquered at 100%!`,
           category: 'goal',
-          color: '#10b981',
           badgeLabel: '100% CONQUERED',
-          badgeColor: 'text-emerald-700 dark:text-emerald-300',
-          badgeBg: 'bg-emerald-500/15',
-          badgeBorder: 'border-emerald-500/30',
+          badgeColor: 'text-on-primary',
+          badgeBg: 'bg-primary',
+          badgeBorder: 'border-primary',
           iconId: goal.icon,
-          sticker: '🏆',
+          sticker: '★',
           xpEarned: (goal.xpReward || 50) * 2,
           sourceGoal: goal,
         });
@@ -411,10 +408,10 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
       subtitle: 'Account activated with 2 Streak Shields & starter habits ready.',
       category: 'level',
       badgeLabel: 'LEVEL 1',
-      badgeColor: 'text-amber-600 dark:text-amber-400',
-      badgeBg: 'bg-amber-500/15',
-      badgeBorder: 'border-amber-500/30',
-      sticker: '🚀',
+      badgeColor: 'text-on-surface',
+      badgeBg: 'bg-surface-container-high',
+      badgeBorder: 'border-outline-variant/50',
+      sticker: '◆',
       xpEarned: 50,
     });
 
@@ -425,14 +422,14 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
         eventType: 'level_up',
         date: todayStr,
         timestamp: Date.now() - 5000,
-        title: '⭐ Level 2 Reached: Goal Pioneer',
+        title: 'Level 2 Reached: Goal Pioneer',
         subtitle: 'Unlocked Studio Monitor Cans & Creator gear in Player Catalog.',
         category: 'level',
         badgeLabel: 'LEVEL 2',
-        badgeColor: 'text-blue-600 dark:text-blue-400',
-        badgeBg: 'bg-blue-500/15',
-        badgeBorder: 'border-blue-500/30',
-        sticker: '⭐',
+        badgeColor: 'text-on-primary',
+        badgeBg: 'bg-primary',
+        badgeBorder: 'border-primary',
+        sticker: '★',
         xpEarned: 100,
       });
     }
@@ -444,14 +441,14 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
         eventType: 'level_up',
         date: todayStr,
         timestamp: Date.now() - 3000,
-        title: '🌟 Level 3 Reached: Momentum Builder',
+        title: 'Level 3 Reached: Momentum Builder',
         subtitle: 'Unlocked Athletic Runner Band & Pro Jersey in Player Catalog.',
         category: 'level',
         badgeLabel: 'LEVEL 3',
-        badgeColor: 'text-indigo-600 dark:text-indigo-400',
-        badgeBg: 'bg-indigo-500/15',
-        badgeBorder: 'border-indigo-500/30',
-        sticker: '🌟',
+        badgeColor: 'text-on-primary',
+        badgeBg: 'bg-primary',
+        badgeBorder: 'border-primary',
+        sticker: '★',
         xpEarned: 150,
       });
     }
@@ -590,7 +587,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden animate-noir-enter">
       {/* Top Header */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
@@ -632,55 +629,55 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
       {/* Main Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3.5 pb-24">
         {/* Hero KPI Card */}
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-surface-container-low border border-primary/20 shadow-xs space-y-3">
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/40 shadow-xs space-y-3 noir-shimmer">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-primary block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant block">
                 Growth Audit Reel & Timeline
               </span>
-              <h2 className="text-xl font-black text-on-surface tracking-tight">
+              <h2 className="text-xl font-black text-on-surface tracking-tight tabular-nums">
                 {masterTimeline.length} Recorded Milestones
               </h2>
             </div>
-            <div className="w-11 h-11 rounded-2xl bg-primary/20 text-primary flex items-center justify-center font-black text-xl border border-primary/30">
-              📸
+            <div className="w-11 h-11 rounded-2xl bg-primary text-on-primary flex items-center justify-center border border-primary shadow-xs">
+              <Camera className="w-5 h-5" />
             </div>
           </div>
 
           {/* Quick Metrics Ticker */}
-          <div className="grid grid-cols-4 gap-2 pt-1 border-t border-outline-variant/20">
-            <div className="bg-surface/80 rounded-xl p-2 text-center border border-outline-variant/20">
-              <span className="text-sm font-black text-primary font-mono block leading-none">
+          <div className="grid grid-cols-4 gap-2 pt-2 border-t border-outline-variant/25">
+            <div className="bg-surface rounded-xl p-2 text-center border border-outline-variant/30">
+              <span className="text-sm font-black text-on-surface font-mono tabular-nums block leading-none">
                 {totalCheckinsCount}
               </span>
-              <span className="text-[9px] text-on-surface-variant font-bold block mt-0.5 truncate">
+              <span className="text-[9px] text-on-surface-variant font-bold block mt-1 truncate">
                 Check-ins
               </span>
             </div>
 
-            <div className="bg-surface/80 rounded-xl p-2 text-center border border-outline-variant/20">
-              <span className="text-sm font-black text-purple-600 dark:text-purple-400 font-mono block leading-none">
+            <div className="bg-surface rounded-xl p-2 text-center border border-outline-variant/30">
+              <span className="text-sm font-black text-on-surface font-mono tabular-nums block leading-none">
                 {goals.length}
               </span>
-              <span className="text-[9px] text-on-surface-variant font-bold block mt-0.5 truncate">
+              <span className="text-[9px] text-on-surface-variant font-bold block mt-1 truncate">
                 Goals Set
               </span>
             </div>
 
-            <div className="bg-surface/80 rounded-xl p-2 text-center border border-outline-variant/20">
-              <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono block leading-none">
+            <div className="bg-surface rounded-xl p-2 text-center border border-outline-variant/30">
+              <span className="text-sm font-black text-on-surface font-mono tabular-nums block leading-none">
                 {totalGoalsCompletedCount}
               </span>
-              <span className="text-[9px] text-on-surface-variant font-bold block mt-0.5 truncate">
+              <span className="text-[9px] text-on-surface-variant font-bold block mt-1 truncate">
                 Finished
               </span>
             </div>
 
-            <div className="bg-surface/80 rounded-xl p-2 text-center border border-outline-variant/20">
-              <span className="text-sm font-black text-amber-600 dark:text-amber-400 font-mono block leading-none">
+            <div className="bg-primary text-on-primary rounded-xl p-2 text-center border border-primary">
+              <span className="text-sm font-black font-mono tabular-nums block leading-none">
                 +{totalTimelineXp}
               </span>
-              <span className="text-[9px] text-on-surface-variant font-bold block mt-0.5 truncate">
+              <span className="text-[9px] opacity-80 font-bold block mt-1 truncate">
                 Total XP
               </span>
             </div>
@@ -690,11 +687,11 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
         {/* Timeline Filter Chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {[
-            { id: 'all' as const, label: `All Timeline (${masterTimeline.length})` },
-            { id: 'habits' as const, label: `🌱 Habits (${masterTimeline.filter((e) => e.sourceType === 'habit').length})` },
-            { id: 'goals' as const, label: `🎯 Goals (${masterTimeline.filter((e) => e.sourceType === 'goal').length})` },
-            { id: 'achievements' as const, label: `🏆 Achievements (${masterTimeline.filter((e) => e.sourceType === 'achievement').length})` },
-            { id: 'memories' as const, label: `📸 Memories (${capsules.length})` },
+            { id: 'all' as const, label: `All (${masterTimeline.length})` },
+            { id: 'habits' as const, label: `Habits (${masterTimeline.filter((e) => e.sourceType === 'habit').length})` },
+            { id: 'goals' as const, label: `Goals (${masterTimeline.filter((e) => e.sourceType === 'goal').length})` },
+            { id: 'achievements' as const, label: `Achievements (${masterTimeline.filter((e) => e.sourceType === 'achievement').length})` },
+            { id: 'memories' as const, label: `Memories (${capsules.length})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -706,7 +703,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
                 timelineFilter === tab.id
                   ? 'bg-primary text-on-primary border-primary shadow-xs'
-                  : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-high'
+                  : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
               }`}
             >
               {tab.label}
@@ -720,18 +717,18 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
             <div key={group.date} className="space-y-2.5">
               {/* Group Date Header */}
               <div className="sticky top-0 z-10 flex items-center gap-2 py-1 bg-surface/95 backdrop-blur-xs">
-                <span className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
+                <span className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>{group.displayDate}</span>
                 </span>
                 <div className="h-px bg-outline-variant/30 flex-1" />
-                <span className="text-[10px] font-bold text-on-surface-variant font-mono">
+                <span className="text-[10px] font-bold text-on-surface-variant font-mono tabular-nums">
                   {group.items.length} {group.items.length === 1 ? 'event' : 'events'}
                 </span>
               </div>
 
               {/* Group Timeline Cards with Vertical Connected Track */}
-              <div className="relative pl-4 space-y-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-outline-variant/30">
+              <div className="relative pl-4 space-y-3 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-outline-variant/40">
                 {group.items.map((event) => {
                   const isCapsule = event.sourceType === 'memory' && event.capsule;
                   const isHabit = event.sourceHabit;
@@ -740,12 +737,11 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                   return (
                     <div
                       key={event.id}
-                      className="relative rounded-2xl bg-surface-container-low border border-outline-variant/30 p-3.5 shadow-xs space-y-2 transition-all hover:border-primary/40 group"
+                      className="relative rounded-2xl bg-surface-container-low border border-outline-variant/35 p-3.5 shadow-xs space-y-2 transition-all hover:border-on-surface/50 group noir-card"
                     >
                       {/* Timeline Dot Indicator */}
                       <div
-                        className="absolute -left-[19px] top-4 w-3 h-3 rounded-full border-2 border-surface shadow-xs transition-transform group-hover:scale-125"
-                        style={{ backgroundColor: event.color || '#3b82f6' }}
+                        className="absolute -left-[19px] top-4 w-3 h-3 rounded-full border-2 border-surface bg-primary shadow-xs transition-transform group-hover:scale-125"
                       />
 
                       {/* Header Row: Badge, Date/Source, XP bonus, and Actions */}
@@ -754,7 +750,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black border ${event.badgeBg} ${event.badgeColor} ${event.badgeBorder}`}
                           >
-                            <span>{event.sticker || '✨'}</span>
+                            <span>{event.sticker || '◆'}</span>
                             <span>{event.badgeLabel}</span>
                           </span>
 
@@ -766,7 +762,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
 
                         <div className="flex items-center gap-1 shrink-0">
                           {event.xpEarned && (
-                            <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1">
+                            <span className="text-[10px] font-black text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full border border-outline-variant/40 flex items-center gap-1 font-mono tabular-nums">
                               <Sparkles className="w-2.5 h-2.5" />
                               <span>+{event.xpEarned} XP</span>
                             </span>
@@ -777,7 +773,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setSharingCapsule(event.capsule!)}
-                                className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
+                                className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 transition-all border border-outline-variant/30 cursor-pointer"
                                 title="Share Memory"
                               >
                                 <Share2 className="w-3 h-3" />
@@ -786,7 +782,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirmId(event.capsule!.id)}
-                                className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center text-on-surface-variant hover:text-red-500 active:scale-95 transition-all border border-outline-variant/20 cursor-pointer"
+                                className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary active:scale-95 transition-all border border-outline-variant/30 cursor-pointer"
                                 title="Delete Memory"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -799,11 +795,8 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                       {/* Main Title & Subtitle */}
                       <div className="flex items-start gap-2.5">
                         {event.iconId && (
-                          <div
-                            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border border-outline-variant/20 mt-0.5"
-                            style={{ backgroundColor: `${event.color}15`, color: event.color }}
-                          >
-                            <GoalIcon iconId={event.iconId} className="w-4 h-4" color={event.color} />
+                          <div className="w-8 h-8 rounded-xl bg-surface-container-high text-on-surface flex items-center justify-center shrink-0 border border-outline-variant/40 mt-0.5">
+                            <GoalIcon iconId={event.iconId} className="w-4 h-4" />
                           </div>
                         )}
 
@@ -866,7 +859,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenGoalDetail(isGoal)}
-                          className="w-full pt-1.5 border-t border-outline-variant/15 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center justify-between cursor-pointer group-hover:text-purple-500"
+                          className="w-full pt-1.5 border-t border-outline-variant/15 text-[11px] font-bold text-on-surface hover:underline flex items-center justify-between cursor-pointer"
                         >
                           <span>Open goal full overview & milestone tab</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -994,7 +987,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                     <button
                       type="button"
                       onClick={() => setFormPhotoUrl(undefined)}
-                      className="text-[11px] font-bold text-red-500 hover:underline cursor-pointer"
+                      className="text-[11px] font-bold text-on-surface underline cursor-pointer"
                     >
                       Remove Photo
                     </button>
@@ -1250,7 +1243,7 @@ export const ScrapbookScreen: React.FC<ScrapbookScreenProps> = ({
                   setDeleteConfirmId(null);
                   sound.playPop();
                 }}
-                className="flex-1 py-2 rounded-xl bg-red-500 text-white font-bold text-xs hover:brightness-105 active:scale-98 transition-all cursor-pointer"
+                className="flex-1 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs hover:brightness-105 active:scale-98 transition-all cursor-pointer"
               >
                 Delete
               </button>

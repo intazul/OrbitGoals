@@ -74,12 +74,21 @@ interface GoalIconProps {
   iconId?: string;
   className?: string;
   color?: string;
+  useBrandColor?: boolean;
 }
 
-export const GoalIcon: React.FC<GoalIconProps> = ({ iconId = 'target', className = 'w-4 h-4', color }) => {
+export const GoalIcon: React.FC<GoalIconProps> = ({
+  iconId = 'target',
+  className = 'w-4 h-4',
+  useBrandColor = false,
+}) => {
   const matched = AVAILABLE_GOAL_ICONS.find((item) => item.id.toLowerCase() === iconId.toLowerCase());
   const IconComponent = matched ? matched.icon : Target;
-  const iconColor = color || matched?.color;
 
-  return <IconComponent className={className} style={iconColor ? { color: iconColor } : undefined} />;
+  return (
+    <IconComponent
+      className={className}
+      style={useBrandColor && matched?.color ? { color: matched.color } : undefined}
+    />
+  );
 };

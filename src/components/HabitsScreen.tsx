@@ -65,7 +65,7 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden animate-noir-enter">
       {/* Top Header */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
@@ -103,17 +103,17 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
       {/* Scrollable Habit Studio List */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {/* Daily Completion Header Summary Banner */}
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-surface-container-low border border-primary/20 shadow-xs space-y-3">
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/40 shadow-xs space-y-3 noir-shimmer">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-primary block">
-                Today's Overview
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant block">
+                Today&apos;s Overview
               </span>
-              <h2 className="text-xl font-black text-on-surface tracking-tight mt-0.5">
+              <h2 className="text-xl font-black text-on-surface tracking-tight mt-0.5 tabular-nums">
                 {completedTodayCount} of {totalCount} Completed
               </h2>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center font-black text-sm border border-primary/30">
+            <div className="w-12 h-12 rounded-2xl bg-primary text-on-primary flex items-center justify-center font-black font-mono tabular-nums text-sm border border-primary shadow-xs">
               {completionPct}%
             </div>
           </div>
@@ -121,18 +121,18 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
           {/* Progress bar */}
           <div className="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary to-primary-container rounded-full transition-all duration-500"
+              className="h-full bg-primary rounded-full transition-all duration-500"
               style={{ width: `${completionPct}%` }}
             />
           </div>
 
           <div className="flex items-center justify-between text-[11px] font-medium text-on-surface-variant pt-0.5">
-            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
+            <span className="flex items-center gap-1 text-on-surface font-bold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Sets award custom XP & power your goals!</span>
+              <span>Sets award custom XP & power your goals</span>
             </span>
-            <span className="text-xs font-mono font-bold text-on-surface">
-              {completionPct === 100 && totalCount > 0 ? '🎉 All Done!' : `${totalCount - completedTodayCount} Left`}
+            <span className="text-xs font-mono font-bold text-on-surface tabular-nums">
+              {completionPct === 100 && totalCount > 0 ? 'All Done' : `${totalCount - completedTodayCount} Left`}
             </span>
           </div>
         </div>
@@ -141,10 +141,10 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {[
             { id: 'all', label: `All (${habits.length})` },
-            { id: 'morning', label: '🌅 Morning' },
-            { id: 'afternoon', label: '☀️ Afternoon' },
-            { id: 'evening', label: '🌙 Evening' },
-            { id: 'anytime', label: '⏰ Anytime' },
+            { id: 'morning', label: 'Morning' },
+            { id: 'afternoon', label: 'Afternoon' },
+            { id: 'evening', label: 'Evening' },
+            { id: 'anytime', label: 'Anytime' },
           ].map((f) => (
             <button
               key={f.id}
@@ -156,7 +156,7 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
                 selectedFilter === f.id
                   ? 'bg-primary text-on-primary border-primary shadow-xs'
-                  : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-high'
+                  : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
               }`}
             >
               {f.label}
@@ -182,10 +182,10 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                     sound.playPop();
                   }
                 }}
-                className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99] ${
+                className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-on-surface/50 active:scale-[0.99] noir-card ${
                   isDoneToday
-                    ? 'bg-surface-container-low/80 border-primary/30'
-                    : 'bg-surface-container-low border-outline-variant/30'
+                    ? 'bg-surface-container-low/90 border-on-surface/40'
+                    : 'bg-surface-container-low border-outline-variant/35'
                 }`}
               >
                 {/* Summary Row: Check circle, Icon & Title, % Pill, Streak, Chevron */}
@@ -200,24 +200,20 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                       }}
                       className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer active:scale-90 ${
                         isDoneToday
-                          ? 'border-transparent text-white shadow-xs'
-                          : 'border-outline-variant/50 hover:border-primary text-transparent bg-surface'
+                          ? 'bg-primary border-primary text-on-primary shadow-xs'
+                          : 'border-outline-variant/60 hover:border-on-surface text-transparent bg-surface'
                       }`}
-                      style={isDoneToday ? { backgroundColor: habit.color } : undefined}
                       title={isDoneToday ? 'Mark as incomplete' : 'Mark completed today'}
                     >
                       <Check
                         className={`w-3.5 h-3.5 stroke-[3] transition-transform ${
-                          isDoneToday ? 'scale-100 text-white' : 'scale-0'
+                          isDoneToday ? 'scale-100 text-on-primary' : 'scale-0'
                         }`}
                       />
                     </button>
 
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${habit.color}15`, color: habit.color }}
-                    >
-                      <GoalIcon iconId={habit.icon} className="w-3.5 h-3.5" color={habit.color} />
+                    <div className="w-7 h-7 rounded-lg bg-surface-container-high text-on-surface border border-outline-variant/40 flex items-center justify-center shrink-0">
+                      <GoalIcon iconId={habit.icon} className="w-3.5 h-3.5" />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -231,7 +227,7 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                         </span>
 
                         {habit.streakDays > 0 && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-black tabular-nums bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black font-mono tabular-nums bg-primary text-on-primary border border-primary">
                             <Flame className="w-2.5 h-2.5 fill-current" />
                             <span>{habit.streakDays}d</span>
                           </span>
@@ -245,9 +241,9 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                     <span
                       className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black tabular-nums border ${
                         pct === 100
-                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                          ? 'bg-primary text-on-primary border-primary'
                           : pct > 0
-                          ? 'bg-primary/10 text-primary border-primary/20'
+                          ? 'bg-surface-container-high text-on-surface border-outline-variant/40'
                           : 'bg-surface text-on-surface-variant border-outline-variant/30'
                       }`}
                     >
@@ -261,11 +257,8 @@ export const HabitsScreen: React.FC<HabitsScreenProps> = ({
                 {/* Sleek Progress Bar */}
                 <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${pct}%`,
-                      backgroundColor: isDoneToday ? '#10b981' : habit.color,
-                    }}
+                    className="h-full rounded-full transition-all duration-300 bg-primary"
+                    style={{ width: `${pct}%` }}
                   />
                 </div>
               </div>

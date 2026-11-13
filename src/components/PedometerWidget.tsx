@@ -63,12 +63,12 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
               <span className="relative flex h-2 w-2">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    state.isTracking ? 'bg-emerald-400' : 'bg-amber-400'
+                    state.isTracking ? 'bg-primary' : 'bg-on-surface-variant/40'
                   }`}
                 />
                 <span
                   className={`relative inline-flex rounded-full h-2 w-2 ${
-                    state.isTracking ? 'bg-emerald-500' : 'bg-amber-500'
+                    state.isTracking ? 'bg-primary' : 'bg-on-surface-variant/40'
                   }`}
                 />
               </span>
@@ -121,7 +121,7 @@ export const PedometerWidget: React.FC<PedometerWidgetProps> = ({
             <span>{state.distanceKm} km</span>
             <span>·</span>
             <span className="text-on-surface font-bold flex items-center gap-0.5">
-              <Flame className="w-3 h-3 text-amber-500 fill-amber-500" />
+              <Flame className="w-3 h-3 text-on-surface fill-on-surface" />
               <span>{state.caloriesBurned} kcal</span>
             </span>
           </div>

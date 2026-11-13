@@ -109,17 +109,17 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden animate-noir-enter">
       {/* Top Header */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
-        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
+        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/30 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
       >
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-all active:scale-95 cursor-pointer border border-outline-variant/30"
+            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-all active:scale-95 cursor-pointer border border-outline-variant/40"
             title="Back to Dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -146,10 +146,10 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                   onResetHabit(habit.id, false);
                 }
               }}
-              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:text-amber-500 hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/40"
               title="Reset today's progress"
             >
-              <RotateCcw className="w-4 h-4 text-amber-500" />
+              <RotateCcw className="w-4 h-4 text-on-surface" />
             </button>
           )}
 
@@ -157,10 +157,10 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
             <button
               type="button"
               onClick={() => onEditHabit(habit)}
-              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+              className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/40"
               title="Edit habit"
             >
-              <Edit2 className="w-4 h-4 text-primary" />
+              <Edit2 className="w-4 h-4 text-on-surface" />
             </button>
           )}
 
@@ -172,7 +172,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                 onBack();
               }
             }}
-            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:text-red-500 hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
+            className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary active:scale-95 transition-all cursor-pointer border border-outline-variant/40"
             title="Delete habit"
           >
             <Trash2 className="w-4 h-4" />
@@ -183,26 +183,25 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
         {/* Hero Card */}
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface border border-outline-variant/30 shadow-xs space-y-3">
+        <div className="p-4 rounded-3xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface border border-outline-variant/40 shadow-xs space-y-3">
           <div className="flex items-start gap-3.5">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md border-2 border-surface"
-              style={{ backgroundColor: `${habit.color}25`, color: habit.color }}
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md border ${
+                isDoneToday
+                  ? 'bg-primary text-on-primary border-primary'
+                  : 'bg-surface-container-high text-on-surface border-outline-variant/40'
+              }`}
             >
-              <GoalIcon iconId={habit.icon} className="w-7 h-7" color={habit.color} />
+              <GoalIcon iconId={habit.icon} className="w-7 h-7" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs uppercase font-black tracking-wider text-primary">
-                  {habit.category}
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface-variant font-bold capitalize">
-                  {habit.timeOfDay}
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface-variant font-bold capitalize">
-                  {habit.frequency}
-                </span>
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-on-surface-variant flex-wrap">
+                <span className="text-on-surface">{habit.category}</span>
+                <span>·</span>
+                <span className="capitalize">{habit.timeOfDay}</span>
+                <span>·</span>
+                <span className="capitalize">{habit.frequency}</span>
               </div>
 
               <h2 className="text-xl font-black text-on-surface tracking-tight mt-1 leading-tight">
@@ -228,56 +227,56 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
 
         {/* 4 Stats Grid: From the Beginning */}
         <div className="grid grid-cols-2 gap-2.5">
-          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1">
-            <div className="flex items-center justify-between text-orange-500">
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-1">
+            <div className="flex items-center justify-between text-on-surface">
               <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
                 Current Streak
               </span>
               <Flame className="w-4 h-4 fill-current" />
             </div>
-            <div className="text-2xl font-black font-mono text-on-surface">
+            <div className="text-2xl font-black font-mono tabular-nums text-on-surface">
               {habit.streakDays}
               <span className="text-xs font-sans text-on-surface-variant font-medium ml-1">days</span>
             </div>
-            <p className="text-[10px] text-on-surface-variant font-medium">Keep it burning today!</p>
+            <p className="text-[10px] text-on-surface-variant font-medium">Keep it burning today</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1">
-            <div className="flex items-center justify-between text-amber-500">
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-1">
+            <div className="flex items-center justify-between text-on-surface">
               <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
                 Best All-Time
               </span>
               <Award className="w-4 h-4" />
             </div>
-            <div className="text-2xl font-black font-mono text-on-surface">
+            <div className="text-2xl font-black font-mono tabular-nums text-on-surface">
               {habit.bestStreak || habit.streakDays || 0}
               <span className="text-xs font-sans text-on-surface-variant font-medium ml-1">days</span>
             </div>
             <p className="text-[10px] text-on-surface-variant font-medium">Personal record</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1">
-            <div className="flex items-center justify-between text-emerald-500">
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-1">
+            <div className="flex items-center justify-between text-on-surface">
               <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
                 Total Check-Ins
               </span>
               <CheckCircle2 className="w-4 h-4" />
             </div>
-            <div className="text-2xl font-black font-mono text-on-surface">
+            <div className="text-2xl font-black font-mono tabular-nums text-on-surface">
               {totalCheckins}
               <span className="text-xs font-sans text-on-surface-variant font-medium ml-1">times</span>
             </div>
             <p className="text-[10px] text-on-surface-variant font-medium">Since day 1</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-1">
-            <div className="flex items-center justify-between text-purple-500">
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-1">
+            <div className="flex items-center justify-between text-on-surface">
               <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
                 XP Earned
               </span>
               <Sparkles className="w-4 h-4" />
             </div>
-            <div className="text-2xl font-black font-mono text-on-surface">
+            <div className="text-2xl font-black font-mono tabular-nums text-on-surface">
               +{totalXpEarned}
               <span className="text-xs font-sans text-on-surface-variant font-medium ml-1">XP</span>
             </div>
@@ -315,19 +314,18 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                   {current} / {target} {habit.unit || 'reps'}
                 </span>
                 {isTargetExceeded && (
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                    +{current - target} exceeded!
+                  <span className="text-[10px] text-on-surface font-mono font-bold">
+                    +{current - target} exceeded
                   </span>
                 )}
               </div>
 
               <div className="w-full bg-surface-container-highest rounded-full h-2.5 overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: isDoneToday ? '#10b981' : habit.color,
-                  }}
+                  className={`h-full rounded-full transition-all duration-300 bg-primary ${
+                    pct === 100 ? 'noir-shimmer' : ''
+                  }`}
+                  style={{ width: `${pct}%` }}
                 />
               </div>
             </div>
@@ -340,7 +338,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     type="button"
                     onClick={() => onLogHabitSet(habit.id, -step)}
                     disabled={current <= 0}
-                    className="flex-1 py-2 rounded-xl bg-surface-container text-red-500 hover:bg-surface-container-high text-xs font-bold active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1 border border-outline-variant/30"
+                    className="flex-1 py-2 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high text-xs font-bold active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1 border border-outline-variant/40"
                   >
                     <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>{step} {habit.unit || 'reps'}</span>
@@ -349,11 +347,11 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                   <button
                     type="button"
                     onClick={() => onLogHabitSet(habit.id, step)}
-                    className="flex-1 py-2 rounded-xl bg-primary text-on-primary text-xs font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer shadow-xs hover:brightness-105"
+                    className="flex-1 py-2 rounded-xl bg-primary text-on-primary text-xs font-black flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer shadow-xs hover:opacity-90"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[3]" />
                     <span>{step} {habit.unit || 'reps'}</span>
-                    <span className="text-[9px] bg-on-primary/20 px-1 rounded ml-1">+{xpReward} XP</span>
+                    <span className="text-[9px] font-mono opacity-85 ml-1">+{xpReward} XP</span>
                   </button>
                 </div>
 
@@ -389,13 +387,13 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
 
         {/* Connected Goal Section */}
         {habit.linkedGoalTitle && (
-          <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Link className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold text-primary">Connected Goal</span>
+                <Link className="w-4 h-4 text-on-surface" />
+                <span className="text-xs font-bold text-on-surface">Connected Goal</span>
               </div>
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+              <span className="text-[10px] font-mono font-bold text-on-surface-variant">
                 +15 XP Synced
               </span>
             </div>
@@ -565,7 +563,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <div className="w-6 h-6 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                       <div className="min-w-0">
@@ -586,7 +584,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 font-mono">
+                      <span className="text-[11px] font-bold text-on-surface font-mono">
                         +{xpReward} XP
                       </span>
                     </div>
@@ -598,10 +596,10 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
         </div>
 
         {/* Manage Habit: Reset & Delete Card */}
-        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+        <div className="p-4 rounded-3xl bg-surface-container-low border border-outline-variant/40 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-surface-container text-on-surface flex items-center justify-center font-bold shrink-0">
-              <RotateCcw className="w-4 h-4 text-amber-500" />
+            <div className="w-8 h-8 rounded-xl bg-surface-container text-on-surface flex items-center justify-center font-bold shrink-0 border border-outline-variant/30">
+              <RotateCcw className="w-4 h-4 text-on-surface" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-on-surface">Manage Habit</h3>
@@ -620,7 +618,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     onResetHabit(habit.id, false);
                   }
                 }}
-                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/40 text-on-surface font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset Today's Progress</span>
@@ -635,7 +633,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                     onResetHabit(habit.id, true);
                   }
                 }}
-                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/30 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="py-2.5 px-3 rounded-xl bg-surface hover:bg-surface-container border border-outline-variant/40 text-on-surface font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset All Stats (Streak to 0)</span>
@@ -651,7 +649,7 @@ export const HabitDetailScreen: React.FC<HabitDetailScreenProps> = ({
                 onBack();
               }
             }}
-            className="w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer mt-1"
+            className="w-full py-2.5 px-3 rounded-xl bg-surface border border-on-surface/40 hover:bg-primary hover:text-on-primary text-on-surface font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer mt-1"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Delete Habit Permanently</span>

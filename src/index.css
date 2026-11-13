@@ -286,7 +286,90 @@ textarea {
   animation: shake 0.35s ease-in-out;
 }
 
-/* Standard UI Transition Utilities */
+/* Standard UI Transition & Monochrome Animation Utilities */
+@keyframes noirShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
 
+@keyframes subtleFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
 
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+.noir-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.noir-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  animation: noirShimmer 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+.dark .noir-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.25),
+    transparent
+  );
+}
+
+.animate-noir-enter {
+  animation: fadeInSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-subtle-float {
+  animation: subtleFloat 3s ease-in-out infinite;
+}
+
+/* Monochrome Architectural Card & Elevation Polish */
+.noir-card {
+  background-color: var(--md-surface-container-low);
+  border: 1px solid var(--md-outline-variant);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.noir-card:hover {
+  border-color: var(--md-outline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

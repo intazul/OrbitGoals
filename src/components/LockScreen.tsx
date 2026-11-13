@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { UserProfile, SecurityConfig } from '../types';
 import { sound, triggerHaptic } from '../utils/sound';
+import { APP_VERSION } from '../utils/version';
 import {
   Lock,
   ShieldCheck,
@@ -120,24 +122,32 @@ export const LockScreen: React.FC<LockScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-screen bg-surface text-on-surface select-none relative overflow-hidden justify-between p-5">
-      {/* Ambient background glow */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="flex-1 flex flex-col h-full min-h-screen bg-surface text-on-surface select-none relative overflow-hidden justify-between p-5 animate-noir-enter">
+      {/* Ambient subtle monochrome light */}
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header & App Identity */}
       <div className="pt-6 text-center space-y-2 z-10">
-        <div className="inline-flex items-center justify-center p-3.5 rounded-3xl bg-surface-container-high border border-outline-variant/30 text-primary shadow-xs">
+        <motion.div
+          animate={unlockSuccess ? { scale: [1, 1.12, 1] } : {}}
+          transition={{ duration: 0.35 }}
+          className={`inline-flex items-center justify-center p-3.5 rounded-3xl border shadow-xs transition-colors ${
+            unlockSuccess
+              ? 'bg-primary text-on-primary border-primary'
+              : 'bg-surface-container-high border-outline-variant/40 text-primary'
+          }`}
+        >
           {unlockSuccess ? (
-            <ShieldCheck className="w-8 h-8 text-emerald-500 animate-bounce" />
+            <ShieldCheck className="w-8 h-8" />
           ) : (
             <Lock className="w-8 h-8 text-primary stroke-[2.2]" />
           )}
-        </div>
+        </motion.div>
 
         <div>
           <h1 className="text-xl font-black text-on-surface tracking-tight">
             {unlockSuccess
-              ? 'Unlocked!'
+              ? 'Unlocked'
               : profile.name
               ? `Welcome back, ${profile.name}`
               : 'OrbitGoals Secured'}
@@ -152,8 +162,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({
       <div className="my-auto py-3 flex flex-col items-center justify-center space-y-4 z-10">
         {/* Reset Notification Banner if 3 tries failed */}
         {resetNotice && (
-          <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-2 max-w-xs text-left animate-in fade-in shadow-xs">
-            <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
+          <div className="p-3 rounded-2xl bg-surface-container-high border border-on-surface/40 text-on-surface text-xs font-bold flex items-center gap-2 max-w-xs text-left animate-in fade-in shadow-xs">
+            <ShieldAlert className="w-4 h-4 shrink-0 text-on-surface" />
             <span className="leading-snug">{resetNotice}</span>
           </div>
         )}
@@ -172,11 +182,11 @@ export const LockScreen: React.FC<LockScreenProps> = ({
                   key={index}
                   className={`w-4 h-4 rounded-full transition-all duration-200 border ${
                     unlockSuccess
-                      ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
+                      ? 'bg-primary border-primary scale-125'
                       : errorShake
-                      ? 'bg-red-500 border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]'
+                      ? 'bg-on-surface border-on-surface scale-90'
                       : isFilled
-                      ? 'bg-primary border-primary scale-115 shadow-[0_0_10px_rgba(103,80,164,0.4)]'
+                      ? 'bg-primary border-primary scale-115'
                       : 'border-outline-variant/60 bg-surface-container'
                   }`}
                 />
@@ -186,7 +196,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({
 
           {/* Dynamic Attempts & Error Messaging */}
           {errorMessage ? (
-            <p className="text-xs text-red-600 dark:text-red-400 font-bold flex items-center gap-1.5 animate-in fade-in">
+            <p className="text-xs text-on-surface font-bold flex items-center gap-1.5 animate-in fade-in">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{errorMessage}</span>
             </p>
@@ -194,12 +204,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-on-surface-variant/80">
               <span>Attempts remaining:</span>
               <span
-                className={`font-mono font-bold px-1.5 py-0.5 rounded ${
+                className={`font-mono font-bold px-1.5 py-0.5 rounded border ${
                   attemptsLeft === 1
-                    ? 'bg-red-500/15 dark:bg-red-500/25 text-red-700 dark:text-red-300'
-                    : attemptsLeft === 2
-                    ? 'bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300'
-                    : 'bg-surface-container text-on-surface-variant'
+                    ? 'bg-primary text-on-primary border-primary'
+                    : 'bg-surface-container text-on-surface-variant border-outline-variant/30'
                 }`}
               >
                 {attemptsLeft}/3
@@ -213,42 +221,46 @@ export const LockScreen: React.FC<LockScreenProps> = ({
       <div className="w-full max-w-[280px] mx-auto pb-4 z-10">
         <div className="grid grid-cols-3 gap-2.5">
           {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-            <button
+            <motion.button
               key={num}
+              whileTap={{ scale: 0.92 }}
               onClick={() => handleDigitTap(num)}
               disabled={unlockSuccess}
-              className="h-13 rounded-2xl bg-surface-container hover:bg-surface-container-high active:bg-primary active:text-on-primary border border-outline-variant/30 text-on-surface font-black text-xl transition-all flex items-center justify-center cursor-pointer shadow-xs active:scale-92"
+              className="h-13 rounded-2xl bg-surface-container hover:bg-surface-container-high active:bg-primary active:text-on-primary border border-outline-variant/40 text-on-surface font-black text-xl transition-colors flex items-center justify-center cursor-pointer shadow-xs"
             >
               {num}
-            </button>
+            </motion.button>
           ))}
 
           {/* Bottom row: Clear / 0 / Backspace */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={handleClear}
             disabled={unlockSuccess || pin.length === 0}
-            className="h-13 rounded-2xl bg-surface-container/60 hover:bg-surface-container-high active:scale-92 transition-all flex items-center justify-center text-on-surface-variant hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border border-outline-variant/20 font-bold text-xs"
+            className="h-13 rounded-2xl bg-surface-container/60 hover:bg-surface-container-high transition-colors flex items-center justify-center text-on-surface-variant hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border border-outline-variant/30 font-bold text-xs"
             title="Clear entered digits"
           >
             Clear
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={() => handleDigitTap('0')}
             disabled={unlockSuccess}
-            className="h-13 rounded-2xl bg-surface-container hover:bg-surface-container-high active:bg-primary active:text-on-primary border border-outline-variant/30 text-on-surface font-black text-xl transition-all flex items-center justify-center cursor-pointer shadow-xs active:scale-92"
+            className="h-13 rounded-2xl bg-surface-container hover:bg-surface-container-high active:bg-primary active:text-on-primary border border-outline-variant/40 text-on-surface font-black text-xl transition-colors flex items-center justify-center cursor-pointer shadow-xs"
           >
             0
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={handleBackspace}
             disabled={unlockSuccess || pin.length === 0}
-            className="h-13 rounded-2xl bg-surface-container/60 hover:bg-surface-container-high active:scale-92 transition-all flex items-center justify-center text-on-surface-variant hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border border-outline-variant/20"
+            className="h-13 rounded-2xl bg-surface-container/60 hover:bg-surface-container-high transition-colors flex items-center justify-center text-on-surface-variant hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border border-outline-variant/30"
             title="Backspace"
           >
             <Delete className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
 
         {/* Forgot Passcode & Guest Mode Helpers */}
@@ -272,6 +284,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({
             Continue as Guest
           </button>
         </div>
+        <p className="text-center text-[9px] font-mono text-on-surface-variant/60 mt-2">
+          OrbitGoals v{APP_VERSION}
+        </p>
       </div>
 
       {/* Forgot Passcode Dialog Modal */}

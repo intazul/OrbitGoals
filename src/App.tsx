@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Goal, Habit, AppSettings, UserProfile, SecurityConfig, HabitTimeOfDay, TimeCapsule, ReversePenaltyRecord } from './types';
 import { storage } from './utils/storage';
 import { sound, triggerHaptic } from './utils/sound';
 import { fireConfetti } from './utils/confetti';
 import { notificationManager } from './utils/notifications';
+import { APP_VERSION } from './utils/version';
 import {
   calculateLevel,
   calculateLevelProgress,
@@ -37,8 +39,8 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { GoalIcon } from './components/GoalIcon';
 import { ReverseZoneAuditModal } from './components/ReverseZoneAuditModal';
 import { StepCounterModal } from './components/StepCounterModal';
-import { PedometerWidget } from './components/PedometerWidget';
 import { StepAnalyticsScreen } from './components/StepAnalyticsScreen';
+import { FocusTimerModal } from './components/FocusTimerModal';
 import { usePedometer } from './hooks/usePedometer';
 import { INITIAL_HABITS } from './utils/initialData';
 
@@ -47,7 +49,6 @@ import {
   Minus,
   Target,
   Settings,
-  Trash2,
   ListTodo,
   Calendar,
   Repeat,
@@ -55,18 +56,15 @@ import {
   Sparkles,
   Check,
   Shield,
-  Zap,
-  User,
   ChevronRight,
-  Link,
-  Layers,
-  Lock,
-  Edit2,
   Camera,
   AlertTriangle,
-  History,
   Clock,
   Footprints,
+  Timer,
+  Search,
+  ArrowUpDown,
+  X,
 } from 'lucide-react';
 
 export default function App() {
@@ -112,8 +110,12 @@ export default function App() {
   const [showReverseAuditModal, setShowReverseAuditModal] = useState<boolean>(false);
   const [countdownToMidnight, setCountdownToMidnight] = useState<string>('');
 
-  // Real-Time Steps Pedometer State
+  // Real-Time Steps Pedometer State & Enhanced Dashboard Controls
   const [showPedometerModal, setShowPedometerModal] = useState<boolean>(false);
+  const [showFocusModal, setShowFocusModal] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortMode, setSortMode] = useState<'default' | 'pending' | 'streak'>('default');
+  const [showSearchBar, setShowSearchBar] = useState<boolean>(false);
   const { state: pedometerState } = usePedometer();
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -1061,11 +1063,96 @@ export default function App() {
     .filter((h) => (h.completedDates || []).includes(todayStr))
     .reduce((sum, h) => sum + (h.xpPerSet || XP_PER_HABIT), 0);
 
-  // Filtered habits for dashboard list
-  const filteredHabits = habits.filter((h) => {
-    if (habitFilter === 'all') return true;
-    return h.timeOfDay === habitFilter;
-  });
+  // Filtered & sorted habits/goals for organized dashboard list
+  const filteredHabits = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const list = habits.filter((h) => {
+      const matchesTime = habitFilter === 'all' || h.timeOfDay === habitFilter;
+      const matchesSearch =
+        !q || h.title.toLowerCase().includes(q) || (h.category && h.category.toLowerCase().includes(q));
+      return matchesTime && matchesSearch;
+    });
+
+    if (sortMode === 'pending') {
+      return [...list].sort((a, b) => {
+        const aDone = (a.completedDates || []).includes(todayStr) ? 1 : 0;
+        const bDone = (b.completedDates || []).includes(todayStr) ? 1 : 0;
+        return aDone - bDone;
+      });
+    }
+    if (sortMode === 'streak') {
+      return [...list].sort((a, b) => (b.streakDays || 0) - (a.streakDays || 0));
+    }
+    return list;
+  }, [habits, habitFilter, searchQuery, sortMode, todayStr]);
+
+  const filteredGoals = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const list = goals.filter(
+      (g) => !q || g.title.toLowerCase().includes(q) || (g.category && g.category.toLowerCase().includes(q))
+    );
+    if (sortMode === 'pending') {
+      return [...list].sort((a, b) => {
+        const aPct = (a.currentValue || 0) / Math.max(1, a.targetValue || 1);
+        const bPct = (b.currentValue || 0) / Math.max(1, b.targetValue || 1);
+        return aPct - bPct;
+      });
+    }
+    if (sortMode === 'streak') {
+      return [...list].sort((a, b) => {
+        const aPct = (a.currentValue || 0) / Math.max(1, a.targetValue || 1);
+        const bPct = (b.currentValue || 0) / Math.max(1, b.targetValue || 1);
+        return bPct - aPct;
+      });
+    }
+    return list;
+  }, [goals, searchQuery, sortMode]);
+
+  // 7-Day Monochrome Rhythm Matrix
+  const weeklyRhythm = useMemo(() => {
+    return weekDays.map((dayObj) => {
+      const doneCount = habits.filter((h) => (h.completedDates || []).includes(dayObj.dateStr)).length;
+      const ratio = habits.length > 0 ? doneCount / habits.length : 0;
+      return {
+        ...dayObj,
+        doneCount,
+        ratio,
+      };
+    });
+  }, [weekDays, habits]);
+
+  // Handle completing a Deep Focus Pomodoro session
+  const handleFocusSessionComplete = ({
+    minutes,
+    xpEarned,
+    linkedHabitId,
+    linkedGoalId,
+  }: {
+    minutes: number;
+    xpEarned: number;
+    linkedHabitId?: string;
+    linkedGoalId?: string;
+  }) => {
+    handleAdjustXp(xpEarned, `${minutes}m Focus Studio Completed`);
+    if (linkedHabitId) {
+      const targetHabit = habits.find((h) => h.id === linkedHabitId);
+      if (targetHabit) {
+        if (targetHabit.trackingType === 'sets') {
+          handleLogHabitSet(linkedHabitId, targetHabit.stepValue || 1);
+        } else if (!(targetHabit.completedDates || []).includes(todayStr)) {
+          handleToggleHabit(linkedHabitId);
+        }
+      }
+    }
+    if (linkedGoalId) {
+      handleUpdateGoalValue(linkedGoalId, 1);
+    }
+    notificationManager.sendNotification(
+      'Deep Focus Session Complete',
+      `Earned +${xpEarned} XP from ${minutes} minutes of uninterrupted focus.`,
+      'xp'
+    );
+  };
 
   // Gamification level progress
   const userXp = profile.xp || 0;
@@ -1086,6 +1173,15 @@ export default function App() {
         onClose={() => setShowReverseAuditModal(false)}
         penalties={reverseHistory}
         onClearHistory={handleClearReverseHistory}
+      />
+
+      {/* Deep Focus Pomodoro Studio Modal */}
+      <FocusTimerModal
+        isOpen={showFocusModal}
+        onClose={() => setShowFocusModal(false)}
+        habits={habits}
+        goals={goals}
+        onCompleteSession={handleFocusSessionComplete}
       />
 
       {/* Real-Time Steps Pedometer Studio Modal */}
@@ -1130,15 +1226,24 @@ export default function App() {
       {/* 4. ACTIVE APP SCREENS (When Unlocked) */}
       {!isOnboarding && !isReplayingTour && !isLocked && (
         <>
-          {/* Floating XP Animation Pill - Anchored at the bottom of the screen */}
-          {floatingXp && (
-            <div className="fixed bottom-20 right-6 z-50 pointer-events-none animate-bounce">
-              <div className="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black text-xs shadow-xl flex items-center gap-1.5 border border-amber-300">
-                <Sparkles className="w-3.5 h-3.5 fill-current" />
-                <span>{floatingXp.text}</span>
-              </div>
-            </div>
-          )}
+          {/* Floating XP Animation Pill - Monochrome Inverted Contrast */}
+          <AnimatePresence>
+            {floatingXp && (
+              <motion.div
+                key={floatingXp.id}
+                initial={{ opacity: 0, y: 18, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -14, scale: 0.92 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                className="fixed bottom-20 right-6 z-50 pointer-events-none"
+              >
+                <div className="px-3.5 py-2 rounded-full bg-primary text-on-primary font-black text-xs shadow-2xl flex items-center gap-1.5 border border-outline/20 font-mono tabular-nums">
+                  <Sparkles className="w-3.5 h-3.5 fill-current" />
+                  <span>{floatingXp.text}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Full Screen Mode: Habit Details (Complete Information from Beginning) */}
           {screenView === 'habit-detail' && selectedHabitForDetail && (
@@ -1330,11 +1435,11 @@ export default function App() {
 
           {/* Main Single Screen: Dashboard */}
           {screenView === 'dashboard' && (
-            <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface">
+            <div className="flex-1 flex flex-col min-h-full bg-surface text-on-surface animate-noir-enter">
               {/* Sticky Dashboard Header Bar */}
               <header
                 style={{ marginTop: '32px', marginLeft: '0px' }}
-                className="sticky top-0 z-30 border-b border-outline-variant/20 px-4 mt-8 ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
+                className="sticky top-0 z-30 border-b border-outline-variant/30 px-4 mt-8 ml-0 pt-8 pb-2.5 text-[20px] shrink-0 flex items-center justify-between gap-2 bg-surface/95 backdrop-blur-md"
               >
                 {/* App Brand Title */}
                 <div
@@ -1344,303 +1449,466 @@ export default function App() {
                   OrbitGoals
                 </div>
 
-                {/* Action Icons in Header: Reverse Zone Toggle, Step Counter, Calendar, Scrapbook, Settings */}
+                {/* Action Icons in Header: Step Counter, Calendar, Scrapbook, Settings */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Step Counter & Analytics Tab Launcher */}
-                    <button
-                      onClick={() => {
-                        setScreenView('pedometer');
-                        sound.playPop();
-                        triggerHaptic('light');
-                      }}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30 relative"
-                      title={pedometerState.isWalkingMode ? 'Walking Mode: Active (Counting Steps)' : 'Step Analytics (Walking Mode: OFF)'}
-                    >
-                      <Footprints className={`w-4 h-4 ${pedometerState.isWalkingMode ? 'text-primary animate-pulse' : 'text-on-surface-variant'}`} />
-                      {pedometerState.isWalkingMode && (
-                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
-                      )}
-                    </button>
+                  {/* Step Counter & Analytics Tab Launcher */}
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => {
+                      setScreenView('pedometer');
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/40 relative"
+                    title={pedometerState.isWalkingMode ? 'Walking Mode: Active (Counting Steps)' : 'Step Analytics (Walking Mode: OFF)'}
+                  >
+                    <Footprints className={`w-4 h-4 ${pedometerState.isWalkingMode ? 'text-primary animate-pulse' : 'text-on-surface-variant'}`} />
+                    {pedometerState.isWalkingMode && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-surface" />
+                    )}
+                  </motion.button>
 
-                    {/* Calendar Launcher */}
-                    <button
-                      onClick={() => handleOpenCalendar()}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
-                      title="Open Habits & Goals Calendar"
-                    >
-                      <Calendar className="w-4 h-4 text-primary" />
-                    </button>
+                  {/* Calendar Launcher */}
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => handleOpenCalendar()}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/40"
+                    title="Open Habits & Goals Calendar"
+                  >
+                    <Calendar className="w-4 h-4 text-on-surface" />
+                  </motion.button>
 
-                    {/* Growth Scrapbook Launcher */}
-                    <button
-                      onClick={() => {
-                        setScreenView('scrapbook');
-                        sound.playPop();
-                        triggerHaptic('light');
-                      }}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30 relative"
-                      title="Open Growth Scrapbook & Time Capsules"
-                    >
-                      <Camera className="w-4 h-4 text-primary" />
-                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500" />
-                    </button>
+                  {/* Growth Scrapbook Launcher */}
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => {
+                      setScreenView('scrapbook');
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/40 relative"
+                    title="Open Growth Scrapbook & Time Capsules"
+                  >
+                    <Camera className="w-4 h-4 text-on-surface" />
+                  </motion.button>
 
-                    {/* Settings Option Button */}
-                    <button
-                      onClick={() => setScreenView('settings')}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer border border-outline-variant/30"
-                      title="Open Settings"
-                    >
-                      <Settings className="w-4 h-4 text-primary" />
-                    </button>
-                  </div>
+                  {/* Settings Option Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => setScreenView('settings')}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/40"
+                    title="Open Settings"
+                  >
+                    <Settings className="w-4 h-4 text-on-surface" />
+                  </motion.button>
+                </div>
               </header>
 
               {/* Dashboard Natural Scroll Body */}
               <div className="flex-1 px-4 pt-3 pb-24 space-y-3">
-                {/* INTERACTIVE HABIT / GOALS SEGMENTED TOGGLE BUTTON */}
-                <div className="grid grid-cols-2 p-1 rounded-2xl bg-surface-container border border-outline-variant/30 shadow-inner gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('habits');
-                        sound.playPop();
-                        triggerHaptic('light');
-                      }}
-                      className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        activeTab === 'habits'
-                          ? 'bg-primary text-on-primary shadow-sm scale-100'
-                          : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
-                    >
-                      <Repeat className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span>Habits ({completedHabitsCount}/{totalHabits})</span>
-                    </button>
+                {/* PLAYER MOMENTUM & DEEP FOCUS STUDIO COMMAND STRIP */}
+                <div className="flex items-stretch gap-2">
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.985 }}
+                    onClick={() => {
+                      setScreenView('profile');
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className="flex-1 min-w-0 px-3 py-2 rounded-2xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 transition-colors cursor-pointer text-left flex items-center justify-between gap-2.5"
+                    title="Open Player Profile & Trophies"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-on-surface truncate">
+                        <span className="font-mono">Lv.{levelInfo.level}</span>
+                        <span className="text-on-surface-variant">·</span>
+                        <span className="truncate">{rankInfo.title}</span>
+                        <span className="text-on-surface-variant font-mono ml-auto shrink-0">
+                          v{APP_VERSION}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.max(4, levelInfo.percent)}%` }}
+                          transition={{ duration: 0.6, ease: 'easeOut' }}
+                          className="h-full rounded-full bg-primary noir-shimmer"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[11px] font-mono font-black tabular-nums text-on-surface block leading-none">
+                        {levelInfo.percent}%
+                      </span>
+                      <span className="text-[9px] text-on-surface-variant font-mono block mt-0.5">
+                        {userXp.toLocaleString()} XP
+                      </span>
+                    </div>
+                  </motion.button>
+                </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('goals');
-                        sound.playPop();
-                        triggerHaptic('light');
-                      }}
-                      className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        activeTab === 'goals'
-                          ? 'bg-primary text-on-primary shadow-sm scale-100'
-                          : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
-                    >
-                      <Target className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span>Goals ({completedGoalsCount}/{totalGoals})</span>
-                    </button>
-                  </div>
+                {/* ANIMATED SEGMENTED HABITS / GOALS TOGGLE */}
+                <div className="relative grid grid-cols-2 p-1 rounded-2xl bg-surface-container border border-outline-variant/40 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('habits');
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className={`relative z-10 py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                      activeTab === 'habits' ? 'text-on-primary' : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    {activeTab === 'habits' && (
+                      <motion.div
+                        layoutId="dashboardTabIndicator"
+                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                        className="absolute inset-0 rounded-xl bg-primary shadow-sm -z-10"
+                      />
+                    )}
+                    <Repeat className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span className="font-mono tabular-nums">Habits ({completedHabitsCount}/{totalHabits})</span>
+                  </button>
 
-                {/* OVERVIEW CARD & BIG ADD BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('goals');
+                      sound.playPop();
+                      triggerHaptic('light');
+                    }}
+                    className={`relative z-10 py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                      activeTab === 'goals' ? 'text-on-primary' : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    {activeTab === 'goals' && (
+                      <motion.div
+                        layoutId="dashboardTabIndicator"
+                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                        className="absolute inset-0 rounded-xl bg-primary shadow-sm -z-10"
+                      />
+                    )}
+                    <Target className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span className="font-mono tabular-nums">Goals ({completedGoalsCount}/{totalGoals})</span>
+                  </button>
+                </div>
+
+                {/* OVERVIEW CARD, 7-DAY RHYTHM MATRIX & BIG ADD BUTTON */}
                 <div className="space-y-2.5">
-                  {/* Dynamic Overview Card based on activeTab */}
-                  {activeTab === 'habits' ? (
-                    <div className="rounded-2xl p-3 border shadow-xs transition-all bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low border-outline-variant/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-primary flex items-center gap-1">
-                          {isReverseZone && <Flame className="w-3 h-3 text-rose-500 fill-current" />}
-                          <span>{isReverseZone ? "Today's Habits · Reverse Active" : "Today's Habits Progress"}</span>
-                        </span>
-                        <span className="text-[11px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
-                          <Flame className="w-3.5 h-3.5 fill-current" />
-                          <span>+{completedHabitsCount * XP_PER_HABIT} XP today</span>
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="space-y-0.5 min-w-0">
-                          <h2 className="text-[20px] font-black text-on-surface tracking-tight leading-tight truncate">
-                            {totalHabits === 0
-                              ? 'No Habits Yet'
-                              : habitsPct === 100
-                              ? 'All Habits Protected! 🛡️'
-                              : `${totalHabits - completedHabitsCount} Habit${totalHabits - completedHabitsCount === 1 ? '' : 's'} at Reverse Risk`}
-                          </h2>
-                          <p className="text-[10px] text-on-surface-variant font-medium truncate">
-                            {isReverseZone
-                              ? `${totalHabits - completedHabitsCount} uncompleted habit${totalHabits - completedHabitsCount === 1 ? '' : 's'} will deduct -${potentialXpLoss} XP if not done before 11:59 PM.`
-                              : totalHabits === 0
-                              ? 'Tap "+ Add Habit" below to build consistency.'
-                              : `${completedHabitsCount} of ${totalHabits} completed · Tap circle to check off`}
-                          </p>
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="noir-card rounded-2xl p-3.5 border border-outline-variant/40 bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low shadow-xs space-y-3"
+                  >
+                    {activeTab === 'habits' ? (
+                      <>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface flex items-center gap-1.5">
+                            {isReverseZone && <Flame className="w-3 h-3 fill-current" />}
+                            <span>{isReverseZone ? "Today's Habits · Reverse Mode" : "Today's Habits Overview"}</span>
+                          </span>
+                          <span className="text-[11px] font-mono tabular-nums text-on-surface font-black flex items-center gap-1">
+                            <Flame className="w-3 h-3 fill-current" />
+                            <span>+{securedXp} XP today</span>
+                          </span>
                         </div>
 
-                        {/* Circular Completion Ring */}
-                        <div className="relative w-11 h-11 flex items-center justify-center shrink-0">
-                          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path
-                              className="text-surface-container-highest"
-                              strokeWidth="4"
-                              stroke="currentColor"
-                              fill="none"
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            />
-                            <path
-                              className="transition-all duration-700 ease-out text-primary"
-                              strokeDasharray={`${habitsPct}, 100`}
-                              strokeLinecap="round"
-                              strokeWidth="4"
-                              stroke="currentColor"
-                              fill="none"
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            />
-                          </svg>
-                          <div className="absolute text-center">
-                            <span className="text-[13px] font-black text-on-surface font-mono tabular-nums leading-none">
-                              {habitsPct}%
-                            </span>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="space-y-0.5 min-w-0">
+                            <h2 className="text-[20px] font-black text-on-surface tracking-tight leading-tight truncate">
+                              {totalHabits === 0
+                                ? 'No Habits Yet'
+                                : habitsPct === 100
+                                ? 'All Habits Complete'
+                                : isReverseZone
+                                ? `${totalHabits - completedHabitsCount} Habit${totalHabits - completedHabitsCount === 1 ? '' : 's'} at Risk`
+                                : `${totalHabits - completedHabitsCount} Habit${totalHabits - completedHabitsCount === 1 ? '' : 's'} Remaining`}
+                            </h2>
+                            <p className="text-[11px] text-on-surface-variant font-medium truncate">
+                              {isReverseZone
+                                ? `${totalHabits - completedHabitsCount} pending · -${potentialXpLoss} XP at 11:59 PM if missed`
+                                : totalHabits === 0
+                                ? 'Create your first daily habit below.'
+                                : `${completedHabitsCount} of ${totalHabits} completed today`}
+                            </p>
+                          </div>
+
+                          {/* Circular Completion Ring */}
+                          <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                              <path
+                                className="text-surface-container-highest"
+                                strokeWidth="3.5"
+                                stroke="currentColor"
+                                fill="none"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              />
+                              <motion.path
+                                className="text-primary"
+                                initial={{ strokeDasharray: '0, 100' }}
+                                animate={{ strokeDasharray: `${habitsPct}, 100` }}
+                                transition={{ duration: 0.65, ease: 'easeOut' }}
+                                strokeLinecap="round"
+                                strokeWidth="3.5"
+                                stroke="currentColor"
+                                fill="none"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              />
+                            </svg>
+                            <div className="absolute text-center">
+                              <span className="text-[12px] font-black text-on-surface font-mono tabular-nums leading-none">
+                                {habitsPct}%
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Reverse Zone Mini Banner Action Bar */}
-                      {isReverseZone && (
-                        <div className="mt-2.5 pt-2 border-t border-outline-variant/20 flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-on-surface">
-                            <Clock className="w-3.5 h-3.5 text-rose-500" />
-                            <span style={{ fontSize: '10px' }}>Cutoff: {countdownToMidnight}</span>
+                        {/* 7-Day Monochrome Rhythm Matrix */}
+                        <div className="pt-2 border-t border-outline-variant/25 flex items-center justify-between gap-2">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-on-surface-variant shrink-0">
+                            7D Rhythm
+                          </span>
+                          <div className="flex items-end gap-1.5 flex-1 justify-end">
+                            {weeklyRhythm.map((day) => {
+                              const heightPct = day.ratio > 0 ? Math.max(24, Math.round(day.ratio * 100)) : 12;
+                              return (
+                                <div
+                                  key={day.dateStr}
+                                  className="flex flex-col items-center gap-1"
+                                  title={`${day.dayLetter} (${day.dateStr}): ${day.doneCount}/${totalHabits} habits`}
+                                >
+                                  <div
+                                    className={`w-4 h-5 rounded-md bg-surface-container-highest flex items-end overflow-hidden p-[1px] ${
+                                      day.isToday ? 'ring-1 ring-primary' : ''
+                                    }`}
+                                  >
+                                    <div
+                                      className={`w-full rounded-sm transition-all duration-500 ${
+                                        day.ratio > 0 ? 'bg-primary' : 'bg-outline-variant/40'
+                                      }`}
+                                      style={{ height: `${heightPct}%` }}
+                                    />
+                                  </div>
+                                  <span
+                                    className={`text-[8px] font-mono leading-none ${
+                                      day.isToday ? 'font-black text-on-surface' : 'text-on-surface-variant'
+                                    }`}
+                                  >
+                                    {day.dayLetter}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
+                        </div>
 
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setShowReverseAuditModal(true)}
-                              className="px-2 py-1 rounded-lg bg-surface-container text-on-surface font-bold text-[10px] border border-outline-variant/30 hover:bg-surface-container-high transition-all cursor-pointer"
-                            >
-                              Ledger ({reverseHistory.length})
-                            </button>
-                            {uncompletedHabits.length > 0 && (
+                        {/* Monochrome Reverse Cutoff Bar */}
+                        {isReverseZone && (
+                          <div className="pt-2 border-t border-outline-variant/25 flex items-center justify-between gap-2 text-xs">
+                            <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-on-surface">
+                              <Clock className="w-3.5 h-3.5 text-on-surface" />
+                              <span>Cutoff: {countdownToMidnight}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
                               <button
                                 type="button"
-                                onClick={handleSettleReversePenaltiesNow}
-                                className="px-2 py-1 rounded-lg bg-rose-600 text-white font-bold text-[10px] shadow-xs hover:bg-rose-700 transition-all cursor-pointer"
-                                title="Audit and deduct uncompleted habits now (11:59 PM Test)"
+                                onClick={() => setShowReverseAuditModal(true)}
+                                className="px-2.5 py-1 rounded-lg bg-surface text-on-surface font-bold text-[10px] border border-outline-variant/40 hover:bg-surface-container-high transition-colors cursor-pointer"
                               >
-                                Settle Cutoff
+                                Ledger ({reverseHistory.length})
                               </button>
-                            )}
+                              {uncompletedHabits.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={handleSettleReversePenaltiesNow}
+                                  className="px-2.5 py-1 rounded-lg bg-primary text-on-primary font-black text-[10px] shadow-xs hover:opacity-90 transition-opacity cursor-pointer"
+                                  title="Audit and deduct uncompleted habits now (11:59 PM Test)"
+                                >
+                                  Settle Cutoff
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface">
+                            Today's Goals Overview
+                          </span>
+                          <span className="text-[11px] font-mono text-on-surface-variant font-bold">
+                            {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="space-y-0.5 min-w-0">
+                            <h2 className="text-[20px] font-black text-on-surface tracking-tight leading-tight truncate">
+                              {totalGoals === 0
+                                ? 'No Goals Yet'
+                                : goalsPct === 100
+                                ? 'All Goals Completed'
+                                : `${totalGoals - completedGoalsCount} Goal${totalGoals - completedGoalsCount === 1 ? '' : 's'} Remaining`}
+                            </h2>
+                            <p className="text-[11px] text-on-surface-variant font-medium truncate">
+                              {totalGoals === 0
+                                ? 'Tap "+ Add Goal" below to start.'
+                                : `${completedGoalsCount} of ${totalGoals} goals finished today.`}
+                            </p>
+                          </div>
+
+                          {/* Circular Completion Ring */}
+                          <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                              <path
+                                className="text-surface-container-highest"
+                                strokeWidth="3.5"
+                                stroke="currentColor"
+                                fill="none"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              />
+                              <motion.path
+                                className="text-primary"
+                                initial={{ strokeDasharray: '0, 100' }}
+                                animate={{ strokeDasharray: `${goalsPct}, 100` }}
+                                transition={{ duration: 0.65, ease: 'easeOut' }}
+                                strokeLinecap="round"
+                                strokeWidth="3.5"
+                                stroke="currentColor"
+                                fill="none"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              />
+                            </svg>
+                            <div className="absolute text-center">
+                              <span className="text-[12px] font-black text-on-surface font-mono tabular-nums leading-none">
+                                {goalsPct}%
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-low rounded-2xl p-3 border border-outline-variant/30 shadow-xs">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-primary">
-                          Today's Goals Overview
-                        </span>
-                        <span className="text-[11px] text-on-surface-variant font-bold">
-                          {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
+                      </>
+                    )}
+                  </motion.div>
 
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="space-y-0.5 min-w-0">
-                          <h2 className="text-[20px] font-black text-on-surface tracking-tight leading-tight truncate">
-                            {totalGoals === 0
-                              ? 'No Goals Yet'
-                              : goalsPct === 100
-                              ? 'All Goals Completed! 🎉'
-                              : `${totalGoals - completedGoalsCount} Goal${totalGoals - completedGoalsCount === 1 ? '' : 's'} Remaining`}
-                          </h2>
-                          <p className="text-[10px] text-on-surface-variant font-medium truncate">
-                            {totalGoals === 0
-                              ? 'Tap "+ Add Goal" below to start.'
-                              : `${completedGoalsCount} of ${totalGoals} goals finished today.`}
-                          </p>
-                        </div>
-
-                        {/* Circular Completion Ring */}
-                        <div className="relative w-11 h-11 flex items-center justify-center shrink-0">
-                          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path
-                              className="text-surface-container-highest"
-                              strokeWidth="4"
-                              stroke="currentColor"
-                              fill="none"
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            />
-                            <path
-                              className="text-primary transition-all duration-700 ease-out"
-                              strokeDasharray={`${goalsPct}, 100`}
-                              strokeLinecap="round"
-                              strokeWidth="4"
-                              stroke="currentColor"
-                              fill="none"
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            />
-                          </svg>
-                          <div className="absolute text-center">
-                            <span className="text-[13px] font-black text-on-surface font-mono tabular-nums leading-none">
-                              {goalsPct}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* BIG ADAPTING "ADD HABIT" OR "ADD GOAL" BUTTON */}
+                  {/* PRIMARY ADAPTING "ADD HABIT" OR "ADD GOAL" CTA */}
                   {activeTab === 'habits' ? (
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.985 }}
                       onClick={() => {
                         setEditingHabit(undefined);
                         setScreenView('add-habit');
                         sound.playPop();
                       }}
-                      className="w-full py-3 px-4 rounded-2xl bg-primary text-on-primary font-black text-sm shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[46px]"
+                      className="w-full py-3 px-4 rounded-2xl bg-primary text-on-primary font-black text-sm shadow-md hover:opacity-95 transition-opacity cursor-pointer flex items-center justify-between min-h-[48px]"
                     >
-                      <div className="w-5 h-5 rounded-full bg-on-primary/15 flex items-center justify-center">
-                        <Plus className="w-3.5 h-3.5 stroke-[3] text-on-primary" />
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-on-primary/15 flex items-center justify-center">
+                          <Plus className="w-4 h-4 stroke-[3] text-on-primary" />
+                        </div>
+                        <span className="text-[15px]">Add Habit</span>
                       </div>
-                      <span className="text-[16px]">Add Habit</span>
-                      <span className="text-[11px] font-bold bg-on-primary/20 px-2 py-0.5 rounded-full">
-                        +{settings.habitXpPerSet ?? XP_PER_HABIT} XP
+                      <span className="text-[11px] font-mono font-bold opacity-85">
+                        +{settings.habitXpPerSet ?? XP_PER_HABIT} XP / set
                       </span>
-                    </button>
+                    </motion.button>
                   ) : (
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.985 }}
                       onClick={() => {
                         setEditingGoal(undefined);
                         setScreenView('add-goal');
                         sound.playPop();
                       }}
-                      className="w-full py-3 px-4 rounded-2xl bg-primary text-on-primary font-black text-sm shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[46px]"
+                      className="w-full py-3 px-4 rounded-2xl bg-primary text-on-primary font-black text-sm shadow-md hover:opacity-95 transition-opacity cursor-pointer flex items-center justify-between min-h-[48px]"
                     >
-                      <div className="w-5 h-5 rounded-full bg-on-primary/15 flex items-center justify-center">
-                        <Plus className="w-3.5 h-3.5 stroke-[3] text-on-primary" />
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-on-primary/15 flex items-center justify-center">
+                          <Plus className="w-4 h-4 stroke-[3] text-on-primary" />
+                        </div>
+                        <span className="text-[15px]">Add Goal</span>
                       </div>
-                      <span className="text-[16px]">Add Goal</span>
-                      <span className="text-[11px] font-bold bg-on-primary/20 px-2 py-0.5 rounded-full">
+                      <span className="text-[11px] font-mono font-bold opacity-85">
                         +{settings.goalXpPerStep ?? XP_PER_GOAL_STEP} XP / step
                       </span>
-                    </button>
+                    </motion.button>
                   )}
 
-                  {/* Category Filter Pills (When on Habits) */}
+                  {/* Search & Smart Sort Utility Bar */}
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative flex-1">
+                      <Search className="w-3.5 h-3.5 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={activeTab === 'habits' ? 'Search habits...' : 'Search goals...'}
+                        className="w-full pl-8 pr-8 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-colors"
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer"
+                          title="Clear search"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextSort: Record<typeof sortMode, typeof sortMode> = {
+                          default: 'pending',
+                          pending: 'streak',
+                          streak: 'default',
+                        };
+                        setSortMode(nextSort[sortMode]);
+                        sound.playPop();
+                      }}
+                      className="px-2.5 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface hover:bg-surface-container-high text-[11px] font-bold flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                      title="Cycle sort order"
+                    >
+                      <ArrowUpDown className="w-3.5 h-3.5" />
+                      <span>
+                        {sortMode === 'default'
+                          ? 'Default'
+                          : sortMode === 'pending'
+                          ? 'Pending'
+                          : activeTab === 'habits'
+                          ? 'Streak'
+                          : 'Progress'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Category Time-of-Day Filter Bar (Clean Monochrome) */}
                   {activeTab === 'habits' && (
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
                       {[
                         { id: 'all', label: `All (${habits.length})` },
                         {
                           id: 'morning',
-                          label: `🌅 Morning (${habits.filter((h) => h.timeOfDay === 'morning').length})`,
+                          label: `Morning (${habits.filter((h) => h.timeOfDay === 'morning').length})`,
                         },
                         {
                           id: 'afternoon',
-                          label: `☀️ Afternoon (${habits.filter((h) => h.timeOfDay === 'afternoon').length})`,
+                          label: `Afternoon (${habits.filter((h) => h.timeOfDay === 'afternoon').length})`,
                         },
                         {
                           id: 'evening',
-                          label: `🌙 Evening (${habits.filter((h) => h.timeOfDay === 'evening').length})`,
+                          label: `Evening (${habits.filter((h) => h.timeOfDay === 'evening').length})`,
                         },
                         {
                           id: 'anytime',
-                          label: `⏰ Anytime (${habits.filter((h) => !h.timeOfDay || h.timeOfDay === 'anytime').length})`,
+                          label: `Anytime (${habits.filter((h) => !h.timeOfDay || h.timeOfDay === 'anytime').length})`,
                         },
                       ].map((f) => (
                         <button
@@ -1653,7 +1921,7 @@ export default function App() {
                           className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
                             habitFilter === f.id
                               ? 'bg-primary text-on-primary border-primary shadow-xs'
-                              : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-high'
+                              : 'bg-surface-container border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
                           }`}
                         >
                           {f.label}
@@ -1664,24 +1932,24 @@ export default function App() {
 
                   {/* List Header Label */}
                   <div className="flex items-center justify-between px-1 pt-0.5">
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    <h3 className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant">
                       {activeTab === 'habits'
                         ? `Daily Habits (${filteredHabits.length})`
-                        : `Active Goals (${goals.length})`}
+                        : `Active Goals (${filteredGoals.length})`}
                     </h3>
-                    <span className="text-[11px] text-on-surface-variant font-medium">
+                    <span className="text-[11px] text-on-surface-variant font-mono font-medium">
                       {activeTab === 'habits'
-                        ? `Tap circle to complete (+${XP_PER_HABIT} XP)`
-                        : `Tap + / - to step (+${XP_PER_GOAL_STEP} XP)`}
+                        ? `+${XP_PER_HABIT} XP / habit`
+                        : `+${XP_PER_GOAL_STEP} XP / step`}
                     </span>
                   </div>
                 </div>
 
-                {/* HABITS TAB CONTENT - Summarised with percentage and tap to open full details */}
+                {/* HABITS TAB CONTENT - Pure Monochrome Staggered Cards */}
                 {activeTab === 'habits' && (
                   <>
                     <div className="space-y-2.5">
-                      {filteredHabits.map((habit) => {
+                      {filteredHabits.map((habit, idx) => {
                         const isDoneToday = (habit.completedDates || []).includes(todayStr);
                         const isSets = habit.trackingType === 'sets';
                         const target = habit.targetValue || 30;
@@ -1690,21 +1958,25 @@ export default function App() {
                         const habitXp = habit.xpPerSet || XP_PER_HABIT;
 
                         return (
-                          <div
+                          <motion.div
                             key={habit.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.22, delay: Math.min(idx * 0.03, 0.25) }}
+                            whileTap={{ scale: 0.99 }}
                             onClick={() => {
                               setSelectedHabitForDetail(habit);
                               setScreenView('habit-detail');
                               sound.playPop();
                               triggerHaptic('light');
                             }}
-                            className={`rounded-2xl border p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99] ${
+                            className={`noir-card rounded-2xl border p-3 shadow-xs space-y-2 transition-colors cursor-pointer ${
                               isDoneToday
-                                ? 'bg-surface-container-low/80 border-primary/30'
-                                : 'bg-surface-container-low border-outline-variant/30'
+                                ? 'bg-surface-container border-primary/50'
+                                : 'bg-surface-container-low border-outline-variant/40 hover:border-primary/50'
                             }`}
                           >
-                            {/* Summary Row: Check circle, Icon & Title, % Pill, Streak, Chevron */}
+                            {/* Summary Row: Check circle, Icon & Title, %, Streak, Chevron */}
                             <div className="flex items-center justify-between gap-2.5">
                               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 {/* Interactive Quick Check Toggle Button */}
@@ -1716,28 +1988,30 @@ export default function App() {
                                   }}
                                   className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer active:scale-90 ${
                                     isDoneToday
-                                      ? 'border-transparent text-white shadow-xs'
-                                      : 'border-outline-variant/50 hover:border-primary text-transparent bg-surface'
+                                      ? 'bg-primary border-primary text-on-primary shadow-xs'
+                                      : 'border-outline-variant hover:border-primary text-transparent bg-surface'
                                   }`}
-                                  style={isDoneToday ? { backgroundColor: habit.color } : undefined}
                                   title={isDoneToday ? 'Mark as incomplete' : 'Mark as completed today'}
                                 >
                                   <Check
                                     className={`w-3.5 h-3.5 stroke-[3] transition-transform ${
-                                      isDoneToday ? 'scale-100 text-white' : 'scale-0'
+                                      isDoneToday ? 'scale-100 text-on-primary' : 'scale-0'
                                     }`}
                                   />
                                 </button>
 
                                 <div
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                                  style={{ backgroundColor: `${habit.color}15`, color: habit.color }}
+                                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+                                    isDoneToday
+                                      ? 'bg-primary text-on-primary border-primary'
+                                      : 'bg-surface-container-high text-on-surface border-outline-variant/40'
+                                  }`}
                                 >
-                                  <GoalIcon iconId={habit.icon} className="w-3.5 h-3.5" color={habit.color} />
+                                  <GoalIcon iconId={habit.icon} className="w-3.5 h-3.5" />
                                 </div>
 
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <span
                                       className={`text-sm font-bold truncate ${
                                         isDoneToday ? 'line-through text-on-surface-variant' : 'text-on-surface'
@@ -1747,8 +2021,8 @@ export default function App() {
                                     </span>
 
                                     {habit.streakDays > 0 && (
-                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-black tabular-nums bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
-                                        <Flame className="w-2.5 h-2.5 fill-current" />
+                                      <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-black tabular-nums text-on-surface-variant">
+                                        <Flame className="w-2.5 h-2.5 fill-current text-on-surface" />
                                         <span>{habit.streakDays}d</span>
                                       </span>
                                     )}
@@ -1756,15 +2030,15 @@ export default function App() {
                                 </div>
                               </div>
 
-                              {/* Right summary: % Pill & Chevron */}
+                              {/* Right summary: Tabular % & Chevron */}
                               <div className="flex items-center gap-2 shrink-0">
                                 <span
-                                  className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black tabular-nums border ${
+                                  className={`text-[11px] font-mono font-black tabular-nums ${
                                     pct === 100
-                                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                      ? 'text-on-surface underline decoration-2 underline-offset-2'
                                       : pct > 0
-                                      ? 'bg-primary/10 text-primary border-primary/20'
-                                      : 'bg-surface text-on-surface-variant border-outline-variant/30'
+                                      ? 'text-on-surface'
+                                      : 'text-on-surface-variant'
                                   }`}
                                 >
                                   {pct}%
@@ -1774,29 +2048,28 @@ export default function App() {
                               </div>
                             </div>
 
-                            {/* Sleek Progress Bar */}
+                            {/* Sleek Monochrome Progress Bar */}
                             <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                               <div
-                                className="h-full rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${pct}%`,
-                                  backgroundColor: isDoneToday ? '#10b981' : habit.color,
-                                }}
+                                className={`h-full rounded-full transition-all duration-300 bg-primary ${
+                                  pct === 100 ? 'noir-shimmer' : ''
+                                }`}
+                                style={{ width: `${pct}%` }}
                               />
                             </div>
 
-                            {/* Reverse Habit Status Badge */}
+                            {/* Reverse Habit Status Line (Pure Monochrome Contrast) */}
                             {isReverseZone && (
-                              <div className="pt-0.5 flex items-center justify-between text-[10px] font-bold border-t border-outline-variant/15">
+                              <div className="pt-1 flex items-center justify-between text-[10px] font-bold border-t border-outline-variant/20">
                                 {isDoneToday ? (
-                                  <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30 text-[9px] font-bold">
-                                    <Shield className="w-3 h-3 text-emerald-500" />
+                                  <span className="text-on-surface flex items-center gap-1 font-mono text-[9px] font-black">
+                                    <Shield className="w-3 h-3 fill-current" />
                                     <span>Shielded · +{habitXp} XP Secured</span>
                                   </span>
                                 ) : (
-                                  <span className="text-rose-700 dark:text-rose-300 flex items-center gap-1 bg-rose-500/10 px-2 py-0.5 rounded-lg border border-rose-500/30 font-mono text-[9px] font-bold">
-                                    <AlertTriangle className="w-3 h-3 text-rose-500" />
-                                    <span>Reverse Risk: -{habitXp} XP at 11:59 PM</span>
+                                  <span className="text-on-surface flex items-center gap-1 font-mono text-[9px] font-black">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    <span>At Risk · -{habitXp} XP at 11:59 PM</span>
                                   </span>
                                 )}
                                 <span className="text-on-surface-variant text-[9px] font-medium">
@@ -1804,24 +2077,25 @@ export default function App() {
                                 </span>
                               </div>
                             )}
-                          </div>
+                          </motion.div>
                         );
                       })}
                     </div>
 
                     {filteredHabits.length === 0 && habits.length > 0 && (
-                      <div className="text-center py-8 bg-surface-container-low rounded-3xl border border-outline-variant/30 p-5 space-y-2.5">
-                        <div className="w-10 h-10 rounded-2xl bg-surface-container-high text-on-surface-variant flex items-center justify-center mx-auto">
+                      <div className="text-center py-8 bg-surface-container-low rounded-3xl border border-outline-variant/40 p-5 space-y-2.5">
+                        <div className="w-10 h-10 rounded-2xl bg-surface-container-high text-on-surface flex items-center justify-center mx-auto border border-outline-variant/30">
                           <Repeat className="w-5 h-5" />
                         </div>
-                        <h4 className="text-sm font-bold text-on-surface">No habits in this slot</h4>
+                        <h4 className="text-sm font-bold text-on-surface">No matching habits</h4>
                         <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed">
-                          You have {habits.length} habits active across your daily schedule.
+                          Try clearing your search or switching back to all time slots.
                         </p>
                         <button
                           type="button"
                           onClick={() => {
                             setHabitFilter('all');
+                            setSearchQuery('');
                             sound.playPop();
                           }}
                           className="px-3.5 py-1.5 rounded-xl bg-primary text-on-primary font-bold text-xs inline-flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs"
@@ -1832,13 +2106,13 @@ export default function App() {
                     )}
 
                     {habits.length === 0 && (
-                      <div className="text-center py-10 bg-surface-container-low rounded-3xl border border-dashed border-outline-variant/40 p-6 space-y-3">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                      <div className="text-center py-10 bg-surface-container-low rounded-3xl border border-dashed border-outline-variant/50 p-6 space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-surface-container-high text-on-surface flex items-center justify-center mx-auto border border-outline-variant/30">
                           <Repeat className="w-6 h-6" />
                         </div>
                         <h4 className="text-base font-bold text-on-surface">No habits yet</h4>
                         <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed">
-                          Your habits list is fresh and clean. Tap below to create your first daily habit!
+                          Your habits list is fresh and clean. Tap below to create your first daily habit.
                         </p>
                         <button
                           type="button"
@@ -1857,54 +2131,62 @@ export default function App() {
                   </>
                 )}
 
-                {/* GOALS TAB CONTENT - Summarised with percentage and tap to open full details */}
+                {/* GOALS TAB CONTENT - Pure Monochrome Staggered Cards */}
                 {activeTab === 'goals' && (
                   <>
                     <div className="space-y-2.5">
-                      {goals.map((goal) => {
+                      {filteredGoals.map((goal, idx) => {
                         const target = typeof goal.targetValue === 'number' && !isNaN(goal.targetValue) && goal.targetValue > 0 ? goal.targetValue : 1;
                         const current = typeof goal.currentValue === 'number' && !isNaN(goal.currentValue) ? Math.max(0, goal.currentValue) : 0;
                         const pct = Math.min(100, Math.max(0, Math.round((current / target) * 100)));
 
                         return (
-                          <div
+                          <motion.div
                             key={goal.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.22, delay: Math.min(idx * 0.03, 0.25) }}
+                            whileTap={{ scale: 0.99 }}
                             onClick={() => {
                               setSelectedGoalForDetail(goal);
                               setScreenView('goal-detail');
                               sound.playPop();
                               triggerHaptic('light');
                             }}
-                            className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-3 shadow-xs space-y-2 transition-all cursor-pointer hover:border-primary/40 active:scale-[0.99]"
+                            className="noir-card bg-surface-container-low border border-outline-variant/40 rounded-2xl p-3 shadow-xs space-y-2 transition-colors cursor-pointer hover:border-primary/50"
                           >
-                            {/* Single Row: Icon, Title & % Pill, Quick Steppers, Chevron */}
+                            {/* Single Row: Icon, Title & Tabular Metrics, Quick Steppers, Chevron */}
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <div
-                                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border border-outline-variant/20"
-                                  style={{ backgroundColor: `${goal.color}15`, color: goal.color }}
+                                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+                                    pct === 100
+                                      ? 'bg-primary text-on-primary border-primary'
+                                      : 'bg-surface-container-high text-on-surface border-outline-variant/40'
+                                  }`}
                                 >
-                                  <GoalIcon iconId={goal.icon} className="w-4 h-4" color={goal.color} />
+                                  <GoalIcon iconId={goal.icon} className="w-4 h-4" />
                                 </div>
 
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-sm font-bold text-on-surface truncate">
                                       {goal.title}
                                     </span>
                                     {goal.linkedHabitId && (
-                                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded-full">
-                                        <Sparkles className="w-2.5 h-2.5" />
+                                      <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider text-on-surface-variant">
+                                        <Sparkles className="w-2.5 h-2.5 text-on-surface" />
                                         <span>Synced</span>
                                       </span>
                                     )}
                                   </div>
 
-                                  <div className="flex items-center gap-2 mt-0.5 text-xs">
-                                    <span className="font-mono font-black text-primary text-[11px] tabular-nums">
-                                      {pct}% Complete
+                                  <div className="flex items-center gap-1.5 mt-0.5 text-[11px] font-mono tabular-nums">
+                                    <span className="font-black text-on-surface">
+                                      {pct}%
                                     </span>
-                                    <span className="font-mono tabular-nums text-on-surface-variant text-[11px] truncate">
+                                    <span className="text-on-surface-variant">·</span>
+                                    <span className="text-on-surface-variant truncate">
                                       {goal.category === 'finance' ? settings.currency : ''}
                                       {current.toLocaleString()} / {goal.category === 'finance' ? settings.currency : ''}
                                       {target.toLocaleString()} {goal.unit || 'units'}
@@ -1915,7 +2197,6 @@ export default function App() {
 
                               {/* Compact Right Control Buttons: Minus, Plus, Chevron */}
                               <div className="flex items-center gap-1 shrink-0">
-                                {/* Minus button to subtract 1 unit */}
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -1923,20 +2204,19 @@ export default function App() {
                                     handleUpdateGoalValue(goal.id, -1);
                                   }}
                                   disabled={current <= 0}
-                                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface text-red-500 hover:bg-surface-container font-bold active:scale-95 transition-all border border-outline-variant/20 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface text-on-surface hover:bg-surface-container font-bold active:scale-95 transition-all border border-outline-variant/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                                   title="Subtract 1 unit (-1)"
                                 >
                                   <Minus className="w-3 h-3 stroke-[2.5]" />
                                 </button>
 
-                                {/* Plus button to add 1 unit */}
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleUpdateGoalValue(goal.id, 1);
                                   }}
-                                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-on-primary font-black active:scale-95 transition-all cursor-pointer shadow-xs hover:brightness-105"
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-on-primary font-black active:scale-95 transition-all cursor-pointer shadow-xs hover:opacity-90"
                                   title="Add 1 unit (+1)"
                                 >
                                   <Plus className="w-3 h-3 stroke-[3]" />
@@ -1946,26 +2226,41 @@ export default function App() {
                               </div>
                             </div>
 
-                            {/* Progress Bar */}
+                            {/* Monochrome Progress Bar */}
                             <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                               <div
-                                className="h-full rounded-full transition-all duration-300"
-                                style={{ width: `${pct}%`, backgroundColor: goal.color }}
+                                className={`h-full rounded-full transition-all duration-300 bg-primary ${
+                                  pct === 100 ? 'noir-shimmer' : ''
+                                }`}
+                                style={{ width: `${pct}%` }}
                               />
                             </div>
-                          </div>
+                          </motion.div>
                         );
                       })}
                     </div>
 
+                    {filteredGoals.length === 0 && goals.length > 0 && (
+                      <div className="text-center py-8 bg-surface-container-low rounded-3xl border border-outline-variant/40 p-5 space-y-2.5">
+                        <h4 className="text-sm font-bold text-on-surface">No matching goals</h4>
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery('')}
+                          className="px-3.5 py-1.5 rounded-xl bg-primary text-on-primary font-bold text-xs cursor-pointer"
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+                    )}
+
                     {goals.length === 0 && (
-                      <div className="text-center py-10 bg-surface-container-low rounded-3xl border border-dashed border-outline-variant/40 p-6 space-y-3">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                      <div className="text-center py-10 bg-surface-container-low rounded-3xl border border-dashed border-outline-variant/50 p-6 space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-surface-container-high text-on-surface flex items-center justify-center mx-auto border border-outline-variant/30">
                           <ListTodo className="w-6 h-6" />
                         </div>
                         <h4 className="text-base font-bold text-on-surface">No goals yet</h4>
                         <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed">
-                          Tap the big "Add Goal" button above to create your first goal and earn +50 XP per step.
+                          Tap "Add Goal" above to create your first goal and earn +50 XP per step.
                         </p>
                       </div>
                     )}

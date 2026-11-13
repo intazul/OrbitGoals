@@ -5,6 +5,7 @@ import { sound, triggerHaptic } from '../utils/sound';
 import { downloadCalendarICS } from '../utils/calendarExport';
 import { downloadHabitsCSV, downloadGoalsCSV, downloadMarkdownSummary } from '../utils/dataExport';
 import { generateRandomGamerTag, cleanGamerTag } from '../utils/gamerNames';
+import { APP_VERSION, APP_BUILD, APP_EDITION, RELEASE_HIGHLIGHTS } from '../utils/version';
 import {
   ArrowLeft,
   Moon,
@@ -36,6 +37,7 @@ import {
   Bell,
   Clock,
   Flame,
+  Shield,
 } from 'lucide-react';
 import { notificationManager } from '../utils/notifications';
 
@@ -308,17 +310,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface">
+    <div className="flex-1 flex flex-col min-h-screen bg-surface text-on-surface animate-noir-enter">
       {/* Settings Top Header with Back Button - Space Upwards */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
-        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 mt-8 pt-6 pb-3 shrink-0 flex items-center justify-between gap-3"
+        className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/30 px-4 mt-8 pt-6 pb-3 shrink-0 flex items-center justify-between gap-3"
       >
         <button
           onClick={onBack}
-          className="flex items-center gap-2 py-2 px-3 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer font-bold text-sm min-h-[44px]"
+          className="flex items-center gap-2 py-2 px-3 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer font-bold text-sm min-h-[44px] border border-outline-variant/30"
         >
-          <ArrowLeft className="w-5 h-5 text-primary stroke-[2.5]" />
+          <ArrowLeft className="w-5 h-5 text-on-surface stroke-[2.5]" />
           <span>Back</span>
         </button>
 
@@ -326,20 +328,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           Settings
         </h1>
 
-        <div className="w-16" /> {/* Spacer for symmetry */}
+        <span className="text-[10px] font-mono font-black text-on-surface-variant px-2 py-1 rounded-lg bg-surface-container border border-outline-variant/30">
+          v{APP_VERSION}
+        </span>
       </header>
 
       {/* Main Settings Scrollable Body */}
       <div className="flex-1 px-4 pt-3 pb-10 space-y-4 overflow-y-auto">
         {backupSuccessMsg && (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <div className="p-3.5 rounded-2xl bg-primary text-on-primary text-xs font-bold flex items-center gap-2 shadow-sm animate-in fade-in">
             <Check className="w-4 h-4 shrink-0 stroke-[3]" />
             <span>{backupSuccessMsg}</span>
           </div>
         )}
 
         {backupErrorMsg && (
-          <div className="p-3.5 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <div className="p-3.5 rounded-2xl bg-surface-container-high border-2 border-on-surface text-on-surface text-xs font-bold flex items-center gap-2 animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5]" />
             <span>{backupErrorMsg}</span>
           </div>
@@ -393,7 +397,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <ShieldCheck className="w-4 h-4" />
               <span>Instant Guest Access</span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+            <span className="text-[10px] font-mono font-black uppercase tracking-wider text-on-surface">
               Active
             </span>
           </div>
@@ -546,11 +550,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* 3. Daily Habit Reset (00:00 Midnight) */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
               <RotateCcw className="w-4 h-4 stroke-[2.5]" />
               <span>Daily Habit Reset</span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+            <span className="text-[10px] font-mono font-bold text-on-surface-variant">
               Active · 00:00 AM
             </span>
           </div>
@@ -559,21 +563,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             All daily habits automatically reset their check-in progress at 00:00:01 midnight. Your active streaks are preserved, and missed habits are guarded by your Streak Shields ({profile.streakShields ?? 2} available).
           </p>
 
-          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2">
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/25 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-primary" />
+                <Calendar className="w-3.5 h-3.5 text-on-surface" />
                 <span>Automatic Schedule:</span>
               </span>
-              <span style={{ fontSize: '11px' }} className="font-mono font-bold text-primary">Everyday at 00:00 AM</span>
+              <span style={{ fontSize: '11px' }} className="font-mono font-bold text-on-surface">Everyday at 00:00 AM</span>
             </div>
 
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <ShieldCheck className="w-3.5 h-3.5 text-on-surface" />
                 <span>Streak Shield Protection:</span>
               </span>
-              <span style={{ fontSize: '11px' }} className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+              <span style={{ fontSize: '11px' }} className="font-mono font-bold text-on-surface">
                 {profile.streakShields ?? 2} Shields Active
               </span>
             </div>
@@ -592,7 +596,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               setBackupSuccessMsg('Daily habits progress reset! Ready for fresh check-ins today.');
               setTimeout(() => setBackupSuccessMsg(null), 3500);
             }}
-            className="w-full py-2.5 px-3 rounded-2xl bg-surface border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-2xs"
+            className="w-full py-2.5 px-3 rounded-2xl bg-surface border border-outline-variant/40 hover:bg-surface-container text-on-surface font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-2xs"
           >
             <RotateCcw className="w-4 h-4 stroke-[2.5]" />
             <span>Reset Daily Habits Now (Manual Test/Reset)</span>
@@ -708,12 +712,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Bell className="w-4 h-4" />
               <span>Push & Alert Notifications</span>
             </div>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-              notificationManager.permission === 'granted'
-                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-            }`}>
-              {notificationManager.permission === 'granted' ? 'Push Granted' : 'In-App Alerts Active'}
+            <span className="text-[10px] font-mono font-bold text-on-surface-variant">
+              {notificationManager.permission === 'granted' ? 'Push Granted' : 'In-App Active'}
             </span>
           </div>
 
@@ -721,23 +721,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             Customize alert reminders individually per habit or goal, including custom reminder times, repeat days, alert chimes, and browser push notifications.
           </p>
 
-          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/25 space-y-2.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1.5">
-                <Bell className="w-3.5 h-3.5 text-primary" />
+                <Bell className="w-3.5 h-3.5 text-on-surface" />
                 <span>Web Push Status:</span>
               </span>
-              <span className="font-mono font-bold capitalize text-primary">
+              <span className="font-mono font-bold capitalize text-on-surface">
                 {notificationManager.hasNativeSupport ? notificationManager.permission : 'In-App Only'}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                <Clock className="w-3.5 h-3.5 text-on-surface" />
                 <span>Active Reminders Configured:</span>
               </span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="font-mono font-bold text-on-surface">
                 {habits.filter((h) => h.reminderEnabled).length} Habits · {goals.filter((g) => g.reminderEnabled).length} Goals
               </span>
             </div>
@@ -798,7 +798,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* 6b. XP Step Rates & Gamification Tuning */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
               <Zap className="w-4 h-4 fill-current" />
               <span>XP Step Rates & Gamification</span>
             </div>
@@ -809,13 +809,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </p>
 
           {/* Goal XP per Step Setting */}
-          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/25 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <Sparkles className="w-3.5 h-3.5 text-on-surface" />
                 <span>Goal Step XP Reward</span>
               </span>
-              <span className="text-xs font-black font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+              <span className="text-xs font-black font-mono text-on-surface">
                 +{settings.goalXpPerStep ?? 15} XP / step
               </span>
             </div>
@@ -864,13 +864,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
 
           {/* Habit XP per Set Setting */}
-          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/20 space-y-2.5">
+          <div className="p-3 rounded-2xl bg-surface border border-outline-variant/25 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                <Zap className="w-3.5 h-3.5 text-on-surface fill-current" />
                 <span>Habit Set XP Reward</span>
               </span>
-              <span className="text-xs font-black font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg">
+              <span className="text-xs font-black font-mono text-on-surface">
                 +{settings.habitXpPerSet ?? 8} XP / set
               </span>
             </div>
@@ -936,18 +936,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           return (
             <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
                   <Flame className="w-4 h-4 fill-current" />
                   <span>Reverse XP Deletion Mode</span>
                 </div>
-                <span
-                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                    isReverseActive
-                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                  }`}
-                >
-                  {isReverseActive ? 'Active (-XP Penalties ON)' : 'OFF (Zero XP Penalties)'}
+                <span className="text-[10px] font-mono font-bold text-on-surface-variant">
+                  {isReverseActive ? 'Active (-XP ON)' : 'OFF (Protected)'}
                 </span>
               </div>
 
@@ -955,7 +949,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 When enabled, uncompleted daily habits deduct XP at the 11:59 PM deadline. Turn this <strong>OFF</strong> to protect your level and prevent any XP from being deleted when habits are missed.
               </p>
 
-              <div className="p-3.5 rounded-2xl bg-surface border border-outline-variant/20 flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-2xl bg-surface border border-outline-variant/25 flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <span className="text-xs font-bold text-on-surface block leading-tight">
                     Reverse XP Deletion
@@ -970,16 +964,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleReverse}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isReverseActive ? 'bg-rose-600' : 'bg-surface-container-highest'
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-outline-variant/40 transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isReverseActive ? 'bg-primary' : 'bg-surface-container-highest'
                   }`}
                   role="switch"
                   aria-checked={isReverseActive}
                   title={isReverseActive ? 'Turn OFF Reverse XP Deletion' : 'Turn ON Reverse XP Deletion'}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                      isReverseActive ? 'translate-x-5' : 'translate-x-0'
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      isReverseActive ? 'translate-x-5 bg-on-primary' : 'translate-x-0 bg-on-surface'
                     }`}
                   />
                 </button>
@@ -995,13 +989,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     }
                   }}
                   disabled={!isReverseActive}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center flex items-center justify-center gap-1.5 ${
                     !isReverseActive
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 opacity-75 cursor-default'
-                      : 'bg-surface-container border-outline-variant/30 text-on-surface hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-600 cursor-pointer active:scale-98'
+                      ? 'bg-primary text-on-primary border-primary cursor-default shadow-xs'
+                      : 'bg-surface-container border-outline-variant/30 text-on-surface hover:bg-surface-container-high cursor-pointer active:scale-98'
                   }`}
                 >
-                  🛡️ Turn Off XP Deletion (Safe Mode)
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Safe Mode (OFF)</span>
                 </button>
 
                 <button
@@ -1012,13 +1007,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     }
                   }}
                   disabled={isReverseActive}
-                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center flex items-center justify-center gap-1.5 ${
                     isReverseActive
-                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 opacity-75 cursor-default'
-                      : 'bg-surface-container border-outline-variant/30 text-on-surface hover:bg-rose-500/10 hover:border-rose-500/40 hover:text-rose-600 cursor-pointer active:scale-98'
+                      ? 'bg-primary text-on-primary border-primary cursor-default shadow-xs'
+                      : 'bg-surface-container border-outline-variant/30 text-on-surface hover:bg-surface-container-high cursor-pointer active:scale-98'
                   }`}
                 >
-                  🔥 Turn On Reverse XP Mode
+                  <Flame className="w-3.5 h-3.5" />
+                  <span>Reverse Mode (ON)</span>
                 </button>
               </div>
             </div>
@@ -1086,12 +1082,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* 8. Full Data Export (CSV Spreadsheets & Markdown Report) */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
               <FileSpreadsheet className="w-4 h-4" />
               <span>Full Data Export</span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-              CSV & Markdown
+            <span className="text-[10px] font-mono font-bold text-on-surface-variant">
+              CSV · Markdown
             </span>
           </div>
 
@@ -1107,13 +1103,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <FileSpreadsheet className="w-5 h-5 text-on-surface" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Export Habits (CSV)</span>
                   <span className="text-xs text-on-surface-variant">Frequencies, streaks, sets, categories ({habits.length} habits)</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-xl bg-emerald-500/10">.CSV</span>
+              <span className="text-xs font-mono font-bold text-on-surface px-2.5 py-1 rounded-xl bg-surface-container border border-outline-variant/30">.CSV</span>
             </button>
 
             {/* Export Goals CSV */}
@@ -1123,13 +1119,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <FileSpreadsheet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <FileSpreadsheet className="w-5 h-5 text-on-surface" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Export Goals (CSV)</span>
                   <span className="text-xs text-on-surface-variant">Targets, current value, completion %, deadlines ({goals.length} goals)</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-xl bg-indigo-500/10">.CSV</span>
+              <span className="text-xs font-mono font-bold text-on-surface px-2.5 py-1 rounded-xl bg-surface-container border border-outline-variant/30">.CSV</span>
             </button>
 
             {/* Export Markdown Summary */}
@@ -1139,20 +1135,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <FileText className="w-5 h-5 text-on-surface" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Export Markdown Report</span>
                   <span className="text-xs text-on-surface-variant">Formatted audit & progress report for Notion, Obsidian & Docs</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-xl bg-purple-500/10">.MD</span>
+              <span className="text-xs font-mono font-bold text-on-surface px-2.5 py-1 rounded-xl bg-surface-container border border-outline-variant/30">.MD</span>
             </button>
           </div>
         </div>
 
         {/* 9. Full JSON Backup & Storage */}
         <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3.5 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
             <Database className="w-4 h-4" />
             <span>Full JSON Backup & Storage</span>
           </div>
@@ -1163,13 +1159,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <Download className="w-5 h-5 text-primary" />
+                <Download className="w-5 h-5 text-on-surface" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Export JSON Backup</span>
                   <span className="text-xs text-on-surface-variant">Download complete backup file (.json)</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-primary px-2.5 py-1 rounded-xl bg-primary/10">Download</span>
+              <span className="text-xs font-bold text-on-primary px-2.5 py-1 rounded-xl bg-primary">Download</span>
             </button>
 
             <button
@@ -1177,13 +1173,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <Copy className="w-5 h-5 text-primary" />
+                <Copy className="w-5 h-5 text-on-surface" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Copy Backup JSON</span>
                   <span className="text-xs text-on-surface-variant">Copy full backup text to device clipboard</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-primary px-2.5 py-1 rounded-xl bg-primary/10">Copy</span>
+              <span className="text-xs font-bold text-on-surface px-2.5 py-1 rounded-xl bg-surface-container border border-outline-variant/30">Copy</span>
             </button>
 
             <button
@@ -1191,13 +1187,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               className="w-full p-3.5 rounded-2xl bg-surface border border-outline-variant/30 hover:bg-surface-container flex items-center justify-between active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <Upload className="w-5 h-5 text-primary" />
+                <Upload className="w-5 h-5 text-on-surface" />
                 <div className="text-left">
                   <span className="text-sm font-bold text-on-surface block leading-tight">Restore from Backup</span>
                   <span className="text-xs text-on-surface-variant">Import an existing OrbitGoals JSON file</span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-primary px-2.5 py-1 rounded-xl bg-primary/10">Import</span>
+              <span className="text-xs font-bold text-on-surface px-2.5 py-1 rounded-xl bg-surface-container border border-outline-variant/30">Import</span>
             </button>
             <input
               type="file"
@@ -1210,28 +1206,61 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             {/* Clear All Goals Data */}
             <button
               onClick={onResetAllData}
-              className="w-full p-3.5 rounded-2xl bg-surface border border-red-500/30 hover:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-between active:scale-98 transition-all cursor-pointer"
+              className="w-full p-3.5 rounded-2xl bg-surface border border-on-surface/40 hover:bg-primary hover:text-on-primary text-on-surface flex items-center justify-between active:scale-98 transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-3">
                 <RotateCcw className="w-5 h-5" />
                 <div className="text-left">
                   <span className="text-sm font-bold block leading-tight">Reset All Goals</span>
-                  <span className="text-xs opacity-80">Clears current list ({totalGoalsCount} goals)</span>
+                  <span className="text-xs opacity-75">Clears current list ({totalGoalsCount} goals)</span>
                 </div>
               </div>
-              <span className="text-xs font-bold">Reset</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Reset</span>
             </button>
           </div>
         </div>
 
-        {/* 8. App Info */}
-        <div className="bg-surface-container-low border border-outline-variant/20 rounded-3xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-            <Info className="w-5 h-5" />
+        {/* 10. Advanced Release & System Diagnostics */}
+        <div className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-4.5 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary text-on-primary flex items-center justify-center font-black text-xs font-mono">
+                {APP_VERSION.split('.').slice(0, 2).join('.')}
+              </div>
+              <div>
+                <span className="text-sm font-black text-on-surface block leading-tight">
+                  OrbitGoals v{APP_VERSION}
+                </span>
+                <span className="text-[11px] font-mono text-on-surface-variant block">
+                  Build {APP_BUILD} · {APP_EDITION}
+                </span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold text-on-surface px-2 py-0.5 rounded-md bg-surface border border-outline-variant/40">
+              {(() => {
+                try {
+                  const bytes = Object.keys(localStorage).reduce(
+                    (acc, k) => acc + (localStorage.getItem(k)?.length || 0) * 2,
+                    0
+                  );
+                  return `${(bytes / 1024).toFixed(1)} KB`;
+                } catch {
+                  return 'Local';
+                }
+              })()}
+            </span>
           </div>
-          <div>
-            <span className="text-xs font-bold text-on-surface block">OrbitGoals Android Edition</span>
-            <span className="text-[11px] text-on-surface-variant">100% Offline-Ready · All data stored locally on your device</span>
+
+          <div className="pt-2 border-t border-outline-variant/25 space-y-2">
+            {RELEASE_HIGHLIGHTS.map((item, idx) => (
+              <div key={idx} className="flex items-start gap-2 text-[11px] text-on-surface-variant">
+                <span className="text-on-surface font-mono font-bold shrink-0">0{idx + 1}</span>
+                <div className="leading-snug">
+                  <span className="text-on-surface font-bold block">{item.title}</span>
+                  <span>{item.detail}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1246,7 +1275,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-on-surface">Edit Profile Details</h3>
               {profileSaveSuccess && (
-                <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
+                <span className="text-xs text-on-surface font-bold flex items-center gap-1 font-mono">
                   <Check className="w-3.5 h-3.5" /> Saved
                 </span>
               )}
@@ -1330,14 +1359,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-on-surface">Change 4-Digit PIN</h3>
               {pinChangeSuccess && (
-                <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
+                <span className="text-xs text-on-surface font-bold flex items-center gap-1 font-mono">
                   <Check className="w-3.5 h-3.5" /> Updated
                 </span>
               )}
             </div>
 
             {pinChangeError && (
-              <p className="text-xs text-red-500 font-bold flex items-center gap-1">
+              <p className="text-xs text-on-surface font-bold flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>{pinChangeError}</span>
               </p>

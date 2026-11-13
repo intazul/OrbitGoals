@@ -192,11 +192,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-surface text-on-surface overflow-hidden animate-noir-enter">
       {/* Top Header */}
       <header
         style={{ marginTop: '32px', marginLeft: '0px' }}
-        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/20 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
+        className="px-4 mt-8 pt-6 pb-3 border-b border-outline-variant/30 flex items-center justify-between shrink-0 bg-surface/90 backdrop-blur-md z-10"
       >
         <div className="flex items-center gap-3">
           <button
@@ -244,12 +244,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       {(claimToast || copiedToast) && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 max-w-[380px] w-[90%] pointer-events-none">
           {claimToast && (
-            <div className="pointer-events-auto p-3 rounded-2xl bg-gradient-to-r from-amber-500 to-primary text-black font-black text-xs flex items-center justify-between shadow-xl animate-in fade-in slide-in-from-bottom-4 border border-amber-300">
+            <div className="pointer-events-auto p-3 rounded-2xl bg-primary text-on-primary font-black text-xs flex items-center justify-between shadow-xl animate-in fade-in slide-in-from-bottom-4 border border-outline/20">
               <span className="flex items-center gap-1.5">
                 <Gift className="w-4 h-4 animate-bounce" />
                 <span>Trophy Claimed: {claimToast.title}!</span>
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-black/20 text-white font-mono">
+              <span className="px-2 py-0.5 rounded-full bg-on-primary/20 text-on-primary font-mono">
                 +{claimToast.xp} XP
               </span>
             </div>
@@ -267,14 +267,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       {/* Main Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 pb-20">
         {/* User Identity Hero Card */}
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface border border-outline-variant/30 shadow-xs space-y-3">
+        <div className="p-4 rounded-3xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface border border-outline-variant/40 shadow-xs space-y-3">
           <div className="flex items-center gap-3">
             {/* User Profile Monogram Badge */}
             <div className="relative shrink-0">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-indigo-500 text-white font-black text-2xl flex items-center justify-center shadow-md border-2 border-surface">
+              <div className="w-16 h-16 rounded-2xl bg-primary text-on-primary font-black text-2xl flex items-center justify-center shadow-md border border-outline/20">
                 {profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'G'}
               </div>
-              <div className="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-black font-black text-[10px] shadow-sm flex items-center gap-0.5 border border-amber-300 pointer-events-none">
+              <div className="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full bg-surface text-on-surface font-black text-[10px] font-mono shadow-sm flex items-center gap-0.5 border border-on-surface/30 pointer-events-none">
                 <span>Lv.{levelInfo.level}</span>
               </div>
             </div>
@@ -293,7 +293,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
 
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-2 py-0.5 rounded-lg border border-amber-500/30 flex items-center gap-1">
+                <span className="text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-lg border border-outline-variant/40 flex items-center gap-1">
                   <span>{rankInfo.badge}</span>
                   <span className="truncate">{profile.title || rankInfo.title}</span>
                 </span>
@@ -307,14 +307,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </div>
           </div>
 
-          {/* XP PROGRESS BAR (1,000 Levels Ascent) */}
-          <div className="pt-2 border-t border-outline-variant/20 space-y-1.5">
+          {/* XP PROGRESS BAR */}
+          <div className="pt-2 border-t border-outline-variant/25 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-on-surface flex items-center gap-1 text-[11px]">
-                <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-current" />
+                <Zap className="w-3.5 h-3.5 text-on-surface fill-current" />
                 <span>Level {levelInfo.level}</span>
               </span>
-              <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-primary">
+              <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-on-surface">
                 <span>{userXp.toLocaleString()} XP</span>
                 <span className="text-on-surface-variant font-normal text-[10px]">
                   ({levelInfo.currentLevelXp.toLocaleString()}/{levelInfo.nextLevelXp.toLocaleString()} to Lv.{levelInfo.level + 1})
@@ -322,25 +322,25 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
 
-            {/* XP Bar */}
+            {/* Monochrome XP Bar */}
             <div className="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-400 via-primary to-primary transition-all duration-500"
+                className="h-full rounded-full bg-primary noir-shimmer transition-all duration-500"
                 style={{ width: `${levelInfo.percent}%` }}
               />
             </div>
 
             <div className="flex items-center justify-between text-[10px] font-medium text-on-surface-variant">
               <span>{levelInfo.isMaxLevel ? 'Ultimate Legend' : `${levelInfo.xpToNextLevel.toLocaleString()} XP to next level`}</span>
-              <span className="text-amber-600 dark:text-amber-400 font-bold">Scaling Curve Active</span>
+              <span className="text-on-surface font-mono font-bold">Scaling Curve Active</span>
             </div>
           </div>
         </div>
 
         {/* Core Stats 4-Grid Strip */}
         <div className="grid grid-cols-4 gap-1.5">
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
-            <div className="flex items-center justify-center gap-1 text-amber-600 dark:text-amber-400">
+          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/40 text-center">
+            <div className="flex items-center justify-center gap-1 text-on-surface">
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-black font-mono tabular-nums">{userXp.toLocaleString()}</span>
             </div>
@@ -349,8 +349,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
-            <div className="flex items-center justify-center gap-1 text-orange-600 dark:text-orange-400">
+          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/40 text-center">
+            <div className="flex items-center justify-center gap-1 text-on-surface">
               <Flame className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-black font-mono tabular-nums">{highestStreak}d</span>
             </div>
@@ -359,8 +359,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
-            <div className="flex items-center justify-center gap-1 text-primary">
+          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/40 text-center">
+            <div className="flex items-center justify-center gap-1 text-on-surface">
               <Repeat className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="text-xs font-black font-mono tabular-nums">{totalHabitCheckins}</span>
             </div>
@@ -369,8 +369,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/30 text-center">
-            <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400">
+          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/40 text-center">
+            <div className="flex items-center justify-center gap-1 text-on-surface">
               <Shield className="w-3.5 h-3.5 fill-current" />
               <span className="text-xs font-black font-mono tabular-nums">{profile.streakShields ?? 2}</span>
             </div>
@@ -388,11 +388,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               onOpenScrapbook();
               sound.playPop();
             }}
-            className="w-full p-3.5 rounded-3xl bg-gradient-to-r from-amber-500/15 via-primary/10 to-purple-500/15 border border-primary/25 hover:border-primary/50 text-on-surface flex items-center justify-between transition-all active:scale-98 shadow-2xs group cursor-pointer"
+            className="w-full p-3.5 rounded-3xl bg-gradient-to-r from-surface-container-high via-surface-container to-surface-container-low border border-outline-variant/40 hover:border-primary/50 text-on-surface flex items-center justify-between transition-all active:scale-98 shadow-2xs group cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/20 text-primary flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
-                📸
+              <div className="w-10 h-10 rounded-2xl bg-primary text-on-primary flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                <Camera className="w-5 h-5" />
               </div>
               <div className="text-left">
                 <span className="text-sm font-black text-on-surface block leading-tight">
@@ -403,7 +403,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-primary text-xs font-bold">
+            <div className="flex items-center gap-1 text-on-surface text-xs font-bold">
               <span>View</span>
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -471,11 +471,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <div className="flex items-center justify-between px-1">
               <div>
                 <span className="text-[11px] font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
-                  <TrophyIcon className="w-3.5 h-3.5 text-amber-500" />
+                  <TrophyIcon className="w-3.5 h-3.5 text-on-surface" />
                   <span>Trophies ({unlockedCount}/{allTrophies.length})</span>
                 </span>
                 <p className="text-[10px] text-on-surface-variant font-medium">
-                  {claimableCount > 0 ? `🎉 ${claimableCount} trophies ready to claim!` : 'Unlock trophies across habits, streaks & levels'}
+                  {claimableCount > 0 ? `${claimableCount} trophies ready to claim` : 'Unlock trophies across habits, streaks & levels'}
                 </p>
               </div>
 
@@ -485,8 +485,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   onClick={() => setShowClaimableOnly(!showClaimableOnly)}
                   className={`px-2.5 py-1 rounded-full text-[10px] font-black flex items-center gap-1 transition-all cursor-pointer shadow-xs ${
                     showClaimableOnly
-                      ? 'bg-amber-500 text-black border border-amber-300 animate-pulse'
-                      : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                      ? 'bg-primary text-on-primary border border-primary'
+                      : 'bg-surface-container-high text-on-surface border border-on-surface/40'
                   }`}
                 >
                   <Gift className="w-3 h-3" />
@@ -499,12 +499,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               {[
                 { id: 'all', label: `All (${allTrophies.length})` },
-                { id: 'streaks', label: '🔥 Streaks' },
-                { id: 'sets', label: '⚡ Sets' },
-                { id: 'goals', label: '🎯 Goals' },
-                { id: 'levels', label: '👑 Levels' },
-                { id: 'creator', label: '🎬 Creator' },
-                { id: 'special', label: '✨ Special' },
+                { id: 'streaks', label: 'Streaks' },
+                { id: 'sets', label: 'Sets' },
+                { id: 'goals', label: 'Goals' },
+                { id: 'levels', label: 'Levels' },
+                { id: 'creator', label: 'Creator' },
+                { id: 'special', label: 'Special' },
               ].map((cat) => (
                 <button
                   key={cat.id}
@@ -516,7 +516,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
                     trophyCategory === cat.id
                       ? 'bg-primary text-on-primary border-primary shadow-xs'
-                      : 'bg-surface-container border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-high'
+                      : 'bg-surface-container border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-high'
                   }`}
                 >
                   {cat.label}
@@ -542,10 +542,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                       key={trophy.id}
                       className={`p-3 rounded-2xl border transition-all ${
                         trophy.claimed
-                          ? 'bg-surface-container/70 border-outline-variant/30'
+                          ? 'bg-surface-container/70 border-outline-variant/40'
                           : canClaim
-                          ? 'bg-gradient-to-r from-amber-500/15 via-surface-container to-primary/10 border-amber-400/60 shadow-md ring-1 ring-amber-400/30'
-                          : 'bg-surface-container-low border-outline-variant/30 opacity-80'
+                          ? 'bg-gradient-to-r from-surface-container-high via-surface-container to-surface-container-low border-on-surface/50 shadow-md'
+                          : 'bg-surface-container-low border-outline-variant/30 opacity-75'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -553,7 +553,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                         <div
                           className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 border ${
                             canClaim
-                              ? 'bg-gradient-to-tr from-amber-500/30 to-yellow-400/20 border-amber-400 shadow-sm animate-bounce-short'
+                              ? 'bg-primary text-on-primary border-primary shadow-sm'
                               : trophy.unlocked
                               ? 'bg-surface-container-high border-outline-variant/40'
                               : 'bg-surface-container-low border-outline-variant/20 grayscale opacity-60'
@@ -569,9 +569,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                               <h4 className="text-sm font-black text-on-surface truncate">
                                 {trophy.title}
                               </h4>
-                              {/* Tier Badge */}
-                              <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-bold uppercase border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
-                                {tierStyle.label}
+                              <span className="text-[9px] font-mono font-bold uppercase text-on-surface-variant">
+                                · {tierStyle.label}
                               </span>
                             </div>
 
@@ -580,18 +579,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleClaimTrophy(trophy)}
-                                className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-xs flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer animate-pulse"
+                                className="px-3 py-1 rounded-xl bg-primary text-on-primary font-black text-xs flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
                               >
                                 <Sparkles className="w-3 h-3" />
                                 <span>CLAIM +{trophy.xpReward} XP</span>
                               </button>
                             ) : trophy.claimed ? (
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] flex items-center gap-1 border border-emerald-500/30">
+                              <span className="text-on-surface font-mono font-bold text-[10px] flex items-center gap-1">
                                 <Check className="w-3 h-3 stroke-[3]" />
-                                <span>Claimed (+{trophy.xpReward} XP)</span>
+                                <span>Claimed +{trophy.xpReward} XP</span>
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                              <span className="text-[10px] font-mono font-bold text-on-surface-variant">
                                 +{trophy.xpReward} XP
                               </span>
                             )}
@@ -605,17 +604,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                           {!trophy.claimed && (
                             <div className="mt-2 space-y-1">
                               <div className="flex items-center justify-between text-[10px] font-medium text-on-surface-variant">
-                                <span>{canClaim ? 'Ready to claim!' : 'Progress'}</span>
+                                <span>{canClaim ? 'Ready to claim' : 'Progress'}</span>
                                 <span className="font-mono tabular-nums">
                                   {trophy.currentProgress.toLocaleString()} / {trophy.maxProgress.toLocaleString()} ({pct}%)
                                 </span>
                               </div>
                               <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                                 <div
-                                  className={`h-full rounded-full transition-all duration-300 ${
-                                    canClaim
-                                      ? 'bg-gradient-to-r from-amber-400 to-yellow-300'
-                                      : 'bg-primary'
+                                  className={`h-full rounded-full transition-all duration-300 bg-primary ${
+                                    canClaim ? 'noir-shimmer' : ''
                                   }`}
                                   style={{ width: `${pct}%` }}
                                 />
@@ -659,11 +656,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     className="p-3 rounded-2xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between gap-3 shadow-xs"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: `${comp.habitColor}15`, color: comp.habitColor }}
-                      >
-                        <GoalIcon iconId={comp.habitIcon} className="w-4 h-4" color={comp.habitColor} />
+                      <div className="w-8 h-8 rounded-xl bg-surface-container-high text-on-surface border border-outline-variant/40 flex items-center justify-center shrink-0">
+                        <GoalIcon iconId={comp.habitIcon} className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
                         <span className="text-sm font-bold text-on-surface block truncate">
@@ -681,7 +675,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-surface border border-outline-variant/20 text-on-surface">
                         {formatRecentDate(comp.dateStr)}
                       </span>
-                      <span className="text-[10px] font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-mono font-black text-on-surface">
                         +8 XP
                       </span>
                     </div>
@@ -732,8 +726,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                       key={habit.id}
                       className={`p-3 rounded-2xl border transition-all ${
                         isDoneToday
-                          ? 'bg-surface-container-low/70 border-primary/30'
-                          : 'bg-surface-container-low border-outline-variant/30'
+                          ? 'bg-surface-container border-primary/50'
+                          : 'bg-surface-container-low border-outline-variant/40'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -742,15 +736,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                           onClick={() => onToggleHabit(habit.id)}
                           className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all cursor-pointer active:scale-90 ${
                             isDoneToday
-                              ? 'border-transparent text-white shadow-xs'
-                              : 'border-outline-variant/50 hover:border-primary text-transparent bg-surface'
+                              ? 'bg-primary border-primary text-on-primary shadow-xs'
+                              : 'border-outline-variant/60 hover:border-primary text-transparent bg-surface'
                           }`}
-                          style={isDoneToday ? { backgroundColor: habit.color } : undefined}
                           title={isDoneToday ? 'Completed today' : 'Tap to complete today'}
                         >
                           <Check
                             className={`w-4 h-4 stroke-[3] transition-transform ${
-                              isDoneToday ? 'scale-100 text-white' : 'scale-0'
+                              isDoneToday ? 'scale-100 text-on-primary' : 'scale-0'
                             }`}
                           />
                         </button>
@@ -766,23 +759,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
-                            <span
-                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold tabular-nums ${
-                                habit.streakDays > 0
-                                  ? 'bg-orange-500/15 text-orange-500 border border-orange-500/30'
-                                  : 'bg-surface text-on-surface-variant border border-outline-variant/20'
-                              }`}
-                            >
+                          <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono">
+                            <span className="inline-flex items-center gap-0.5 font-bold tabular-nums text-on-surface">
                               <Flame className="w-2.5 h-2.5 fill-current" />
-                              <span>{habit.streakDays}d streak</span>
+                              <span>{habit.streakDays}d</span>
                             </span>
-
-                            <span className="text-on-surface-variant font-medium">
-                              Best: {habit.bestStreak}d
+                            <span className="text-on-surface-variant">·</span>
+                            <span className="text-on-surface-variant">
+                              Best {habit.bestStreak}d
                             </span>
-
-                            <span className="capitalize px-1.5 py-0.5 rounded bg-surface text-on-surface-variant border border-outline-variant/20">
+                            <span className="text-on-surface-variant">·</span>
+                            <span className="capitalize text-on-surface-variant">
                               {habit.timeOfDay}
                             </span>
                           </div>
@@ -790,13 +777,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
                         <div className="shrink-0 text-right">
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg border ${
                               isDoneToday
-                                ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
-                                : 'bg-surface text-on-surface-variant border border-outline-variant/20'
+                                ? 'bg-primary text-on-primary border-primary'
+                                : 'bg-surface text-on-surface-variant border-outline-variant/30'
                             }`}
                           >
-                            {isDoneToday ? 'Done Today' : 'Due Today'}
+                            {isDoneToday ? 'Done' : 'Due'}
                           </span>
                         </div>
                       </div>

@@ -213,9 +213,9 @@ export const AVATAR_CATALOG: AvatarItem[] = [
   { id: 'item-armor', name: 'Cyber Titanium Weave', type: 'outfit', unlockRequirement: 'Reach Level 9', unlockLevel: 9, unlocked: false, iconEmoji: '🛡️' },
   // Auras
   { id: 'item-aura-slate', name: 'Calm Studio Mist', type: 'aura', unlockRequirement: 'Default Aura', unlockLevel: 1, unlocked: true, iconEmoji: '🌫️' },
-  { id: 'item-aura-solar', name: 'Golden Solar Radiance', type: 'aura', unlockRequirement: 'Reach Level 4', unlockLevel: 4, unlocked: true, iconEmoji: '☀️', styleClass: 'ring-4 ring-amber-400/50 shadow-[0_0_25px_rgba(251,191,36,0.5)]' },
-  { id: 'item-aura-neon', name: 'Cyber Neon Pulse', type: 'aura', unlockRequirement: 'Reach Level 7', unlockLevel: 7, unlocked: false, iconEmoji: '⚡', styleClass: 'ring-4 ring-cyan-400/60 shadow-[0_0_30px_rgba(34,211,238,0.6)]' },
-  { id: 'item-aura-flame', name: 'Blazing Streak Fire', type: 'aura', unlockRequirement: '21-Day Streak Milestone', unlockLevel: 6, unlockStreak: 21, unlocked: false, iconEmoji: '🔥', styleClass: 'ring-4 ring-orange-500/70 shadow-[0_0_30px_rgba(249,115,22,0.7)]' },
+  { id: 'item-aura-solar', name: 'Obsidian Halo Ring', type: 'aura', unlockRequirement: 'Reach Level 4', unlockLevel: 4, unlocked: true, iconEmoji: '☀️', styleClass: 'ring-4 ring-on-surface/50 shadow-md' },
+  { id: 'item-aura-neon', name: 'Monochrome Double Pulse', type: 'aura', unlockRequirement: 'Reach Level 7', unlockLevel: 7, unlocked: false, iconEmoji: '⚡', styleClass: 'ring-4 ring-on-surface/70 shadow-lg' },
+  { id: 'item-aura-flame', name: 'Platinum Edge Aura', type: 'aura', unlockRequirement: '21-Day Streak Milestone', unlockLevel: 6, unlockStreak: 21, unlocked: false, iconEmoji: '🔥', styleClass: 'ring-4 ring-primary/80 shadow-xl' },
   // Badges
   { id: 'item-badge-first', name: 'First Spark Badge', type: 'badge', unlockRequirement: 'First completed habit', unlockLevel: 1, unlocked: true, iconEmoji: '🥉' },
   { id: 'item-badge-streak', name: 'Flame Centurion (14d)', type: 'badge', unlockRequirement: '14-Day Streak', unlockLevel: 4, unlocked: true, iconEmoji: '🔥' },
